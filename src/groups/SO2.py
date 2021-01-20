@@ -1,46 +1,56 @@
 import numpy as np
+from .SO import SO
 
 
-class SO2(object):
+class SO2(SO):
+
+    # static properties
+    n = 2
+
+    # constructor
     def __init__(self, angle):
-        self._n = 2
-        self._angle = angle
+        super().__init__(angle)
 
+    # public methods
     def angle(self):
-        return self._angle
-
-    def to_matrix(self):
-        return self.find_matrix(self._angle)
+        return self.vector()
 
     def smallest_angle(self):
-        return  self.smallest_positive_angle() - np.pi
+        return self.smallest_positive_angle() - np.pi
 
     def smallest_positive_angle(self):
-        return self._angle % (2*np.pi)
+        return self.angle() % (2 * np.pi)
 
-    # def set_angle(self, angle):
-    #     self._angle = angle
-    #
-    # def set_matrix(self, matrix):
-    #     self.set_angle(self.find_angle(matrix))
+    # abstract implementations
+    @classmethod
+    def vector_to_algebra(cls, vector):
+        element = np.array([[0, -1],
+                            [1, 0]])
+        return vector*element
 
     @classmethod
-    def find_matrix(cls, angle):
-        sin_angle = np.sin(angle)
-        cos_angle = np.cos(angle)
+    def algebra_to_matrix(cls, algebra):
+        vector = cls.algebra_to_vector(algebra)
+        return cls.vector_to_matrix(vector)
+
+    @classmethod
+    def vector_to_matrix(cls, vector):
+        sin_angle = np.sin(vector)
+        cos_angle = np.cos(vector)
         return np.array([[cos_angle, -sin_angle],
                          [sin_angle, cos_angle]])
 
     @classmethod
-    def find_angle(cls, matrix):
+    def algebra_to_vector(cls, algebra):
+        return algebra[1][0]
+
+    @classmethod
+    def matrix_to_algebra(cls, matrix):
+        vector = cls.matrix_to_vector(matrix)
+        return cls.vector_to_algebra(vector)
+
+    @classmethod
+    def matrix_to_vector(cls, matrix):
         # assert isinstance(matrix, np.ndarray)
         # assert matrix.shape == (2, 2)
         return np.arctan2(matrix[1][0], matrix[0][0])
-
-    @classmethod
-    def from_angle(cls, angle):
-        return cls(angle)
-
-    @classmethod
-    def from_matrix(cls, matrix):
-        return cls(cls.find_angle(matrix))
