@@ -1,6 +1,7 @@
 import numpy as np
 from scipy import linalg
-from .SO import SO
+from src.groups.SO import SO
+from src.structures import *
 
 
 class SO3(SO):
@@ -12,54 +13,48 @@ class SO3(SO):
     def __init__(self, vector):
         super().__init__(vector)
 
-    # private class-methods
-    @classmethod
-    def _vector_to_angle(cls, vector):
-        return linalg.norm(vector)
-
-    @classmethod
-    def _vector_to_unit(cls, vector):
-        norm = cls._vector_to_angle(vector)
-        if np.isclose(norm, 0.):
-            return np.array([[1], [0], [0]])
-        return vector/norm
-
     # abstract implementations
     @classmethod
     def vector_to_algebra(cls, vector):
-        elements = [np.array([[0, 0, 0], [0, 0, -1], [0, 1, 0]]),
-                    np.array([[0, 0, 1], [0, 0, 0], [-1, 0, 0]]),
-                    np.array([[0, -1, 0], [1, 0, 0], [0, 0, 0]])]
+        assert isinstance(vector, Vector3)
+        elements = [Square([[0, 0, 0], [0, 0, -1], [0, 1, 0]]),
+                    Square([[0, 0, 1], [0, 0, 0], [-1, 0, 0]]),
+                    Square([[0, -1, 0], [1, 0, 0], [0, 0, 0]])]
         return vector[0]*elements[0] + vector[1]*elements[1] + vector[2]*elements[2]
 
     @classmethod
     def algebra_to_matrix(cls, algebra):
+        assert isinstance(algebra, Square)
         vector = cls.algebra_to_vector(algebra)
         return cls.vector_to_matrix(vector)
 
     @classmethod
     def vector_to_matrix(cls, vector):
-        angle = cls._vector_to_angle(vector)
-        unit = cls._vector_to_unit(vector)
+        assert isinstance(vector, Vector3)
+        angle = vector.magnitude()
+        unit = vector.normal()
         unit_algebra = cls.vector_to_algebra(unit)
 
         # Rodrigues formula
-        return np.eye(3) + unit_algebra*np.sin(angle) + (unit_algebra**2)*(1 - np.cos(angle))
+        matrix = np.eye(3) + unit_algebra*np.sin(angle) + (unit_algebra**2)*(1 - np.cos(angle))
+        return Square(matrix)
 
     @classmethod
     def algebra_to_vector(cls, algebra):
-        return np.array([[algebra[2][1]],
-                         [algebra[0][2]],
-                         [algebra[1][0]]])
+        assert isinstance(algebra, Square)
+        return Vector3(algebra[2][1],
+                       algebra[0][2],
+                       algebra[1][0])
 
     @classmethod
     def matrix_to_algebra(cls, matrix):
+        assert isinstance(matrix, Square)
         angle = np.arccos(0.5*(np.trace(matrix) - 1))
-
         if np.isclose(angle, 0.):
             return matrix - np.eye(3)
         return (angle*(matrix - np.transpose(matrix)))/(2*np.sin(angle))
 
     @classmethod
     def matrix_to_vector(cls, matrix):
+        assert isinstance(matrix, Square)
         return cls.algebra_to_vector(cls.matrix_to_algebra(matrix))

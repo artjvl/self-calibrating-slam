@@ -1,5 +1,5 @@
 import numpy as np
-from .SO import SO
+from src.groups.SO import SO
 
 
 class SO2(SO):

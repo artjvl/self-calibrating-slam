@@ -1,16 +1,18 @@
 from abc import ABC, abstractmethod
+from src.structures import *
 
 
 class Group(ABC):
 
     # constructor
     def __init__(self, vector):
+        assert isinstance(vector, Vector)
         self._vector = vector
 
     # operators
     def __mul__(self, other):
         matrix = self.matrix()
-        product = matrix*other
+        product = matrix * other
         return self.from_matrix(product)
 
     # public methods
@@ -23,10 +25,12 @@ class Group(ABC):
     # public class-methods
     @classmethod
     def from_vector(cls, vector):
+        assert isinstance(vector, Vector)
         return cls(vector)
 
     @classmethod
     def from_matrix(cls, matrix):
+        isinstance(matrix, Square)
         return cls(cls.matrix_to_vector(matrix))
 
     # abstract methods
@@ -63,5 +67,6 @@ class Group(ABC):
     @classmethod
     @abstractmethod
     def matrix_to_vector(cls, matrix):
+        print("lol")
         """ 'Log' operator """
         pass

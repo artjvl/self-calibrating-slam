@@ -1,11 +1,13 @@
 from abc import ABC, abstractmethod
-from .Group import Group
+from src.structures import *
+from src.groups.Group import Group
 
 
 class SO(Group, ABC):
 
     # constructor
     def __init__(self, vector):
+        assert isinstance(vector, Vector)
         super().__init__(vector)
 
     # abstract properties

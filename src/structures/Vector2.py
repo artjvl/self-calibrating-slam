@@ -1,4 +1,4 @@
-from .Vector import Vector
+from src.structures.Vector import Vector
 
 
 class Vector2(Vector):
@@ -13,3 +13,9 @@ class Vector2(Vector):
 
     def y(self):
         return self[1][0]
+
+    # open class-methods
+    @classmethod
+    def from_elements(cls, elements):
+        assert len(elements) <= 2
+        return cls(elements[0], elements[1])

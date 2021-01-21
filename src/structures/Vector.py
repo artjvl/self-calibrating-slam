@@ -23,15 +23,19 @@ class Vector(np.ndarray):
     # public class-methods
     @classmethod
     def norm(cls, vector):
-        assert type(vector) == cls
+        assert isinstance(vector, cls)
         return linalg.norm(vector)
 
     @classmethod
     def unit(cls, vector):
-        assert type(vector) == cls
+        assert isinstance(vector, cls)
         magnitude = cls.norm(vector)
         if np.isclose(magnitude, 0.):
             unit = np.zeros((vector.size, 1))
             unit[0] = 1
-            return unit
+            return cls.from_elements(unit)
         return vector / magnitude
+
+    @classmethod
+    def from_elements(cls, elements):
+        return cls(elements)

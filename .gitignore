@@ -1,0 +1,8 @@
+# JetBrains/PyCharm
+.idea/
+
+# python
+__pycache__/
+
+# setup
+*.egg-info/

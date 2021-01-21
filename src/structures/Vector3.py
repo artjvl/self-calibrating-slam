@@ -1,5 +1,5 @@
 import numpy as np
-from .Vector import Vector
+from src.structures.Vector import Vector
 
 
 class Vector3(Vector):
@@ -21,3 +21,9 @@ class Vector3(Vector):
 
     def z(self):
         return self[2][0]
+
+    # open class-methods
+    @classmethod
+    def from_elements(cls, elements):
+        assert len(elements) <= 3
+        return cls(elements[0], elements[1], elements[2])
