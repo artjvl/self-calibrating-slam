@@ -7,8 +7,7 @@ class Vector(np.ndarray):
     # constructor
     def __new__(cls, elements):
         column = np.reshape(elements, (-1, 1))
-        obj = np.asarray(column).view(cls)
-        return obj
+        return column.view(cls)
 
     def __array_finalize__(self, obj):
         if obj is None:
@@ -24,10 +23,12 @@ class Vector(np.ndarray):
     # public class-methods
     @classmethod
     def norm(cls, vector):
+        assert type(vector) == cls
         return linalg.norm(vector)
 
     @classmethod
     def unit(cls, vector):
+        assert type(vector) == cls
         magnitude = cls.norm(vector)
         if np.isclose(magnitude, 0.):
             unit = np.zeros((vector.size, 1))
