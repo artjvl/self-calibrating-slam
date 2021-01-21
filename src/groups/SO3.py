@@ -1,27 +1,20 @@
 import numpy as np
 from scipy import linalg
-from src.groups.SO import SO
 from src.structures import *
+from src.groups.SO import SO
 
 
 class SO3(SO):
 
     # static properties
     n = 3
+    m = 3
 
     # constructor
     def __init__(self, vector):
         super().__init__(vector)
 
     # abstract implementations
-    @classmethod
-    def vector_to_algebra(cls, vector):
-        assert isinstance(vector, Vector3)
-        elements = [Square([[0, 0, 0], [0, 0, -1], [0, 1, 0]]),
-                    Square([[0, 0, 1], [0, 0, 0], [-1, 0, 0]]),
-                    Square([[0, -1, 0], [1, 0, 0], [0, 0, 0]])]
-        return vector[0]*elements[0] + vector[1]*elements[1] + vector[2]*elements[2]
-
     @classmethod
     def algebra_to_matrix(cls, algebra):
         assert isinstance(algebra, Square)
@@ -30,7 +23,7 @@ class SO3(SO):
 
     @classmethod
     def vector_to_matrix(cls, vector):
-        assert isinstance(vector, Vector3)
+        assert isinstance(vector, Vector)
         angle = vector.magnitude()
         unit = vector.normal()
         unit_algebra = cls.vector_to_algebra(unit)
@@ -58,3 +51,9 @@ class SO3(SO):
     def matrix_to_vector(cls, matrix):
         assert isinstance(matrix, Square)
         return cls.algebra_to_vector(cls.matrix_to_algebra(matrix))
+
+    @staticmethod
+    def elements():
+        return [Square([[0, 0, 0], [0, 0, -1], [0, 1, 0]]),
+                Square([[0, 0, 1], [0, 0, 0], [-1, 0, 0]]),
+                Square([[0, -1, 0], [1, 0, 0], [0, 0, 0]])]

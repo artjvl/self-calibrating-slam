@@ -15,3 +15,24 @@ class SO(Group, ABC):
     @abstractmethod
     def n(self):
         pass
+
+    @property
+    @abstractmethod
+    def m(self):
+        pass
+
+    # abstract methods
+    @staticmethod
+    @abstractmethod
+    def elements():
+        pass
+
+    # abstract implementations
+    @classmethod
+    def vector_to_algebra(cls, vector):
+        assert isinstance(vector, Vector)
+        elements = cls.elements()
+        algebra = Square(np.zeros((n, n)))
+        for index in range(m):
+            algebra += vector[index] * elements[index]
+        return algebra
