@@ -19,7 +19,10 @@ class SO3(SO):
 
     @classmethod
     def _vector_to_unit(cls, vector):
-        return vector/cls._vector_to_angle(vector)
+        norm = cls._vector_to_angle(vector)
+        if np.isclose(norm, 0.):
+            return np.array([[1], [0], [0]])
+        return vector/norm
 
     # abstract implementations
     @classmethod
@@ -52,6 +55,9 @@ class SO3(SO):
     @classmethod
     def matrix_to_algebra(cls, matrix):
         angle = np.arccos(0.5*(np.trace(matrix) - 1))
+
+        if np.isclose(angle, 0.):
+            return matrix - np.eye(3)
         return (angle*(matrix - np.transpose(matrix)))/(2*np.sin(angle))
 
     @classmethod
