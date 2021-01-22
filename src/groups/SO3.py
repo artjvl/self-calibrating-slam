@@ -1,5 +1,5 @@
 import numpy as np
-from scipy import linalg
+
 from src.structures import *
 from src.groups.SO import SO
 
@@ -11,8 +11,9 @@ class SO3(SO):
     m = 3
 
     # constructor
-    def __init__(self, vector):
-        super().__init__(vector)
+    def __init__(self, vector, matrix=None):
+        assert isinstance(vector, Vector)
+        super().__init__(vector, matrix)
 
     # abstract implementations
     @classmethod
@@ -35,9 +36,9 @@ class SO3(SO):
     @classmethod
     def algebra_to_vector(cls, algebra):
         assert isinstance(algebra, Square)
-        return Vector3(algebra[2][1],
+        return Vector([algebra[2][1],
                        algebra[0][2],
-                       algebra[1][0])
+                       algebra[1][0]])
 
     @classmethod
     def matrix_to_algebra(cls, matrix):
@@ -54,6 +55,6 @@ class SO3(SO):
 
     @staticmethod
     def elements():
-        return [Square([[0, 0, 0], [0, 0, -1], [0, 1, 0]]),
-                Square([[0, 0, 1], [0, 0, 0], [-1, 0, 0]]),
-                Square([[0, -1, 0], [1, 0, 0], [0, 0, 0]])]
+        return list([Square([[0, 0, 0], [0, 0, -1], [0, 1, 0]]),
+                     Square([[0, 0, 1], [0, 0, 0], [-1, 0, 0]]),
+                     Square([[0, -1, 0], [1, 0, 0], [0, 0, 0]])])

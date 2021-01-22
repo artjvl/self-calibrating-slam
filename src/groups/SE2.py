@@ -1,4 +1,3 @@
-import numpy as np
 from src.structures import *
 from src.groups.SO2 import SO2
 from src.groups.SE import SE

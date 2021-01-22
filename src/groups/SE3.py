@@ -1,10 +1,9 @@
-import numpy as np
 from src.structures import *
 from src.groups.SO3 import SO3
 from src.groups.SE import SE
 
-class SE3(SE):
 
+class SE3(SE):
     # static properties
     n = 3
     m = 3
