@@ -31,7 +31,7 @@ class Vector(np.ndarray):
         assert isinstance(vector, cls)
         magnitude = cls.norm(vector)
         if np.isclose(magnitude, 0.):
-            unit = np.zeros((vector.size, 1))
+            unit = np.zeros(vector.shape)
             unit[0] = 1
             return cls.from_elements(unit)
         return vector / magnitude
@@ -39,3 +39,12 @@ class Vector(np.ndarray):
     @classmethod
     def from_elements(cls, elements):
         return cls(elements)
+
+    # public static-methods
+    @staticmethod
+    def axes(size):
+        axes = list()
+        for index in range(size):
+            axis = np.zeros(size, 1)
+            axis[index] = 1
+            axes.append(axis)
