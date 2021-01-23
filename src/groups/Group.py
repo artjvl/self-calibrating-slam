@@ -7,34 +7,38 @@ class Group(ABC):
 
     # operators
     def __mul__(self, other):
+        assert isinstance(other, Group)
         product = self.matrix() * other.matrix()
         return self.from_matrix(product)
 
     # public methods
-    def vector(self):
-        """ returns the vector representation """
-        return self.matrix_to_vector(self.matrix())
+    def algebra(self):
+        vector = self.vector()
+        algebra = type(self).vector_to_algebra(vector)
+        return algebra
 
     # public class-methods
     @classmethod
-    def from_vector(cls, vector):
-        """ generates group element from vector """
+    def vector_to_algebra(cls, vector):
         assert isinstance(vector, Vector)
-        matrix = cls.matrix_to_vector(vector)
-        return cls.from_matrix(matrix)
+        elements = cls.elements()
+        algebra = 0
+        for i, element in enumerate(elements):
+            algebra += vector.get(i) * element
+        return algebra
 
     # abstract properties
     @property
     @classmethod
     @abstractmethod
-    def _dim(cls):
+    def _dim(cls) -> int:
         """ number of dimensions """
         pass
 
     @property
     @classmethod
     @abstractmethod
-    def _dof(cls):
+    def _dof(cls) -> int:
         """ number of degrees of freedom """
         pass
 
@@ -42,6 +46,10 @@ class Group(ABC):
     @abstractmethod
     def matrix(self):
         """ returns the matrix representation """
+        pass
+
+    def vector(self):
+        """ returns the vector representation """
         pass
 
     @classmethod
@@ -52,42 +60,18 @@ class Group(ABC):
 
     @classmethod
     @abstractmethod
+    def from_vector(cls, vector):
+        """ generates group element from vector """
+        pass
+
+    @classmethod
+    @abstractmethod
     def from_elements(cls, *args, **kwargs):
         """ generates group element from vector elements """
         pass
 
-    @classmethod
+    @staticmethod
     @abstractmethod
-    def vector_to_algebra(cls, vector):
-        """ 'hat' operator """
-        pass
-
-    @classmethod
-    @abstractmethod
-    def algebra_to_matrix(cls, algebra):
-        """ 'exp' operator """
-        pass
-
-    @classmethod
-    @abstractmethod
-    def vector_to_matrix(cls, vector):
-        """ 'Exp' operator """
-        pass
-
-    @classmethod
-    @abstractmethod
-    def algebra_to_vector(cls, algebra):
-        """ 'vee' operator """
-        pass
-
-    @classmethod
-    @abstractmethod
-    def matrix_to_algebra(cls, matrix):
-        """ 'log' operator """
-        pass
-
-    @classmethod
-    @abstractmethod
-    def matrix_to_vector(cls, matrix):
-        """ 'Log' operator """
+    def elements():
+        """ returns the list of base elements """
         pass

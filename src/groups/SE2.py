@@ -24,22 +24,8 @@ class SE2(SE):
         rotation_vector = Vector(a)
         return cls.from_vectors(translation_vector, rotation_vector)
 
-    @classmethod
-    def algebra_to_matrix(cls, algebra):
-        assert isinstance(algebra, Square)
-
-    @classmethod
-    def vector_to_matrix(cls, vector):
-        assert isinstance(vector, Vector)
-
-    @classmethod
-    def algebra_to_vector(cls, algebra):
-        assert isinstance(algebra, Square)
-
-    @classmethod
-    def matrix_to_algebra(cls, matrix):
-        assert isinstance(matrix, Square)
-
-    @classmethod
-    def matrix_to_vector(cls, matrix):
-        assert isinstance(matrix, Square)
+    @staticmethod
+    def elements():
+        return list([Square([[0, 0, 1], [0, 0, 0], [0, 0, 0]]),
+                     Square([[0, 0, 1], [0, 0, 1], [0, 0, 0]]),
+                     Square([[0, -1, 0], [1, 0, 0], [0, 0, 0]])])

@@ -14,6 +14,9 @@ class Vector(np.ndarray):
             return
 
     # public methods
+    def get(self, index):
+        return self[index][0]
+
     def magnitude(self):
         return self.norm(self)
 

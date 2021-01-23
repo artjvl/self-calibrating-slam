@@ -17,7 +17,7 @@ class SO2(SO):
 
     # public methods
     def angle(self):
-        return self.vector()[0][0]
+        return self.vector().get(0)
 
     def smallest_angle(self):
         return self.smallest_positive_angle() - np.pi
@@ -26,50 +26,43 @@ class SO2(SO):
         return self.angle() % (2 * np.pi)
 
     # abstract implementations
-    @classmethod
-    def from_elements(cls, angle):
-        vector = Vector(angle)
-        return cls(vector)
+    def vector(self):
+        matrix = self.matrix()
+        return Vector(np.arctan2(matrix[1][0], matrix[0][0]))
 
-    def left_jacobian(self):
+    def jacobian(self):
         angle = self.angle()
         if np.isclose(angle, 0.):
-            return Square(np.eye(type(self)._dim) + 0.5 * type(self).vector_to_algebra(self.vector()))
+            return Square(np.eye(2) + 0.5 * self.algebra())
         sin_angle = np.sin(angle)
         cos_angle = np.cos(angle)
-        return (1/angle)*Square([[sin_angle, cos_angle - 1],
-                                 [1 - cos_angle, sin_angle]])
+        matrix = (1/angle)*[[sin_angle, cos_angle - 1],
+                            [1 - cos_angle, sin_angle]]
+        return Square(matrix)
+
+    def inverse_jacobian(self):
+        jacobian = self.jacobian()
+        a = jacobian[0][0]
+        b = jacobian[1][0]
+        matrix = (1/(a**2 + b**2))*[[a, b],
+                                    [-b, a]]
+        return Square(matrix)
 
     @classmethod
-    def algebra_to_matrix(cls, algebra):
-        assert isinstance(algebra, Square)
-        vector = cls.algebra_to_vector(algebra)
-        return cls.vector_to_matrix(vector)
-
-    @classmethod
-    def vector_to_matrix(cls, vector):
+    def from_vector(cls, vector):
         assert isinstance(vector, Vector)
         angle = vector[0][0]
         sin_angle = np.sin(angle)
         cos_angle = np.cos(angle)
-        return Square(np.array([[cos_angle, -sin_angle],
-                                [sin_angle, cos_angle]]))
+        matrix = [[cos_angle, -sin_angle],
+                  [sin_angle, cos_angle]]
+        return cls(Square(matrix))
 
     @classmethod
-    def algebra_to_vector(cls, algebra):
-        assert isinstance(algebra, Square)
-        return Vector(algebra[1][0])
-
-    @classmethod
-    def matrix_to_algebra(cls, matrix):
-        assert isinstance(matrix, Square)
-        vector = cls.matrix_to_vector(matrix)
-        return cls.vector_to_algebra(vector)
-
-    @classmethod
-    def matrix_to_vector(cls, matrix):
-        assert isinstance(matrix, Square)
-        return Vector(np.arctan2(matrix[1][0], matrix[0][0]))
+    def from_elements(cls, angle):
+        assert isinstance(angle, (int, float))
+        vector = Vector(angle)
+        return cls.from_vector(vector)
 
     @staticmethod
     def elements():
