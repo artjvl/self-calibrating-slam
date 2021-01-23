@@ -9,10 +9,9 @@ from src.groups.SO import SO
 class SE(Group, ABC):
 
     # constructor
-    def __init__(self, vector, matrix=None, translation=None, rotation=None):
-        assert isinstance(vector, Vector)
-        vector = Vector(np.vstack((translation, rotation.vector())))
-        super().__init__(vector, matrix)
+    def __init__(self, translation, rotation):
+        assert isinstance(translation, Vector)
+        assert isinstance(rotation, SO)
         self._translation = translation
         self._rotation = rotation
 
@@ -24,20 +23,21 @@ class SE(Group, ABC):
         return self._rotation
 
     # public class-methods
-    def from_elements(self, translation, rotation):
-        assert isinstance(translation, Vector)
-        assert isinstance(rotation, SO)
-
-
+    @classmethod
+    def from_vectors(cls, translation_vector, rotation_vector):
+        assert isinstance(translation_vector, Vector)
+        assert isinstance(rotation_vector, Vector)
+        vector = np.vstack((translation_vector, rotation_vector))
+        return cls.from_vector(vector)
 
     @classmethod
     def elements(cls):
         elements = list()
-        translation_elements = cls.translation().axes()
+        translation_elements = Vector.axes(cls.dim)
         for element in translation_elements:
-            padded = np.pad(element, [(0, 1), (cls.n, 0)])
+            padded = np.pad(element, [(0, 1), (cls.dim, 0)])
             elements.append(padded)
-        rotation_elements = cls.rotation().elements()
+        rotation_elements = cls._rotation_type.elements()
         for element in rotation_elements:
             padded = np.pad(element, [(0, 1), (0, 1)])
             elements.append(padded)
@@ -46,28 +46,45 @@ class SE(Group, ABC):
     # private class-methods
     @classmethod
     def _construct_matrix(cls, translation, rotation):
-        return np.pad(np.vstack((translation, 1)), [(0, 0), (cls.n, 0)]) \
-               + np.pad(rotation, [(0, 1), (0, 1)])
+        assert isinstance(translation, Vector)
+        assert isinstance(rotation, SO)
+        padded_translation = np.pad(np.vstack((translation, 1)), [(0, 0), (cls.dim, 0)])
+        padded_rotation = np.pad(rotation, [(0, 1), (0, 1)])
+        return Square(padded_translation + padded_rotation)
+
+    @classmethod
+    def _extract_translation(cls, matrix):
+        assert isinstance(matrix, Square)
+        return matrix[-1][1: cls.dim]
+
+    @classmethod
+    def _extract_rotation(cls, matrix):
+        assert isinstance(matrix, Square)
+        return matrix[0: cls.dim][0: cls.dim]
 
     # abstract properties
     @property
+    @classmethod
     @abstractmethod
-    def n(self):
-        # number of dimensions
-        pass
-
-    @property
-    @abstractmethod
-    def m(self):
-        # number of degrees of freedom
+    def _rotation_type(cls):
         pass
 
     # abstract implementations
+    def matrix(self):
+        return self._construct_matrix(self._translation, self._rotation)
+
+    @classmethod
+    def from_matrix(cls, matrix):
+        assert isinstance(matrix, Square)
+        translation = cls._extract_translation(matrix)
+        rotation = cls._extract_rotation(matrix)
+        return cls(translation, rotation)
+
     @classmethod
     def vector_to_algebra(cls, vector):
         assert isinstance(vector, Vector)
         elements = cls.elements()
-        algebra = Square(np.zeros((cls.n + 1, cls.n + 1)))
-        for index in range(cls.n + cls.m):
-            algebra += vector[index] * elements[index]
+        algebra = 0
+        for i, element in enumerate(elements):
+            algebra += vector[i] * element
         return algebra

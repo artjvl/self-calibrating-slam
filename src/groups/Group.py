@@ -5,39 +5,57 @@ from src.structures import *
 
 class Group(ABC):
 
-    # constructor
-    def __init__(self, vector, matrix=None):
-        assert isinstance(vector, Vector)
-        self._vector = vector
-        if matrix is None:
-            matrix = self.vector_to_matrix(vector)
-        self._matrix = matrix
-
     # operators
     def __mul__(self, other):
-        matrix = self.matrix()
-        product = matrix * other
+        product = self.matrix() * other.matrix()
         return self.from_matrix(product)
 
     # public methods
     def vector(self):
-        return self._vector
-
-    def matrix(self):
-        return self._matrix
+        """ returns the vector representation """
+        return self.matrix_to_vector(self.matrix())
 
     # public class-methods
     @classmethod
     def from_vector(cls, vector):
+        """ generates group element from vector """
         assert isinstance(vector, Vector)
-        return cls(vector)
+        matrix = cls.matrix_to_vector(vector)
+        return cls.from_matrix(matrix)
 
+    # abstract properties
+    @property
     @classmethod
-    def from_matrix(cls, matrix):
-        isinstance(matrix, Square)
-        return cls(cls.matrix_to_vector(matrix), matrix=matrix)
+    @abstractmethod
+    def dim(cls):
+        """ number of dimensions """
+        pass
+
+    @property
+    @classmethod
+    @abstractmethod
+    def dof(cls):
+        """ number of degrees of freedom """
+        pass
 
     # abstract methods
+    @abstractmethod
+    def matrix(self):
+        """ returns the matrix representation """
+        pass
+
+    @classmethod
+    @abstractmethod
+    def from_matrix(cls, matrix):
+        """ generates group element from matrix """
+        pass
+
+    @classmethod
+    @abstractmethod
+    def from_elements(cls, *args, **kwargs):
+        """ generates group element from vector elements """
+        pass
+
     @classmethod
     @abstractmethod
     def vector_to_algebra(cls, vector):

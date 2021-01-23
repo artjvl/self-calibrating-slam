@@ -2,11 +2,12 @@ from src.structures import *
 from src.groups.SO2 import SO2
 from src.groups.SE import SE
 
-class SE2(SE):
 
+class SE2(SE):
     # static properties
-    n = 2
-    m = 1
+    dim = 2
+    dof = 1
+    _rotation_type = SO2
 
     # constructor
     def __init__(self, translation, rotation):
@@ -16,14 +17,18 @@ class SE2(SE):
 
     # abstract implementations
     @classmethod
+    def from_elements(cls, x, y, a):
+        translation_vector = Vector([x, y])
+        rotation_vector = Vector(a)
+        return cls(translation_vector, rotation_vector)
+
+    @classmethod
     def algebra_to_matrix(cls, algebra):
         assert isinstance(algebra, Square)
-
 
     @classmethod
     def vector_to_matrix(cls, vector):
         assert isinstance(vector, Vector)
-
 
     @classmethod
     def algebra_to_vector(cls, algebra):

@@ -7,13 +7,13 @@ from src.groups.SO import SO
 class SO2(SO):
 
     # static properties
-    n = 2
-    m = 1
+    dim = 2
+    dof = 1
 
     # constructor
-    def __init__(self, angle, matrix=None):
-        assert isinstance(angle, float)
-        super().__init__(Vector(angle), matrix)
+    def __init__(self, matrix):
+        assert isinstance(matrix, Square)
+        super().__init__(matrix)
 
     # public methods
     def angle(self):
@@ -27,6 +27,11 @@ class SO2(SO):
 
     # abstract implementations
     @classmethod
+    def from_elements(cls, angle):
+        vector = Vector(angle)
+        return cls(vector)
+
+    @classmethod
     def algebra_to_matrix(cls, algebra):
         assert isinstance(algebra, Square)
         vector = cls.algebra_to_vector(algebra)
@@ -35,8 +40,9 @@ class SO2(SO):
     @classmethod
     def vector_to_matrix(cls, vector):
         assert isinstance(vector, Vector)
-        sin_angle = np.sin(vector)
-        cos_angle = np.cos(vector)
+        angle = vector[0][0]
+        sin_angle = np.sin(angle)
+        cos_angle = np.cos(angle)
         return Square(np.array([[cos_angle, -sin_angle],
                                 [sin_angle, cos_angle]]))
 

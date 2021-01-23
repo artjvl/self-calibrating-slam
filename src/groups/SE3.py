@@ -4,9 +4,11 @@ from src.groups.SE import SE
 
 
 class SE3(SE):
+
     # static properties
-    n = 3
-    m = 3
+    dim = 3
+    dof = 3
+    _rotation_type = SO3
 
     # constructor
     def __init__(self, translation, rotation):
@@ -15,6 +17,12 @@ class SE3(SE):
         super().__init__(translation, rotation)
 
     # abstract implementations
+    @classmethod
+    def from_elements(cls, x, y, z, a, b, c):
+        translation_vector = Vector([x, y, z])
+        rotation_vector = Vector([a, b, c])
+        return cls(translation_vector, rotation_vector)
+
     @classmethod
     def algebra_to_matrix(cls, algebra):
         assert isinstance(algebra, Square)

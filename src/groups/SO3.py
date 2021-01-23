@@ -7,15 +7,20 @@ from src.groups.SO import SO
 class SO3(SO):
 
     # static properties
-    n = 3
-    m = 3
+    dim = 3
+    dof = 3
 
     # constructor
-    def __init__(self, vector, matrix=None):
-        assert isinstance(vector, Vector)
-        super().__init__(vector, matrix)
+    def __init__(self, matrix):
+        assert isinstance(matrix, Square)
+        super().__init__(matrix)
 
     # abstract implementations
+    @classmethod
+    def from_elements(cls, r1, r2, r3):
+        vector = Vector([r1, r2, r3])
+        return cls(vector)
+
     @classmethod
     def algebra_to_matrix(cls, algebra):
         assert isinstance(algebra, Square)
