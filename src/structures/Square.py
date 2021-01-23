@@ -1,4 +1,5 @@
 import numpy as np
+from scipy import linalg
 
 
 class Square(np.ndarray):
@@ -13,3 +14,6 @@ class Square(np.ndarray):
     def __array_finalize__(self, obj):
         if obj is None:
             return
+
+    def inverse(self):
+        return type(self)(linalg.inv(self))

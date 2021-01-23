@@ -27,14 +27,14 @@ class Group(ABC):
     @property
     @classmethod
     @abstractmethod
-    def dim(cls):
+    def _dim(cls):
         """ number of dimensions """
         pass
 
     @property
     @classmethod
     @abstractmethod
-    def dof(cls):
+    def _dof(cls):
         """ number of degrees of freedom """
         pass
 

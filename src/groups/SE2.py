@@ -1,3 +1,5 @@
+import numpy as np
+
 from src.structures import *
 from src.groups.SO2 import SO2
 from src.groups.SE import SE
@@ -5,8 +7,8 @@ from src.groups.SE import SE
 
 class SE2(SE):
     # static properties
-    dim = 2
-    dof = 1
+    _dim = 2
+    _dof = 1
     _rotation_type = SO2
 
     # constructor
@@ -20,7 +22,7 @@ class SE2(SE):
     def from_elements(cls, x, y, a):
         translation_vector = Vector([x, y])
         rotation_vector = Vector(a)
-        return cls(translation_vector, rotation_vector)
+        return cls.from_vectors(translation_vector, rotation_vector)
 
     @classmethod
     def algebra_to_matrix(cls, algebra):

@@ -12,6 +12,11 @@ class SO(Group, ABC):
         self._matrix = matrix
 
     # abstract methods
+    @abstractmethod
+    def left_jacobian(self):
+        """ returns the left Jacobian of the group element """
+        pass
+
     @staticmethod
     @abstractmethod
     def elements():

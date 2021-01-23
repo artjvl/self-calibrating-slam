@@ -1,3 +1,5 @@
+import numpy as np
+
 from src.structures import *
 from src.groups.SO3 import SO3
 from src.groups.SE import SE
@@ -6,8 +8,8 @@ from src.groups.SE import SE
 class SE3(SE):
 
     # static properties
-    dim = 3
-    dof = 3
+    _dim = 3
+    _dof = 3
     _rotation_type = SO3
 
     # constructor
@@ -21,7 +23,7 @@ class SE3(SE):
     def from_elements(cls, x, y, z, a, b, c):
         translation_vector = Vector([x, y, z])
         rotation_vector = Vector([a, b, c])
-        return cls(translation_vector, rotation_vector)
+        return cls.from_vectors(translation_vector, rotation_vector)
 
     @classmethod
     def algebra_to_matrix(cls, algebra):

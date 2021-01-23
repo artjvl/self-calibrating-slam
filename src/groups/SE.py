@@ -33,9 +33,9 @@ class SE(Group, ABC):
     @classmethod
     def elements(cls):
         elements = list()
-        translation_elements = Vector.axes(cls.dim)
+        translation_elements = Vector.axes(cls._dim)
         for element in translation_elements:
-            padded = np.pad(element, [(0, 1), (cls.dim, 0)])
+            padded = np.pad(element, [(0, 1), (cls._dim, 0)])
             elements.append(padded)
         rotation_elements = cls._rotation_type.elements()
         for element in rotation_elements:
@@ -48,19 +48,19 @@ class SE(Group, ABC):
     def _construct_matrix(cls, translation, rotation):
         assert isinstance(translation, Vector)
         assert isinstance(rotation, SO)
-        padded_translation = np.pad(np.vstack((translation, 1)), [(0, 0), (cls.dim, 0)])
+        padded_translation = np.pad(np.vstack((translation, 1)), [(0, 0), (cls._dim, 0)])
         padded_rotation = np.pad(rotation, [(0, 1), (0, 1)])
         return Square(padded_translation + padded_rotation)
 
     @classmethod
     def _extract_translation(cls, matrix):
         assert isinstance(matrix, Square)
-        return matrix[-1][1: cls.dim]
+        return matrix[-1][0: cls._dim]
 
     @classmethod
     def _extract_rotation(cls, matrix):
         assert isinstance(matrix, Square)
-        return matrix[0: cls.dim][0: cls.dim]
+        return matrix[0: cls._dim][0: cls._dim]
 
     # abstract properties
     @property

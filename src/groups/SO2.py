@@ -7,8 +7,8 @@ from src.groups.SO import SO
 class SO2(SO):
 
     # static properties
-    dim = 2
-    dof = 1
+    _dim = 2
+    _dof = 1
 
     # constructor
     def __init__(self, matrix):
@@ -30,6 +30,15 @@ class SO2(SO):
     def from_elements(cls, angle):
         vector = Vector(angle)
         return cls(vector)
+
+    def left_jacobian(self):
+        angle = self.angle()
+        if np.isclose(angle, 0.):
+            return Square(np.eye(type(self)._dim) + 0.5 * type(self).vector_to_algebra(self.vector()))
+        sin_angle = np.sin(angle)
+        cos_angle = np.cos(angle)
+        return (1/angle)*Square([[sin_angle, cos_angle - 1],
+                                 [1 - cos_angle, sin_angle]])
 
     @classmethod
     def algebra_to_matrix(cls, algebra):

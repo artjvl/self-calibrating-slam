@@ -7,19 +7,33 @@ from src.groups.SO import SO
 class SO3(SO):
 
     # static properties
-    dim = 3
-    dof = 3
+    _dim = 3
+    _dof = 3
 
     # constructor
     def __init__(self, matrix):
         assert isinstance(matrix, Square)
         super().__init__(matrix)
 
+    # public methods
+    def angle(self):
+        return self.vector().magnitude()
+
     # abstract implementations
     @classmethod
     def from_elements(cls, r1, r2, r3):
         vector = Vector([r1, r2, r3])
         return cls(vector)
+
+    def left_jacobian(self):
+        vector = self.vector()
+        angle = vector.magnitude()
+        if np.isclose(angle, 0.):
+            return Square(np.eye(3) + 0.5 * type(self).vector_to_algebra(self.vector()))
+        unit = vector.normal()
+        unit_algebra = type(self).vector_to_algebra(unit)
+        matrix = np.eye(3) + unit_algebra*(1 - np.cos(angle)) + (unit_algebra**2)*(1 - np.sin(angle)/angle)
+        return Square(matrix)
 
     @classmethod
     def algebra_to_matrix(cls, algebra):
