@@ -36,16 +36,16 @@ class SO2(SO):
             return Square(np.eye(2) + 0.5 * self.algebra())
         sin_angle = np.sin(angle)
         cos_angle = np.cos(angle)
-        matrix = (1/angle)*[[sin_angle, cos_angle - 1],
-                            [1 - cos_angle, sin_angle]]
+        matrix = (1 / angle) * Square([[sin_angle, cos_angle - 1],
+                                       [1 - cos_angle, sin_angle]])
         return Square(matrix)
 
     def inverse_jacobian(self):
         jacobian = self.jacobian()
         a = jacobian[0][0]
         b = jacobian[1][0]
-        matrix = (1/(a**2 + b**2))*[[a, b],
-                                    [-b, a]]
+        matrix = (1 / (a**2 + b**2)) * Square([[a, b],
+                                               [-b, a]])
         return Square(matrix)
 
     @classmethod
@@ -65,5 +65,13 @@ class SO2(SO):
         return cls.from_vector(vector)
 
     @staticmethod
-    def elements():
-        return list([Square([[0, -1], [1, 0]])])
+    def vector_to_algebra(vector):
+        assert isinstance(vector, Vector)
+        a = vector.get(0)
+        return Square([[0, -a],
+                       [a, 0]])
+
+    @staticmethod
+    def algebra_to_vector(algebra):
+        assert isinstance(algebra, Square)
+        return Vector(algebra[1][0])

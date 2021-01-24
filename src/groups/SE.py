@@ -27,9 +27,9 @@ class SE(Group, ABC):
         translation = self.translation()
         rotation_vector = rotation.vector()
         inverse_jacobian = rotation.inverse_jacobian()
-        translation_vector = inverse_jacobian * translation
-        vector = np.vstack((translation_vector, rotation_vector))
-        return Vector(vector)
+        translation_vector = Vector(inverse_jacobian @ translation)
+        vector = Vector(np.vstack((translation_vector, rotation_vector)))
+        return vector
 
     # public class-methods
     @classmethod
@@ -38,7 +38,7 @@ class SE(Group, ABC):
         assert isinstance(rotation_vector, Vector)
         rotation = cls._rotation_type.from_vector(rotation_vector)
         jacobian = rotation.jacobian()
-        translation = jacobian * translation_vector
+        translation = Vector(jacobian @ translation_vector)
         return cls(translation, rotation)
 
     @classmethod
@@ -48,47 +48,29 @@ class SE(Group, ABC):
         rotation_vector = vector[cls._dim + 1:]
         return cls.from_vectors(translation_vector, rotation_vector)
 
-    # @classmethod
-    # def elements(cls):
-    #     elements = list()
-    #     translation_elements = Vector.axes(cls._dim)
-    #     for element in translation_elements:
-    #         padded = cls._pad_translation(element)
-    #         elements.append(padded)
-    #     rotation_elements = cls._rotation_type.elements()
-    #     for element in rotation_elements:
-    #         padded = cls._pad_rotation(element)
-    #         elements.append(padded)
-    #     return elements
-
     # private class-methods
-    @classmethod
-    def _pad_translation(cls, translation, extra=0):
-        assert isinstance(translation, Vector)
-        return Square(np.pad(np.vstack((translation, extra)), [(0, 0), (cls._dim, 0)]))
-
-    @classmethod
-    def _pad_rotation(cls, rotation):
-        assert isinstance(rotation, Square)
-        return Square(np.pad(rotation, [(0, 1), (0, 1)]))
-
     @classmethod
     def _construct_matrix(cls, translation, rotation):
         assert isinstance(translation, Vector)
         assert isinstance(rotation, SO)
-        padded_translation = cls._pad_translation(translation, extra=1)
-        padded_rotation = cls._pad_rotation(rotation)
-        return padded_translation + padded_rotation
+        rotation_matrix = rotation.matrix()
+        pad = np.zeros((1, cls._dim))
+        matrix = np.block([[rotation_matrix, translation],
+                           [pad, 1]])
+        return Square(matrix)
 
     @classmethod
     def _extract_translation(cls, matrix):
         assert isinstance(matrix, Square)
-        return matrix[-1][0: cls._dim]
+        translation = Vector(matrix[-1][0: cls._dim])
+        return translation
 
     @classmethod
     def _extract_rotation(cls, matrix):
         assert isinstance(matrix, Square)
-        return matrix[0: cls._dim][0: cls._dim]
+        matrix = Square(matrix[0: cls._dim][0: cls._dim])
+        rotation = cls._rotation_type.from_matrix(matrix)
+        return rotation
 
     # abstract properties
     @property

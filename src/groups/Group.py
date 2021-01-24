@@ -1,30 +1,18 @@
 from abc import ABC, abstractmethod
 
-from src.structures import *
-
 
 class Group(ABC):
 
     # operators
     def __mul__(self, other):
         assert isinstance(other, Group)
-        product = self.matrix() * other.matrix()
+        product = self.matrix() @ other.matrix()
         return self.from_matrix(product)
 
     # public methods
     def algebra(self):
         vector = self.vector()
         algebra = type(self).vector_to_algebra(vector)
-        return algebra
-
-    # public class-methods
-    @classmethod
-    def vector_to_algebra(cls, vector):
-        assert isinstance(vector, Vector)
-        elements = cls.elements()
-        algebra = 0
-        for i, element in enumerate(elements):
-            algebra += vector.get(i) * element
         return algebra
 
     # abstract properties
@@ -72,6 +60,12 @@ class Group(ABC):
 
     @staticmethod
     @abstractmethod
-    def elements():
-        """ returns the list of base elements """
+    def vector_to_algebra(vector):
+        """ returns the algebra corresponding to the vector """
+        pass
+
+    @staticmethod
+    @abstractmethod
+    def algebra_to_vector(algebra):
+        """ returns the vector corresponding to the algebra """
         pass

@@ -27,42 +27,57 @@ class SO3(SO):
             algebra = matrix - np.eye(3)
         else:
             algebra = (angle * (matrix - np.transpose(matrix))) / (2 * np.sin(angle))
-        return Vector([algebra[2][1],
-                       algebra[0][2],
-                       algebra[1][0]])
+        return type(self).algebra_to_vector(algebra)
 
     def jacobian(self):
         vector = self.vector()
+        algebra = type(self).vector_to_algebra(vector)
         angle = vector.magnitude()
         if np.isclose(angle, 0.):
-            matrix = np.eye(3) + 0.5 * type(self).vector_to_algebra(vector)
+            matrix = np.eye(3) + 0.5 * algebra
         else:
-            unit = vector.normal()
-            unit_algebra = type(self).vector_to_algebra(unit)
-            matrix = np.eye(3) + (1 - np.cos(angle)) * unit_algebra + (1 - np.sin(angle) / angle) * unit_algebra**2
+            unit_algebra = algebra / angle
+
+            # unit = vector / angle
+            # matrix_ = (np.sin(angle) / angle) * np.eye(3) + \
+            #     (1 - np.sin(angle) / angle) * np.outer(unit, unit) + \
+            #     ((1 - np.cos(angle)) / angle) * unit_algebra
+
+            matrix = np.eye(3) + ((1 - np.cos(angle)) / angle) * unit_algebra + \
+                (1 - np.sin(angle) / angle) * (unit_algebra @ unit_algebra)
         return Square(matrix)
 
     def inverse_jacobian(self):
         vector = self.vector()
+        algebra = type(self).vector_to_algebra(vector)
         angle = vector.magnitude()
         if np.isclose(angle, 0.):
-            matrix = np.eye(3) + 0.5 * type(self).vector_to_algebra(vector)
+            matrix = np.eye(3) + 0.5 * algebra
         else:
-            unit = vector.normal()
-            unit_algebra = type(self).vector_to_algebra(unit)
-            matrix = np.eye(3) - 0.5 * angle * unit_algebra + \
-                (1 - 0.5 * angle * (np.sin(angle) / (1 - np.cos(angle)))) * unit_algebra**2
+            unit_algebra = algebra / angle
+            matrix = np.eye(3) - 0.5 * algebra + \
+                (1 - 0.5 * angle * np.sin(angle) / (1 - np.cos(angle))) * (unit_algebra @ unit_algebra)
         return Square(matrix)
 
     @classmethod
     def from_vector(cls, vector):
         assert isinstance(vector, Vector)
+        algebra = cls.vector_to_algebra(vector)
         angle = vector.magnitude()
-        unit = vector.normal()
-        unit_algebra = cls.vector_to_algebra(unit)
+        if np.isclose(angle, 0.):
+            matrix = np.eye(3) + algebra
+        else:
+            unit_algebra = algebra / angle
 
-        # Rodrigues formula
-        matrix = np.eye(3) + unit_algebra*np.sin(angle) + (unit_algebra**2)*(1 - np.cos(angle))
+            # matrix = np.cos(angle) * np.eye(3) + np.sin(angle) * unit_algebra + \
+            #     (1 - np.cos(angle)) * np.outer(unit, unit)
+
+            # algebra = cls.vector_to_algebra(vector)
+            # matrix = np.eye(3) + (np.sin(angle)/angle) * algebra + \
+            #     ((1 - np.cos(angle))/(angle**2)) * (algebra @ algebra)
+
+            matrix = np.eye(3) + np.sin(angle) * unit_algebra + \
+                (1 - np.cos(angle)) * (unit_algebra @ unit_algebra)
         return cls(Square(matrix))
 
     @classmethod
@@ -71,7 +86,18 @@ class SO3(SO):
         return cls.from_vector(vector)
 
     @staticmethod
-    def elements():
-        return list([Square([[0, 0, 0], [0, 0, -1], [0, 1, 0]]),
-                     Square([[0, 0, 1], [0, 0, 0], [-1, 0, 0]]),
-                     Square([[0, -1, 0], [1, 0, 0], [0, 0, 0]])])
+    def vector_to_algebra(vector):
+        assert isinstance(vector, Vector)
+        a = vector.get(0)
+        b = vector.get(1)
+        c = vector.get(2)
+        return Square([[0, -c, b],
+                       [c, 0, -a],
+                       [-b, a, 0]])
+
+    @staticmethod
+    def algebra_to_vector(algebra):
+        assert isinstance(algebra, Square)
+        return Vector([algebra[2][1],
+                       algebra[0][2],
+                       algebra[1][0]])
