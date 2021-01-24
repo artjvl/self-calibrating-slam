@@ -72,7 +72,6 @@ class SO3(SO):
             # matrix = np.cos(angle) * np.eye(3) + np.sin(angle) * unit_algebra + \
             #     (1 - np.cos(angle)) * np.outer(unit, unit)
 
-            # algebra = cls.vector_to_algebra(vector)
             # matrix = np.eye(3) + (np.sin(angle)/angle) * algebra + \
             #     ((1 - np.cos(angle))/(angle**2)) * (algebra @ algebra)
 

@@ -41,13 +41,6 @@ class SE(Group, ABC):
         translation = Vector(jacobian @ translation_vector)
         return cls(translation, rotation)
 
-    @classmethod
-    def from_vector(cls, vector):
-        assert isinstance(vector, Vector)
-        translation_vector = vector[0: cls._dim]
-        rotation_vector = vector[cls._dim + 1:]
-        return cls.from_vectors(translation_vector, rotation_vector)
-
     # private class-methods
     @classmethod
     def _construct_matrix(cls, translation, rotation):
@@ -89,3 +82,10 @@ class SE(Group, ABC):
         translation = cls._extract_translation(matrix)
         rotation = cls._extract_rotation(matrix)
         return cls(translation, rotation)
+
+    @classmethod
+    def from_vector(cls, vector):
+        assert isinstance(vector, Vector)
+        translation_vector = vector[0: cls._dim]
+        rotation_vector = vector[cls._dim + 1:]
+        return cls.from_vectors(translation_vector, rotation_vector)

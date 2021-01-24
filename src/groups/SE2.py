@@ -4,6 +4,7 @@ from src.groups.SE import SE
 
 
 class SE2(SE):
+
     # static properties
     _dim = 2
     _dof = 1
