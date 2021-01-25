@@ -5,7 +5,7 @@ class Group(ABC):
 
     # operators
     def __mul__(self, other):
-        assert isinstance(other, Group)
+        assert isinstance(other, (Group, Vector))
         product = self.matrix() @ other.matrix()
         return self.from_matrix(product)
 
@@ -38,6 +38,10 @@ class Group(ABC):
 
     def vector(self):
         """ returns the vector representation """
+        pass
+
+    def inverse(self):
+        """ returns the inverted group element """
         pass
 
     @classmethod

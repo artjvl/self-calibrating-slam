@@ -31,6 +31,16 @@ class SE(Group, ABC):
         vector = Vector(np.vstack((translation_vector, rotation_vector)))
         return vector
 
+    def plus(self, vector):
+        assert isinstance(vector, Vector)
+        increment = type(self).from_vector(vector)
+        return self * increment
+
+    def minus(self, transformation):
+        assert isinstance(transformation, SE)
+        difference = transformation * self.inverse()
+        return difference.vector()
+
     # public class-methods
     @classmethod
     def from_vectors(cls, translation_vector, rotation_vector):
@@ -75,6 +85,13 @@ class SE(Group, ABC):
     # abstract implementations
     def matrix(self):
         return self._construct_matrix(self._translation, self._rotation)
+
+    def inverse(self):
+        translation = self.translation()
+        rotation = self.rotation()
+        inverse_rotation = rotation.inverse()
+        inverse_translation = - inverse_rotation @ translation
+        return type(self)(inverse_translation, inverse_rotation)
 
     @classmethod
     def from_matrix(cls, matrix):

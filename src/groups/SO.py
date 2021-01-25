@@ -15,6 +15,9 @@ class SO(Group, ABC):
     def matrix(self):
         return self._matrix
 
+    def inverse(self):
+        return type(self).from_matrix(np.transpose(self.matrix()))
+
     @classmethod
     def from_matrix(cls, matrix):
         assert isinstance(matrix, Square)
