@@ -1,3 +1,4 @@
+import numpy as np
 from abc import ABC, abstractmethod
 
 from src.structures import *
