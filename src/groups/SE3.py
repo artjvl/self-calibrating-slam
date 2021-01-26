@@ -1,3 +1,5 @@
+import numpy as np
+
 from src.structures import *
 from src.groups.SO3 import SO3
 from src.groups.SE import SE
@@ -16,12 +18,25 @@ class SE3(SE):
         assert isinstance(rotation, SO3)
         super().__init__(translation, rotation)
 
+    # public methods
+    def quaternion_vector(self):
+        translation = self.translation()
+        quaternion = self.rotation().quaternion()
+        return Vector(np.vstack((translation, quaternion)))
+
     # abstract implementations
     @classmethod
     def from_elements(cls, x, y, z, a, b, c):
         translation_vector = Vector([x, y, z])
         rotation_vector = Vector([a, b, c])
         return cls.from_vectors(translation_vector, rotation_vector)
+
+    @classmethod
+    def from_quaternion(cls, quaternion, translation):
+        assert isinstance(quaternion, Quaternion)
+        assert isinstance(translation, Vector)
+        rotation = SO3.from_quaternion(quaternion)
+        return cls(translation, rotation)
 
     @staticmethod
     def vector_to_algebra(vector):

@@ -19,6 +19,24 @@ class SO3(SO):
     def angle(self):
         return self.vector().magnitude()
 
+    def quaternion(self):
+        m = self.matrix()
+        if m[2][2] < 0:                 # is |(x, y)| bigger than |(z, w)|?
+            if m[0][0] > m[1][1]:       # is |x| bigger than |y|?
+                t = 1 + m[0][0] - m[1][1] - m[2][2]
+                quaternion = Quaternion(w=m[2][1] - m[1][2], x=t, y=m[1][0] + m[0][1], z=m[0][2] + m[2][0])
+            else:                       # is |y| bigger than |x|?
+                t = 1 - m[0][0] + m[1][1] - m[2][2]
+                quaternion = Quaternion(w=m[0][2] - m[2][0], x=m[1][0] + m[0][1], y=t, z=m[2][1] + m[1][2])
+        else:                           # is |(z, w)| bigger than |(x, y)|?
+            if m[0][0] < - m[1][1]:     # is |z| bigger than |w|?
+                t = 1 - m[0][0] - m[1][1] + m[2][2]
+                quaternion = Quaternion(w=m[1][0] - m[0][1], x=m[0][2] + m[2][0], y=m[2][1] + m[1][2], z=t)
+            else:                       # is |w| bigger than |z|?
+                t = 1 + m[0][0] + m[1][1] + m[2][2]
+                quaternion = Quaternion(w=t, x=m[2][1] - m[1][2], y=m[0][2] - m[2][0], z=m[1][0] - m[0][1])
+        return (0.5 / np.sqrt(t)) * quaternion
+
     # abstract implementations
     def vector(self):
         matrix = self.matrix()
@@ -83,6 +101,18 @@ class SO3(SO):
     def from_elements(cls, r1, r2, r3):
         vector = Vector([r1, r2, r3])
         return cls.from_vector(vector)
+
+    @classmethod
+    def from_quaternion(cls, quaternion):
+        assert isinstance(quaternion, Quaternion)
+        w = quaternion.w()
+        x = quaternion.x()
+        y = quaternion.y()
+        z = quaternion.z()
+        matrix = [[1 - 2 * (y ** 2 + z ** 2), 2 * (x * y - z * w), 2 * (x * z + y * w)],
+                  [2 * (x * y + z * w), 1 - 2 * (x ** 2 + z ** 2), 2 * (y * z - x * w)],
+                  [2 * (x * z - y * w), 2 * (y * z + x * w), 1 - 2 * (x ** 2 + y ** 2)]]
+        return cls.from_matrix(matrix)
 
     @staticmethod
     def vector_to_algebra(vector):

@@ -1,4 +1,5 @@
 import numpy as np
+
 from src.structures.Vector import Vector
 
 
@@ -24,6 +25,6 @@ class Vector3(Vector):
 
     # open class-methods
     @classmethod
-    def from_elements(cls, elements):
-        assert len(elements) <= 3
+    def from_list(cls, elements):
+        assert isinstance(elements, (list, np.ndarray))
         return cls(elements[0], elements[1], elements[2])

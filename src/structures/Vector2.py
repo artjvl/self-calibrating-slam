@@ -1,3 +1,5 @@
+import numpy as np
+
 from src.structures.Vector import Vector
 
 
@@ -16,6 +18,6 @@ class Vector2(Vector):
 
     # open class-methods
     @classmethod
-    def from_elements(cls, elements):
-        assert len(elements) <= 2
+    def from_list(cls, elements):
+        assert isinstance(elements, (list, np.ndarray))
         return cls(elements[0], elements[1])

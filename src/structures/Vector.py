@@ -36,11 +36,12 @@ class Vector(np.ndarray):
         if np.isclose(magnitude, 0.):
             unit = np.zeros(vector.shape)
             unit[0] = 1
-            return cls.from_elements(unit)
+            return cls.from_list(unit)
         return vector / magnitude
 
     @classmethod
-    def from_elements(cls, elements):
+    def from_list(cls, elements):
+        assert isinstance(elements, (list, np.ndarray))
         return cls(elements)
 
     # public static-methods
