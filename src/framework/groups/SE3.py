@@ -1,8 +1,8 @@
 import numpy as np
 
-from src.structures import *
-from src.groups.SO3 import SO3
-from src.groups.SE import SE
+from src.framework.structures import *
+from src.framework.groups.SO3 import SO3
+from src.framework.groups.SE import SE
 
 
 class SE3(SE):

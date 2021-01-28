@@ -1,6 +1,6 @@
 import numpy as np
 
-from src.structures.Vector import Vector
+from src.framework.structures.Vector import Vector
 
 
 class Quaternion(Vector):

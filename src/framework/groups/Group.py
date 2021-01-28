@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from src.structures import *
+from src.framework.structures import *
 
 
 class Group(ABC):
