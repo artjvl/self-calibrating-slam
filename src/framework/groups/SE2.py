@@ -1,6 +1,9 @@
+import numpy as np
+
 from src.framework.structures import *
 from src.framework.groups.SO2 import SO2
 from src.framework.groups.SE import SE
+from src.framework.groups.SE3 import SE3
 
 
 class SE2(SE):
@@ -15,6 +18,12 @@ class SE2(SE):
         assert isinstance(translation, Vector)
         assert isinstance(rotation, SO2)
         super().__init__(translation, rotation)
+
+    # public methods
+    def to_se3(self) -> SE3:
+        rotation = self.rotation()
+        translation = self.translation()
+        return SE3(rotation.to_so3(), Vector(np.vstack((translation, 0))))
 
     # abstract implementations
     @classmethod

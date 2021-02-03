@@ -16,10 +16,10 @@ class SO3(SO):
         super().__init__(matrix)
 
     # public methods
-    def angle(self):
+    def angle(self) -> float:
         return self.vector().magnitude()
 
-    def quaternion(self):
+    def quaternion(self) -> Quaternion:
         m = self.matrix()
         if m[2][2] < 0:                 # is |(x, y)| bigger than |(z, w)|?
             if m[0][0] > m[1][1]:       # is |x| bigger than |y|?
@@ -36,6 +36,43 @@ class SO3(SO):
                 t = 1 + m[0][0] + m[1][1] + m[2][2]
                 quaternion = Quaternion(w=t, x=m[2][1] - m[1][2], y=m[0][2] - m[2][0], z=m[1][0] - m[0][1])
         return (0.5 / np.sqrt(t)) * quaternion
+
+    def euler(self):
+        m = self.matrix()
+        pitch = np.arctan2(-m[2][0], np.sqrt(m[0][0]**2 + m[1][0]**2))
+        if np.isclose(np.abs(pitch), 0.5 * np.pi):
+            yaw = 0.
+            roll = np.sign(pitch) * np.arctan2(m[0][1], m[1][1])
+        else:
+            sec_pitch = 1. / np.cos(pitch)
+            yaw = np.arctan2(m[1][0] * sec_pitch, m[0][0] * sec_pitch)
+            roll = np.arctan2(m[2][1] * sec_pitch, m[2][2] * sec_pitch)
+        return Vector([roll, pitch, yaw])
+
+    # public class-methods
+    @classmethod
+    def from_quaternion(cls, quaternion):
+        assert isinstance(quaternion, Quaternion)
+        w = quaternion.w()
+        x = quaternion.x()
+        y = quaternion.y()
+        z = quaternion.z()
+        matrix = Square([[1 - 2 * (y ** 2 + z ** 2), 2 * (x * y - z * w), 2 * (x * z + y * w)],
+                         [2 * (x * y + z * w), 1 - 2 * (x ** 2 + z ** 2), 2 * (y * z - x * w)],
+                         [2 * (x * z - y * w), 2 * (y * z + x * w), 1 - 2 * (x ** 2 + y ** 2)]])
+        return cls.from_matrix(matrix)
+
+    @classmethod
+    def from_euler(cls, euler):
+        assert isinstance(euler, Vector)
+        roll = euler.get(0)
+        roll_matrix = Square([[1, 0, 0], [0, np.cos(roll), -np.sin(roll)], [0, np.sin(roll), np.cos(roll)]])
+        pitch = euler.get(1)
+        pitch_matrix = Square([[np.cos(pitch), 0, np.sin(pitch)], [0, 1, 0], [-np.sin(pitch), 0, np.cos(pitch)]])
+        yaw = euler.get(2)
+        yaw_matrix = Square([[np.cos(yaw), -np.sin(yaw), 0], [np.sin(yaw), np.cos(yaw), 0], [0, 0, 1]])
+        matrix = roll_matrix @ pitch_matrix @ yaw_matrix
+        return cls.from_matrix(Square(matrix))
 
     # abstract implementations
     def vector(self):
@@ -101,18 +138,6 @@ class SO3(SO):
     def from_elements(cls, r1, r2, r3):
         vector = Vector([r1, r2, r3])
         return cls.from_vector(vector)
-
-    @classmethod
-    def from_quaternion(cls, quaternion):
-        assert isinstance(quaternion, Quaternion)
-        w = quaternion.w()
-        x = quaternion.x()
-        y = quaternion.y()
-        z = quaternion.z()
-        matrix = [[1 - 2 * (y ** 2 + z ** 2), 2 * (x * y - z * w), 2 * (x * z + y * w)],
-                  [2 * (x * y + z * w), 1 - 2 * (x ** 2 + z ** 2), 2 * (y * z - x * w)],
-                  [2 * (x * z - y * w), 2 * (y * z + x * w), 1 - 2 * (x ** 2 + y ** 2)]]
-        return cls.from_matrix(matrix)
 
     @staticmethod
     def vector_to_algebra(vector):

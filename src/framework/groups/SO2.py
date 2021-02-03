@@ -2,6 +2,7 @@ import numpy as np
 
 from src.framework.structures import *
 from src.framework.groups.SO import SO
+from src.framework.groups.SO3 import SO3
 
 
 class SO2(SO):
@@ -25,12 +26,18 @@ class SO2(SO):
     def smallest_positive_angle(self):
         return self.angle() % (2 * np.pi)
 
+    def to_so3(self) -> SO3:
+        matrix = self.matrix()
+        extended = np.block([[matrix, np.zeros((2, 1))],
+                            [np.zeros((1, 2)), 1]])
+        return SO3(extended)
+
     # abstract implementations
-    def vector(self):
+    def vector(self) -> Vector:
         matrix = self.matrix()
         return Vector(np.arctan2(matrix[1][0], matrix[0][0]))
 
-    def jacobian(self):
+    def jacobian(self) -> Square:
         angle = self.angle()
         if np.isclose(angle, 0.):
             return Square(np.eye(2) + 0.5 * self.algebra())
@@ -40,7 +47,7 @@ class SO2(SO):
                                        [1 - cos_angle, sin_angle]])
         return Square(matrix)
 
-    def inverse_jacobian(self):
+    def inverse_jacobian(self) -> Square:
         jacobian = self.jacobian()
         a = jacobian[0][0]
         b = jacobian[1][0]

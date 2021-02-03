@@ -24,19 +24,32 @@ class SE3(SE):
         quaternion = self.rotation().quaternion()
         return Vector(np.vstack((translation, quaternion)))
 
+    def euler_vector(self):
+        translation = self.translation()
+        euler = self.rotation().euler()
+        return Vector(np.vstack((translation, euler)))
+
+    # public class-methods
+    @classmethod
+    def from_quaternion(cls, translation, quaternion):
+        assert isinstance(translation, Vector)
+        assert isinstance(quaternion, Quaternion)
+        rotation = SO3.from_quaternion(quaternion)
+        return cls(translation, rotation)
+
+    @classmethod
+    def from_euler(cls, translation, euler):
+        assert isinstance(translation, Vector)
+        assert isinstance(euler, Vector)
+        rotation = SO3.from_euler(euler)
+        return cls(translation, rotation)
+
     # abstract implementations
     @classmethod
     def from_elements(cls, x, y, z, a, b, c):
         translation_vector = Vector([x, y, z])
         rotation_vector = Vector([a, b, c])
         return cls.from_vectors(translation_vector, rotation_vector)
-
-    @classmethod
-    def from_quaternion(cls, quaternion, translation):
-        assert isinstance(quaternion, Quaternion)
-        assert isinstance(translation, Vector)
-        rotation = SO3.from_quaternion(quaternion)
-        return cls(translation, rotation)
 
     @staticmethod
     def vector_to_algebra(vector):
