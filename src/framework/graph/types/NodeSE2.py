@@ -1,9 +1,9 @@
 from src.framework.groups import *
-from src.framework.graph.Node import Node
+from src.framework.graph.Graph import Graph
 from src.framework.graph.types.Type import Type
 
 
-class NodeSE2(Type, Node):
+class NodeSE2(Type, Graph.Node):
 
     # constructor
     def __init__(self, id, true, estimated):
@@ -22,12 +22,12 @@ class NodeSE2(Type, Node):
         return self._estimated
 
     # abstract implementations
-    def id(self):
-        return self.get_id()
+    def id(self) -> str:
+        return str(self.get_id())
 
-    def data_to_string(self):
+    def data_to_string(self) -> str:
         return type(self)._array_to_string(self.get_estimated().vector())
 
     @staticmethod
-    def tag():
+    def tag() -> str:
         return 'VERTEX_SE2'

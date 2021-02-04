@@ -1,10 +1,10 @@
 from src.framework.groups import *
 from src.framework.structures import *
 from src.framework.graph.types.Type import Type
-from src.framework.graph.Edge import Edge
+from src.framework.graph.Graph import Graph
 
 
-class EdgeSE2(Type, Edge):
+class EdgeSE2(Type, Graph.Edge):
 
     # constructor
     def __init__(self, id, transformation, information, nodes=None):

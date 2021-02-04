@@ -14,14 +14,14 @@ class Type(ABC):
 
     # abstract methods
     @abstractmethod
-    def id(self):
+    def id(self) -> str:
         pass
 
     @abstractmethod
-    def data_to_string(self):
+    def data_to_string(self) -> str:
         pass
 
     @staticmethod
     @abstractmethod
-    def tag():
+    def tag() -> str:
         pass
