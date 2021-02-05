@@ -1,53 +1,36 @@
-from abc import ABC
+from abc import ABC, abstractmethod
 
-from src.framework.graph.types.Type import Type
+from src.framework.graph.Element import Element
 
 
-class Graph(object):
+class BaseGraph(object):
 
     # subclass: Node
-    class Node(Type, ABC):
+    class Node(Element, ABC):
 
-        def __init__(self, id, edges=None):
+        # constructor
+        def __init__(self, id):
             assert isinstance(id, int)
-            super().__init__(id)
-            if edges is None:
-                self._edges = []
-            else:
-                assert isinstance(edges, list)
-                self._edges = edges
+            self._id = id
 
         # public methods
-        def get_edges(self):
-            return self._edges
-
-        def get_edge(self, index):
-            assert isinstance(index, int)
-            if index < len(self._edges):
-                return self._edges[index]
-            else:
-                return None
-
-        def add_edge(self, edge):
-            assert isinstance(edge, Graph.Edge)
-            if edge not in self._edges:
-                self._edges.append(edge)
-
-    # subclass: Edge
-    class Edge(Type, ABC):
-
-        def __init__(self, id, nodes=None):
-            assert isinstance(id, int)
-            super().__init__(id)
-            if nodes is None:
-                self._nodes = []
-            else:
-                assert isinstance(nodes, list)
-                self._nodes = nodes
-
-        def get_id(self):
+        def id(self):
             return self._id
 
+        def set_id(self, id):
+            assert isinstance(id, int)
+            self._id = id
+
+    # subclass: Edge
+    class Edge(Element, ABC):
+
+        # constructor
+        def __init__(self, nodes):
+            assert isinstance(nodes, list)
+            assert all(isinstance(node, BaseGraph.Node) for node in nodes)
+            self._nodes = nodes
+
+        # public methods
         def get_nodes(self):
             return self._nodes
 
@@ -55,56 +38,45 @@ class Graph(object):
             assert isinstance(index, int)
             if index < len(self._nodes):
                 return self._nodes[index]
-            else:
-                return None
+            raise Exception('No node found at index {}'.format(index))
+            # return None
 
-        def add_nodes(self, *args):
-            for node in args:
-                assert isinstance(node, Graph.Node)
-                if node not in self._nodes:
-                    self._nodes.append(node)
+        # abstract properties
+        @property
+        @classmethod
+        @abstractmethod
+        def size(cls):
+            pass
+
+        # abstract methods
+        @classmethod
+        @abstractmethod
+        def from_nodes(cls, nodes):
+            pass
 
     # constructor
     def __init__(self):
-        self.types = dict()
         self._nodes = dict()
-        self._edges = dict()
+        self._edges = list()
 
     # public methods
     def get_node(self, id):
         assert isinstance(id, int)
         if id in self._nodes:
             return self._nodes[id]
-        else:
-            return None
+        raise Exception('No node found with id {}'.format(id))
+        # return None
 
     def add_node(self, node):
         assert isinstance(node, self.Node)
-        self._nodes[node.get_id()] = node
+        self._nodes[node.id()] = node
 
-    def get_edge(self, id):
-        assert isinstance(id, int)
-        if id in self._edges:
-            return self._edges[id]
-        else:
-            return None
+    def get_edge(self, index):
+        assert isinstance(index, int)
+        assert index < len(self._edges)
+        return self._edges[index]
 
     def add_edge(self, edge):
         assert isinstance(edge, self.Edge)
-        self._edges[edge.get_id()] = edge
-
-    def load(self, filename):
-        file = open(filename, 'r')
-        lines = file.readlines()
-        for line in lines:
-            words = line.strip()
-            # handle FIX
-            token = words[0]
-            if token not in self.types:
-                raise Exception('Wrong type!')
-            else:
-                element_type = self.types[token]
-            # handle parameters
-            id = words[1]
-            rest = words[2:]
-            element = element_type(id, rest)
+        if edge not in self._edges:
+            self._edges.append(edge)

@@ -1,7 +1,7 @@
 from src.framework.structures import *
 from src.framework.groups import *
 from src.framework.graph.BaseGraph import BaseGraph
-from src.framework.graph.types.NodeSE2 import NodeSE2
+from src.framework.types.NodeSE2 import NodeSE2
 
 
 class EdgeSE2(BaseGraph.Edge):
@@ -11,7 +11,6 @@ class EdgeSE2(BaseGraph.Edge):
 
     # constructor
     def __init__(self, a, b, transformation=None):
-        assert isinstance(id, int)
         assert isinstance(a, NodeSE2)
         assert isinstance(b, NodeSE2)
         super().__init__([a, b])
@@ -38,3 +37,9 @@ class EdgeSE2(BaseGraph.Edge):
         assert all(isinstance(word, str) for word in words)
         elements = [float(word) for word in words]
         self.set_transformation(SE2.from_vector(Vector(elements)))
+
+    @classmethod
+    def from_nodes(cls, nodes):
+        assert isinstance(nodes, list)
+        assert all(isinstance(node, NodeSE2) for node in nodes)
+        return cls(nodes[0], nodes[1])
