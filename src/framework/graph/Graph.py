@@ -19,8 +19,8 @@ class Graph(BaseGraph):
 
     # loading / saving
     def load(self, filename):
-        file = open(filename, 'r')
         print('Reading file: {}'.format(filename))
+        file = open(filename, 'r')
         lines = file.readlines()
         for i, line in enumerate(lines):
             if line == '\n':
@@ -51,5 +51,18 @@ class Graph(BaseGraph):
                 edge = element_type.from_nodes(nodes)
                 self.add_edge(edge)
 
-    def save(self):
-        pass
+    def save(self, filename):
+        print('Saving to file: {}'.format(filename))
+        file = open(filename, 'x')
+
+        node_set = list()
+        edge_set = self.get_edges()
+        for edge in edge_set:
+            nodes = edge.get_nodes()
+            for node in nodes:
+                if node not in node_set:
+                    node_set.append(node)
+        for node in node_set:
+            file.write(node.to_string() + '\n')
+        for edge in edge_set:
+            file.write(edge.to_string() + '\n')

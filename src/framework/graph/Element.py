@@ -8,7 +8,7 @@ class Element(ABC):
     @staticmethod
     def _array_to_string(array):
         assert isinstance(array, np.ndarray)
-        return ' '.join(['{:.6f}'.format(element) for element in array.flatten()])
+        return ' '.join([str(float('{:.5e}'.format(element))) for element in array.flatten()])
 
     # abstract properties
     @property

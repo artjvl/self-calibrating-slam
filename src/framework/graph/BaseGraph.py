@@ -60,6 +60,9 @@ class BaseGraph(object):
         self._edges = list()
 
     # public methods
+    def get_nodes(self):
+        return self._nodes
+
     def get_node(self, id):
         assert isinstance(id, int)
         if id in self._nodes:
@@ -70,6 +73,9 @@ class BaseGraph(object):
     def add_node(self, node):
         assert isinstance(node, self.Node)
         self._nodes[node.id()] = node
+
+    def get_edges(self):
+        return self._edges
 
     def get_edge(self, index):
         assert isinstance(index, int)
