@@ -14,10 +14,13 @@ from src.viewer.Drawer import Drawer
 
 
 class GraphViewer(QMainWindow):
+    # reference: https://memotut.com/create-a-3d-model-viewer-with-pyqt5-and-pyqtgraph-b3916/
+    #            https://github.com/Be4rR/STLViewer
 
     # constructor
     def __init__(self):
         super(GraphViewer, self).__init__()
+        self.graphs = list()
 
         # grid
         self.is_grid = True
@@ -55,6 +58,7 @@ class GraphViewer(QMainWindow):
 
     # widgets
     def init_viewer(self) -> gl.GLViewWidget:
+        # reference: https://pyqtgraph.readthedocs.io/en/latest/
         viewer = gl.GLViewWidget(self.central_widget)
         viewer.setMinimumSize(QSize(600, 400))
         viewer.setSizePolicy(QSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored))

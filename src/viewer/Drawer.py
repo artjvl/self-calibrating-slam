@@ -8,6 +8,7 @@ from src.framework.groups import *
 
 
 class Drawer(object):
+    # reference: https://pyqtgraph.readthedocs.io/en/latest/
 
     @staticmethod
     def axis(transformation=None) -> gl.GLAxisItem:
