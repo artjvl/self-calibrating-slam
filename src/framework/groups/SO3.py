@@ -5,6 +5,7 @@ from src.framework.groups.SO import SO
 
 
 class SO3(SO):
+    # reference: https://github.com/utiasSTARS/liegroups
 
     # static properties
     _dim = 3
@@ -38,6 +39,7 @@ class SO3(SO):
         return (0.5 / np.sqrt(t)) * quaternion
 
     def euler(self):
+        # reference: https://www.gregslabaugh.net/publications/euler.pdf
         m = self.matrix()
         pitch = np.arctan2(-m[2][0], np.sqrt(m[0][0]**2 + m[1][0]**2))
         if np.isclose(np.abs(pitch), 0.5 * np.pi):
@@ -64,6 +66,7 @@ class SO3(SO):
 
     @classmethod
     def from_euler(cls, euler):
+        # reference: https://www.gregslabaugh.net/publications/euler.pdf
         assert isinstance(euler, Vector)
         roll = euler.get(0)
         roll_matrix = Square([[1, 0, 0], [0, np.cos(roll), -np.sin(roll)], [0, np.sin(roll), np.cos(roll)]])

@@ -1,11 +1,16 @@
+from abc import ABC
+
+from src.framework.graph.types.Type import Type
+
+
 class Graph(object):
 
     # subclass: Node
-    class Node(object):
+    class Node(Type, ABC):
 
         def __init__(self, id, edges=None):
             assert isinstance(id, int)
-            self._id = id
+            super().__init__(id)
             if edges is None:
                 self._edges = []
             else:
@@ -13,9 +18,6 @@ class Graph(object):
                 self._edges = edges
 
         # public methods
-        def get_id(self):
-            return self._id
-
         def get_edges(self):
             return self._edges
 
@@ -32,11 +34,11 @@ class Graph(object):
                 self._edges.append(edge)
 
     # subclass: Edge
-    class Edge(object):
+    class Edge(Type, ABC):
 
         def __init__(self, id, nodes=None):
             assert isinstance(id, int)
-            self._id = id
+            super().__init__(id)
             if nodes is None:
                 self._nodes = []
             else:
@@ -64,6 +66,7 @@ class Graph(object):
 
     # constructor
     def __init__(self):
+        self.types = dict()
         self._nodes = dict()
         self._edges = dict()
 
@@ -89,3 +92,19 @@ class Graph(object):
     def add_edge(self, edge):
         assert isinstance(edge, self.Edge)
         self._edges[edge.get_id()] = edge
+
+    def load(self, filename):
+        file = open(filename, 'r')
+        lines = file.readlines()
+        for line in lines:
+            words = line.strip()
+            # handle FIX
+            token = words[0]
+            if token not in self.types:
+                raise Exception('Wrong type!')
+            else:
+                element_type = self.types[token]
+            # handle parameters
+            id = words[1]
+            rest = words[2:]
+            element = element_type(id, rest)

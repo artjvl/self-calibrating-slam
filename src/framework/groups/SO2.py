@@ -6,6 +6,7 @@ from src.framework.groups.SO3 import SO3
 
 
 class SO2(SO):
+    # reference: https://github.com/utiasSTARS/liegroups
 
     # static properties
     _dim = 2
@@ -58,7 +59,7 @@ class SO2(SO):
     @classmethod
     def from_vector(cls, vector):
         assert isinstance(vector, Vector)
-        angle = vector[0][0]
+        angle = vector.get(0)
         sin_angle = np.sin(angle)
         cos_angle = np.cos(angle)
         matrix = [[cos_angle, -sin_angle],

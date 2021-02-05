@@ -7,6 +7,7 @@ from src.framework.groups.SE3 import SE3
 
 
 class SE2(SE):
+    # reference: https://github.com/utiasSTARS/liegroups
 
     # static properties
     _dim = 2

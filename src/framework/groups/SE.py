@@ -104,5 +104,5 @@ class SE(Group, ABC):
     def from_vector(cls, vector):
         assert isinstance(vector, Vector)
         translation_vector = vector[0: cls._dim]
-        rotation_vector = vector[cls._dim + 1:]
+        rotation_vector = vector[cls._dim:]
         return cls.from_vectors(translation_vector, rotation_vector)
