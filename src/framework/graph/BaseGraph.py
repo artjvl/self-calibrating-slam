@@ -1,12 +1,7 @@
-from abc import ABC, abstractmethod
-
-from src.framework.graph.Element import Element
-
-
 class BaseGraph(object):
 
-    # subclass: Node
-    class Node(Element, ABC):
+    # subclass: BaseNode
+    class BaseNode(object):
 
         # constructor
         def __init__(self, id):
@@ -21,13 +16,13 @@ class BaseGraph(object):
             assert isinstance(id, int)
             self._id = id
 
-    # subclass: Edge
-    class Edge(Element, ABC):
+    # subclass: BaseEdge
+    class BaseEdge(object):
 
         # constructor
         def __init__(self, nodes):
             assert isinstance(nodes, list)
-            assert all(isinstance(node, BaseGraph.Node) for node in nodes)
+            assert all(isinstance(node, BaseGraph.BaseNode) for node in nodes)
             self._nodes = nodes
 
         # public methods
@@ -40,19 +35,6 @@ class BaseGraph(object):
                 return self._nodes[index]
             raise Exception('No node found at index {}'.format(index))
             # return None
-
-        # abstract properties
-        @property
-        @classmethod
-        @abstractmethod
-        def size(cls):
-            pass
-
-        # abstract methods
-        @classmethod
-        @abstractmethod
-        def from_nodes(cls, nodes):
-            pass
 
     # constructor
     def __init__(self):
@@ -71,7 +53,7 @@ class BaseGraph(object):
         # return None
 
     def add_node(self, node):
-        assert isinstance(node, self.Node)
+        assert isinstance(node, self.BaseNode)
         self._nodes[node.id()] = node
 
     def get_edges(self):
@@ -83,6 +65,6 @@ class BaseGraph(object):
         return self._edges[index]
 
     def add_edge(self, edge):
-        assert isinstance(edge, self.Edge)
+        assert isinstance(edge, self.BaseEdge)
         if edge not in self._edges:
             self._edges.append(edge)

@@ -15,5 +15,11 @@ class Square(np.ndarray):
         if obj is None:
             return
 
+    # public methods
     def inverse(self):
         return type(self)(linalg.inv(self))
+
+    # public class-methods
+    @classmethod
+    def zeros(cls, size):
+        return cls(np.zeros((size, size)))

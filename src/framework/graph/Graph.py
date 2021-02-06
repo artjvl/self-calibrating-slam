@@ -1,9 +1,9 @@
-from src.framework.graph.BaseGraph import BaseGraph
+from src.framework.graph.FactorGraph import FactorGraph
 from src.framework.types.NodeSE2 import NodeSE2
 from src.framework.types.EdgeSE2 import EdgeSE2
 
 
-class Graph(BaseGraph):
+class Graph(FactorGraph):
 
     # constructor
     def __init__(self):
@@ -38,31 +38,26 @@ class Graph(BaseGraph):
 
             # handle parameters
 
-            if issubclass(element_type, BaseGraph.Node):
+            if issubclass(element_type, FactorGraph.Node):
                 id = int(words[1])
                 node = element_type(id)
                 rest = words[2:]
                 node.read(rest)
                 self.add_node(node)
-            elif issubclass(element_type, BaseGraph.Edge):
+            elif issubclass(element_type, FactorGraph.Edge):
                 size = element_type.size
                 ids = words[1: 1 + size]
                 nodes = [self.get_node(int(id)) for id in ids]
                 edge = element_type.from_nodes(nodes)
+                rest = words[1 + size: 4 + size]
+                edge.read(rest)
                 self.add_edge(edge)
 
     def save(self, filename):
         print('Saving to file: {}'.format(filename))
         file = open(filename, 'x')
 
-        node_set = list()
-        edge_set = self.get_edges()
-        for edge in edge_set:
-            nodes = edge.get_nodes()
-            for node in nodes:
-                if node not in node_set:
-                    node_set.append(node)
-        for node in node_set:
+        for node in self.get_nodes().values():
             file.write(node.to_string() + '\n')
-        for edge in edge_set:
+        for edge in self.get_edges():
             file.write(edge.to_string() + '\n')
