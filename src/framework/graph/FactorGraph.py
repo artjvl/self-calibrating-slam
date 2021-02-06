@@ -13,19 +13,46 @@ class FactorGraph(BaseGraph):
 
         # private static-methods
         @staticmethod
-        def _array_to_string(array):
-            assert isinstance(array, (list, np.ndarray))
-            return ' '.join([str(float('{:.5e}'.format(element))) for element in array.flatten()])
+        def _array_to_elements(array):
+            assert isinstance(array, np.ndarray)
+            return list(array.flatten())
+
+        @staticmethod
+        def _elements_to_string(elements):
+            elements = [float('{:.5e}'.format(element)) for element in elements]
+            for i, element in enumerate(elements):
+                if element.is_integer():
+                    elements[i] = int(element)
+            return ' '.join(str(element) for element in elements)
+            # return ' '.join([str(float('{:.5e}'.format(element))) for element in elements])
 
         @classmethod
-        def _symmetric_to_string(cls, matrix):
+        def _symmetric_to_elements(cls, matrix):
             assert isinstance(matrix, Square)
             elements = []
             indices = np.arange(matrix.shape[0])
             for i in indices:
                 for j in indices[i:]:
                     elements.append(matrix[i][j])
-            return cls._array_to_string(np.array(elements))
+            return elements
+
+        @classmethod
+        def _elements_to_symmetric(cls, elements):
+            assert isinstance(elements, list)
+            assert all(isinstance(element, float) for element in elements)
+            length = len(elements)
+            dimension = -0.5 + 0.5 * np.sqrt(1 + 8 * length)
+            assert dimension.is_integer()
+            dimension = int(dimension)
+            matrix = Square.zeros(dimension)
+            indices = np.arange(dimension)
+            count = 0
+            for i in indices:
+                for j in indices[i:]:
+                    matrix[i][j] = elements[count]
+                    matrix[j][i] = matrix[i][j]
+                    count += 1
+            return matrix
 
         # abstract properties
         @property
@@ -66,12 +93,18 @@ class FactorGraph(BaseGraph):
     class Edge(BaseGraph.BaseEdge, Element, ABC):
 
         # constructor
-        def __init__(self, nodes, value):
+        def __init__(self, nodes, value, information=None):
             assert isinstance(nodes, list)
             assert all(isinstance(node, FactorGraph.Node) for node in nodes)
             assert isinstance(value, (Vector, SO, SE))
             super().__init__(nodes)
             self._value = value
+            if information is None:
+                self._is_uncertain = False
+            else:
+                assert isinstance(information, Square)
+                self._is_uncertain = True
+            self._information = information
 
         # public methods
         def get_value(self):
@@ -80,6 +113,14 @@ class FactorGraph(BaseGraph):
         def set_value(self, value):
             assert isinstance(value, (Vector, SO, SE))
             self._value = value
+
+        def get_information(self):
+            return self._information
+
+        def set_information(self, information):
+            assert isinstance(information, Square)
+            self._information = information
+            self._is_uncertain = True
 
         # abstract properties
         @property
@@ -93,26 +134,6 @@ class FactorGraph(BaseGraph):
         @abstractmethod
         def from_nodes(cls, nodes):
             pass
-
-    # sub-class: Constraint
-    class Constraint(Edge, ABC):
-
-        # constructor
-        def __init__(self, nodes, value, information):
-            assert isinstance(nodes, list)
-            assert all(isinstance(node, FactorGraph.Node) for node in nodes)
-            assert isinstance(value, (Vector, SO, SE))
-            assert isinstance(information, Square)
-            super().__init__(nodes, value)
-            self._information = information
-
-        # public methods
-        def get_information(self):
-            return self._information
-
-        def set_information(self, information):
-            assert isinstance(information, Square)
-            self._information = information
 
     # constructor
     def __init__(self):
