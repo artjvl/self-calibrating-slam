@@ -57,8 +57,9 @@ class Graph(FactorGraph):
 
     def save(self, filename):
         print('Saving to file: {}'.format(filename))
-        path = pathlib.Path(filename)
-        if file.exists()
+        file = pathlib.Path(filename)
+        if file.exists():
+            file.unlink()
         file = open(filename, 'x')
 
         for node in self.get_nodes().values():
