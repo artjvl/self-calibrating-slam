@@ -21,5 +21,5 @@ class Square(np.ndarray):
 
     # public class-methods
     @classmethod
-    def zeros(cls, size):
-        return cls(np.zeros((size, size)))
+    def zeros(cls, dimension):
+        return cls(np.zeros((dimension, dimension)))

@@ -25,7 +25,7 @@ class NodeSE2(FactorGraph.Node):
 
     # abstract implementations
     def to_string(self):
-        pose_string = self._array_to_string(self.get_pose().vector())
+        pose_string = self._elements_to_string(self._array_to_elements(self.get_pose().vector()))
         return ' '.join([self.tag, str(self.id()), pose_string])
 
     def read(self, words):

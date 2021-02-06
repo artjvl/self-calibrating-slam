@@ -10,13 +10,15 @@ class EdgeSE2(FactorGraph.Edge):
     size = 2
 
     # constructor
-    def __init__(self, a, b, transformation=None):
+    def __init__(self, a, b, transformation=None, information=None):
         assert isinstance(a, NodeSE2)
         assert isinstance(b, NodeSE2)
         if transformation is None:
             transformation = SE2.from_elements(0, 0, 0)
         assert isinstance(transformation, SE2)
-        super().__init__([a, b], transformation)
+        if information is not None:
+            assert isinstance(information, Square)
+        super().__init__([a, b], transformation, information)
 
     # public methods
     def get_transformation(self):
@@ -28,14 +30,18 @@ class EdgeSE2(FactorGraph.Edge):
 
     # abstract implementations
     def to_string(self):
-        transformation_string = self._array_to_string(self.get_transformation().vector())
-        return ' '.join([self.tag, str(self.get_node(0).id()), str(self.get_node(1).id()), transformation_string])
+        data_string = self._elements_to_string(self._array_to_elements(self.get_transformation().vector()))
+        if self._is_uncertain:
+            data_string += ' {}'.format(self._elements_to_string(self._symmetric_to_elements(self._information)))
+        return ' '.join([self.tag, str(self.get_node(0).id()), str(self.get_node(1).id()), data_string])
 
     def read(self, words):
         assert isinstance(words, list)
         assert all(isinstance(word, str) for word in words)
         elements = [float(word) for word in words]
-        self.set_transformation(SE2.from_vector(Vector(elements)))
+        if len(elements) != 3:
+            self.set_information(self._elements_to_symmetric(elements[3:]))
+        self.set_transformation(SE2.from_vector(Vector(elements[: 3])))
 
     @classmethod
     def from_nodes(cls, nodes):
