@@ -97,24 +97,17 @@ class GraphViewer(QMainWindow):
         menu_file.setToolTipsVisible(True)
 
         # file: load
-        action_file_load = QAction('&Load', self)
+        action_file_load = self.create_action(self, '&Load', 'Load a file', self.handle_load)
         action_file_load.setShortcut('Ctrl+L')
-        action_file_load_tip = 'Load a file'
-        action_file_load.setStatusTip(action_file_load_tip)
-        action_file_load.setToolTip(action_file_load_tip)
-        action_file_load.triggered.connect(self.handle_load)
         menu_file.addAction(action_file_load)
 
         # file: (separator)
         menu_file.addSeparator()
 
         # file: exit
-        action_file_exit = QAction('&Quit', self)
+
+        action_file_exit = self.create_action(self, '&Quit', 'Exit application', self.handle_quit)
         action_file_exit.setShortcut('Ctrl+Q')
-        action_file_exit_tip = 'Exit application'
-        action_file_exit.setStatusTip(action_file_exit_tip)
-        action_file_exit.setToolTip(action_file_exit_tip)
-        action_file_exit.triggered.connect(self.handle_quit)
         menu_file.addAction(action_file_exit)
 
         # view-menu
@@ -122,33 +115,21 @@ class GraphViewer(QMainWindow):
         menu_view.setToolTipsVisible(True)
 
         # view: grid
-        action_view_grid = QAction('&Grid', self)
-        action_view_grid_tip = 'Show/hide grid'
+        action_view_grid = self.create_action(self, '&Grid', 'Show/hide grid', self.handle_grid)
         action_view_grid.setCheckable(True)
         action_view_grid.setChecked(self.is_grid)
-        action_view_grid.setStatusTip(action_view_grid_tip)
-        action_view_grid.setToolTip(action_view_grid_tip)
         self.set_grid(self.is_grid)
-        action_view_grid.triggered.connect(self.handle_grid)
         menu_view.addAction(action_view_grid)
 
         # view: (separator)
         menu_view.addSeparator()
 
         # view: top
-        action_view_top = QAction('&Top', self)
-        action_view_top_tip = 'Move camera to top view'
-        action_view_top.setStatusTip(action_view_top_tip)
-        action_view_top.setToolTip(action_view_top_tip)
-        action_view_top.triggered.connect(self.handle_top)
+        action_view_top = self.create_action(self, '&Top', 'Move camera to top view', self.handle_top)
         menu_view.addAction(action_view_top)
 
         # view: isometric
-        action_view_isometric = QAction('&Isometric', self)
-        action_view_isometric_tip = 'Move camera to isometric view'
-        action_view_isometric.setStatusTip(action_view_isometric_tip)
-        action_view_isometric.setToolTip(action_view_isometric_tip)
-        action_view_isometric.triggered.connect(self.handle_isometric)
+        action_view_isometric = self.create_action(self, '&Isometric', 'Move camera to isometric view', self.handle_isometric)
         menu_view.addAction(action_view_isometric)
 
         # about-menu
@@ -157,11 +138,7 @@ class GraphViewer(QMainWindow):
 
         # about: GitHub
         url = QUrl('https://github.com/artjvl/self-calibrating-slam')
-        action_about_github = QAction('Go to GitHub', self)
-        action_about_github_tip = 'Redirect to source-code on GitHub'
-        action_about_github.setStatusTip(action_about_github_tip)
-        action_about_github.setToolTip(action_about_github_tip)
-        action_about_github.triggered.connect(lambda: QDesktopServices.openUrl(url))
+        action_about_github = self.create_action(self, 'Go to GitHub', 'Redirect to source-code on GitHub', lambda: QDesktopServices.openUrl(url))
         menu_about.addAction(action_about_github)
 
         return menubar
@@ -212,29 +189,12 @@ class GraphViewer(QMainWindow):
 
     def handle_browser_clicked(self, item, column):
         if hasattr(item, 'instance_item'):
+            self.properties.clear()
             element = item.instance_item
             if isinstance(element, FactorGraph.Node):
-                self.construct_node_tree(element)
+                self.construct_node_tree(self.properties, element)
             elif isinstance(element, FactorGraph.Edge):
-                self.construct_edge_tree(element)
-
-    # methods
-    def set_grid(self, is_grid):
-        if is_grid and self.grid not in self.viewer.items:
-            self.viewer.addItem(self.grid)
-            print('Grid enabled')
-        elif not is_grid and self.grid in self.viewer.items:
-            self.viewer.removeItem(self.grid)
-            print('Grid disabled')
-
-    # def add_line(self):
-    #     pos = np.array([[0, 0, 0],
-    #                     [2, 1, 0]])
-    #     line = gl.GLLinePlotItem(pos=pos, width=2)
-    #     width = 0.1
-    #     cyl = gl.MeshData.cylinder(1, 12, radius=[0.5*width, 0.5*width])
-    #     self.viewer.addItem(gl.GLMeshItem(meshdata=cyl, drawFaces=False, drawEdges=True))
-    #     self.viewer.addItem(line)
+                self.construct_edge_tree(self.properties, element)
 
     def centre(self):
         # move frame to centre of screen
@@ -243,6 +203,28 @@ class GraphViewer(QMainWindow):
         frame_geometry.moveCenter(centre)
         self.move(frame_geometry.topLeft())
 
+    # helper-methods: menubar
+    @staticmethod
+    def create_action(parent, text, tip, connection):
+        assert isinstance(parent, QMainWindow)
+        assert isinstance(text, str)
+        assert isinstance(tip, str)
+        action = QAction(text, parent)
+        action.setStatusTip(tip)
+        action.setToolTip(tip)
+        action.triggered.connect(connection)
+        return action
+
+    # helper-methods: viewer
+    def set_grid(self, is_grid):
+        if is_grid and self.grid not in self.viewer.items:
+            self.viewer.addItem(self.grid)
+            print('Grid enabled')
+        elif not is_grid and self.grid in self.viewer.items:
+            self.viewer.removeItem(self.grid)
+            print('Grid disabled')
+
+    # helper-methods: load
     def load_file(self, filename):
         assert isinstance(filename, str)
         graph = Graph()
@@ -283,37 +265,38 @@ class GraphViewer(QMainWindow):
             browser_edge.setText(1, type(edge).__name__)
             browser_edge.instance_item = edge
 
-    def construct_node_tree(self, node):
+    # helper-methods: properties-tree
+    @classmethod
+    def construct_node_tree(cls, root, node):
         assert isinstance(node, FactorGraph.Node)
-        self.properties.clear()
 
         # tag:
-        self.construct_tree_property(self.properties, 'tag', "'{}'".format(type(node).tag))
+        cls.construct_tree_property(root, 'tag', "'{}'".format(type(node).tag))
         # id:
-        self.construct_tree_property(self.properties, 'id', '{}'.format(node.id()))
+        cls.construct_tree_property(root, 'id', '{}'.format(node.id()))
         # value:
-        self.construct_value_tree(self.properties, 'value', node.get_value())
-        self.properties.expandAll()
+        cls.construct_value_tree(root, 'value', node.get_value())
+        root.expandAll()
 
-    def construct_edge_tree(self, edge):
+    @classmethod
+    def construct_edge_tree(cls, root, edge):
         assert isinstance(edge, FactorGraph.Edge)
-        self.properties.clear()
 
         # tag:
-        self.construct_tree_property(self.properties, 'tag', "'{}'".format(type(edge).tag))
+        cls.construct_tree_property(root, 'tag', "'{}'".format(type(edge).tag))
         # nodes:
-        tree_nodes = QTreeWidgetItem(self.properties)
+        tree_nodes = QTreeWidgetItem(root)
         tree_nodes.setText(0, 'nodes:')
         nodes = edge.get_nodes()
         tree_nodes.setText(1, '({})'.format(len(nodes)))
         for i, node in enumerate(nodes):
-            self.construct_tree_property(tree_nodes, '{}'.format(i), '{}'.format(node))
+            cls.construct_tree_property(tree_nodes, '{}'.format(i), '{}'.format(node))
         # value:
-        self.construct_value_tree(self.properties, 'value', edge.get_value())
+        cls.construct_value_tree(root, 'value', edge.get_value())
         if edge.is_uncertain():
             # information:
-            self.construct_tree_property(self.properties, 'information', '{}'.format(edge.get_information()))
-        self.properties.expandAll()
+            cls.construct_tree_property(root, 'information', '{}'.format(edge.get_information()))
+        root.expandAll()
 
     @classmethod
     def construct_value_tree(cls, root, value_string, value):
