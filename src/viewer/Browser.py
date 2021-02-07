@@ -13,12 +13,19 @@ class Browser(QTreeWidget):
         assert isinstance(inspector, Inspector)
         super().__init__(*args, **kwargs)
         self._inspector = inspector
-        self.setSizePolicy(QSizePolicy(QSizePolicy.Maximum, QSizePolicy.Preferred))
         self.headerItem().setText(0, 'Object')
         self.headerItem().setText(1, 'Type')
         self.setColumnWidth(0, 140)
         self.setAlternatingRowColors(True)
         self.itemSelectionChanged.connect(self.handle_browser_selection)
+        self._graphs = []
+
+    # public methods
+    def add_graph(self, graph, filename):
+        assert isinstance(graph, Graph)
+        assert isinstance(filename, str)
+        self._graphs.append(graph)
+        self.construct_graph_tree(self, graph, filename)
 
     # handlers
     def handle_browser_selection(self):

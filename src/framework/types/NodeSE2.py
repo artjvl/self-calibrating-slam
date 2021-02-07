@@ -32,4 +32,7 @@ class NodeSE2(FactorGraph.Node):
         assert isinstance(words, list)
         assert all(isinstance(word, str) for word in words)
         elements = [float(word) for word in words]
-        self.set_pose(SE2.from_vector(Vector(elements)))
+        translation = Vector(elements[:2])
+        angle = elements[2]
+        rotation = SO2.from_elements(angle)
+        self.set_pose(SE2(translation, rotation))

@@ -23,6 +23,9 @@ class Vector(np.ndarray):
     def normal(self):
         return self.unit(self)
 
+    def to_list(self):
+        return list(self.flatten())
+
     # public class-methods
     @classmethod
     def norm(cls, vector):

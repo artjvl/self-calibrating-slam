@@ -31,7 +31,7 @@ class SO2(SO):
         matrix = self.matrix()
         extended = np.block([[matrix, np.zeros((2, 1))],
                             [np.zeros((1, 2)), 1]])
-        return SO3(extended)
+        return SO3(Square(extended))
 
     # abstract implementations
     def vector(self) -> Vector:

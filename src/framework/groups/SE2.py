@@ -24,7 +24,7 @@ class SE2(SE):
     def to_se3(self) -> SE3:
         rotation = self.rotation()
         translation = self.translation()
-        return SE3(rotation.to_so3(), Vector(np.vstack((translation, 0))))
+        return SE3(Vector(np.vstack((translation, 0))), rotation.to_so3())
 
     # abstract implementations
     @classmethod

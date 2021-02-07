@@ -21,7 +21,7 @@ class MainWindow(QMainWindow):
     # constructor
     def __init__(self):
         super(MainWindow, self).__init__()
-        self.graphs = list()
+        self._graphs = []
 
         # grid
         self.is_grid = True
@@ -208,7 +208,7 @@ class MainWindow(QMainWindow):
     def draw_graph(self, graph):
         for node in graph.get_nodes():
             axis = self.viewer.construct_axis(node.get_value())
-            self.viewer.addItem(axis)
+            # self.viewer.addItem(axis)
 
     # helper-methods: load
     def load_file(self, filename):
@@ -222,10 +222,10 @@ class MainWindow(QMainWindow):
         assert isinstance(filename, str)
 
         # add graph
-        self.graphs.append(graph)
+        self._graphs.append(graph)
 
         # update tree
-        self.browser.construct_graph_tree(self.browser, graph, filename)
-        self.draw_graph(graph)
+        self.browser.add_graph(graph, filename)
+        self.viewer.add_graph(graph)
 
     # def remove_graph(self, graph):
