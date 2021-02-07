@@ -1,17 +1,26 @@
 import numpy as np
 
+from PyQt5.QtCore import *  # QSize
+
 import pyqtgraph.opengl as gl
 import pyqtgraph as qtg
 
-from src.framework.structures import *
-from src.framework.groups import *
+from framework.structures import *
+from framework.groups import *
 
 
-class Drawer(object):
+class Viewer(gl.GLViewWidget):
     # reference: https://pyqtgraph.readthedocs.io/en/latest/
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.setMinimumSize(QSize(600, 400))
+        self.setCameraPosition(distance=40)
+        self.addItem(self.construct_axis())
+
+    # helper-methods
     @staticmethod
-    def axis(transformation=None) -> gl.GLAxisItem:
+    def construct_axis(transformation=None) -> gl.GLAxisItem:
         if transformation is None:
             transformation = SE3.from_elements(0, 0, 0, 0, 0, 0)
         else:
@@ -24,7 +33,7 @@ class Drawer(object):
         vector = rotation.vector()
         angle = rotation.angle()
         axis = gl.GLAxisItem()
-        axis.rotate(angle, vector.get(0), vector.get(1), vector.get(2))
+        axis.rotate(angle * 180/np.pi, vector.get(0), vector.get(1), vector.get(2))
         axis.translate(translation.get(0), translation.get(1), translation.get(2))
         return axis
 

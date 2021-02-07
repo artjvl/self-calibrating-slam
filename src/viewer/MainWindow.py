@@ -7,19 +7,20 @@ from PyQt5.QtGui import *  # QDesktopServices
 import pyqtgraph.opengl as gl
 import pyqtgraph as qtg
 
-from src.framework.structures import *
-from src.framework.groups import *
 from src.framework.graph import *
-from src.viewer.Drawer import Drawer
+
+from src.viewer.Browser import Browser
+from src.viewer.Inspector import Inspector
+from src.viewer.Viewer import Viewer
 
 
-class GraphViewer(QMainWindow):
+class MainWindow(QMainWindow):
     # reference: https://memotut.com/create-a-3d-model-viewer-with-pyqt5-and-pyqtgraph-b3916/
     #            https://github.com/Be4rR/STLViewer
 
     # constructor
     def __init__(self):
-        super(GraphViewer, self).__init__()
+        super(MainWindow, self).__init__()
         self.graphs = list()
 
         # grid
@@ -43,8 +44,8 @@ class GraphViewer(QMainWindow):
         self.menubar = self.init_menubar()
         # right:
         self.load = self.init_load()
+        self.inspector = self.init_inspector()
         self.browser = self.init_browser()
-        self.properties = self.init_properties()
         # bottom:
         self.statusbar = self.statusBar()
 
@@ -59,7 +60,7 @@ class GraphViewer(QMainWindow):
         self.right_layout = QVBoxLayout()
         self.right_layout.addWidget(self.load)
         self.right_layout.addWidget(self.browser)
-        self.right_layout.addWidget(self.properties)
+        self.right_layout.addWidget(self.inspector)
         self.layout.addLayout(self.right_layout)
 
         # show
@@ -69,11 +70,8 @@ class GraphViewer(QMainWindow):
     # widgets
     def init_viewer(self) -> gl.GLViewWidget:
         # reference: https://pyqtgraph.readthedocs.io/en/latest/
-        viewer = gl.GLViewWidget(self.central_widget)
-        viewer.setMinimumSize(QSize(600, 400))
+        viewer = Viewer(self.central_widget)
         viewer.setSizePolicy(QSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored))
-        viewer.setCameraPosition(distance=40)
-        viewer.addItem(Drawer.axis())
         return viewer
 
     def init_terminal(self) -> QTextEdit:
@@ -144,22 +142,13 @@ class GraphViewer(QMainWindow):
         return menubar
 
     def init_browser(self):
-        browser = QTreeWidget(self.central_widget)
+        browser = Browser(self.inspector, self.central_widget)
         browser.setSizePolicy(QSizePolicy(QSizePolicy.Maximum, QSizePolicy.Preferred))
-        browser.headerItem().setText(0, 'Object')
-        browser.headerItem().setText(1, 'Type')
-        browser.setColumnWidth(0, 140)
-        browser.setAlternatingRowColors(True)
-        browser.itemClicked.connect(self.handle_browser_clicked)
         return browser
 
-    def init_properties(self):
-        properties = QTreeWidget(self.central_widget)
+    def init_inspector(self):
+        properties = Inspector(self.central_widget)
         properties.setSizePolicy(QSizePolicy(QSizePolicy.Maximum, QSizePolicy.Preferred))
-        properties.headerItem().setText(0, 'Property')
-        properties.headerItem().setText(1, 'Value')
-        properties.setColumnWidth(0, 140)
-        properties.setAlternatingRowColors(True)
         return properties
 
     # actions
@@ -187,15 +176,7 @@ class GraphViewer(QMainWindow):
         print(self.viewer.cameraPosition())
         print('Moved camera to isometric view')
 
-    def handle_browser_clicked(self, item, column):
-        if hasattr(item, 'instance_item'):
-            self.properties.clear()
-            element = item.instance_item
-            if isinstance(element, FactorGraph.Node):
-                self.construct_node_tree(self.properties, element)
-            elif isinstance(element, FactorGraph.Edge):
-                self.construct_edge_tree(self.properties, element)
-
+    # helper-methods: window
     def centre(self):
         # move frame to centre of screen
         frame_geometry = self.frameGeometry()
@@ -224,6 +205,11 @@ class GraphViewer(QMainWindow):
             self.viewer.removeItem(self.grid)
             print('Grid disabled')
 
+    def draw_graph(self, graph):
+        for node in graph.get_nodes():
+            axis = self.viewer.construct_axis(node.get_value())
+            self.viewer.addItem(axis)
+
     # helper-methods: load
     def load_file(self, filename):
         assert isinstance(filename, str)
@@ -239,108 +225,7 @@ class GraphViewer(QMainWindow):
         self.graphs.append(graph)
 
         # update tree
-        name = pathlib.Path(filename).name
-        browser_graph = QTreeWidgetItem(self.browser)
-        browser_graph.setText(0, name)
-        browser_graph.setText(1, 'Graph')
-        browser_graph.setToolTip(0, filename)
-        # nodes:
-        browser_nodes = QTreeWidgetItem(browser_graph)
-        nodes = graph.get_nodes()
-        browser_nodes.setText(0, 'nodes')
-        browser_nodes.setText(1, '({})'.format(len(nodes)))
-        for node in graph.get_nodes():
-            browser_node = QTreeWidgetItem(browser_nodes)
-            browser_node.setText(0, 'id: {}'.format(node.id()))
-            browser_node.setText(1, type(node).__name__)
-            browser_node.instance_item = node
-        # edges:
-        browser_edges = QTreeWidgetItem(browser_graph)
-        edges = graph.get_edges()
-        browser_edges.setText(0, 'edges')
-        browser_edges.setText(1, '({})'.format(len(edges)))
-        for edge in edges:
-            browser_edge = QTreeWidgetItem(browser_edges)
-            browser_edge.setText(0, '({})'.format(', '.join([str(node.id()) for node in edge.get_nodes()])))
-            browser_edge.setText(1, type(edge).__name__)
-            browser_edge.instance_item = edge
+        self.browser.construct_graph_tree(self.browser, graph, filename)
+        self.draw_graph(graph)
 
-    # helper-methods: properties-tree
-    @classmethod
-    def construct_node_tree(cls, root, node):
-        assert isinstance(node, FactorGraph.Node)
-
-        # tag:
-        cls.construct_tree_property(root, 'tag', "'{}'".format(type(node).tag))
-        # id:
-        cls.construct_tree_property(root, 'id', '{}'.format(node.id()))
-        # value:
-        cls.construct_value_tree(root, 'value', node.get_value())
-        root.expandAll()
-
-    @classmethod
-    def construct_edge_tree(cls, root, edge):
-        assert isinstance(edge, FactorGraph.Edge)
-
-        # tag:
-        cls.construct_tree_property(root, 'tag', "'{}'".format(type(edge).tag))
-        # nodes:
-        tree_nodes = QTreeWidgetItem(root)
-        tree_nodes.setText(0, 'nodes:')
-        nodes = edge.get_nodes()
-        tree_nodes.setText(1, '({})'.format(len(nodes)))
-        for i, node in enumerate(nodes):
-            cls.construct_tree_property(tree_nodes, '{}'.format(i), '{}'.format(node))
-        # value:
-        cls.construct_value_tree(root, 'value', edge.get_value())
-        if edge.is_uncertain():
-            # information:
-            cls.construct_tree_property(root, 'information', '{}'.format(edge.get_information()))
-        root.expandAll()
-
-    @classmethod
-    def construct_value_tree(cls, root, value_string, value):
-        assert isinstance(root, (QTreeWidget, QTreeWidgetItem))
-        assert isinstance(value, (Vector, SO, SE))
-        if isinstance(value, Vector):
-            cls.construct_tree_property(root, value_string, '{}'.format(value))
-        else:
-            cls.construct_group_tree(root, value_string, value)
-
-    @classmethod
-    def construct_group_tree(cls, root, group_string, group):
-        assert isinstance(root, (QTreeWidget, QTreeWidgetItem))
-        assert isinstance(group_string, str)
-        assert isinstance(group, (SO, SE))
-        values = QTreeWidgetItem(root)
-        values.setText(0, group_string)
-        # vector:
-        cls.construct_tree_property(values, 'vector', '{}'.format(group.vector()))
-        # matrix:
-        cls.construct_tree_property(values, 'matrix', '{}'.format(group.matrix()))
-        counter = 2
-        if isinstance(group, SO):
-            cls.construct_tree_property(values, 'angle', '{}'.format(group.angle()))
-            counter += 1
-            if isinstance(group, SO3):
-                cls.construct_tree_property(values, 'quaternion', '{}'.format(group.quaternion()))
-                cls.construct_tree_property(values, 'euler', '{}'.format(group.euler()))
-                counter += 2
-        elif isinstance(group, SE):
-            translation = group.translation()
-            cls.construct_tree_property(values, 'translation', '{}'.format(translation))
-            rotation = group.rotation()
-            cls.construct_group_tree(values, 'rotation', rotation)
-            counter += 2
-        values.setText(1, '({})'.format(counter))
-
-    @staticmethod
-    def construct_tree_property(root, property_string, value_string):
-        assert isinstance(root, (QTreeWidget, QTreeWidgetItem))
-        assert isinstance(property_string, str)
-        assert isinstance(value_string, str)
-        item = QTreeWidgetItem(root)
-        item.setText(0, '{}:'.format(property_string))
-        item.setText(1, value_string)
-        item.setFont(1, QFont('Courier New', 10))
-        item.setToolTip(1, value_string)
+    # def remove_graph(self, graph):

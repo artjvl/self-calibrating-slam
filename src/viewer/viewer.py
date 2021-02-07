@@ -1,10 +1,10 @@
 from pyqtgraph.Qt import QtGui
 
-from src.viewer.GraphViewer import GraphViewer
+from src.viewer.MainWindow import MainWindow
 
 
 if __name__ == '__main__':
     app = QtGui.QApplication([])
-    window = GraphViewer()
+    window = MainWindow()
     window.show()
     app.exec_()

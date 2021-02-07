@@ -1,1 +1,1 @@
-from src.viewer.GraphViewer import GraphViewer
+from src.viewer.MainWindow import MainWindow
