@@ -1,5 +1,4 @@
-import numpy as np
-from pathlib import Path
+import pathlib
 
 from PyQt5.QtCore import *  # QSize
 from PyQt5.QtWidgets import *  # QMainWindow, QWidget, QDesktopWidget, QAction, qApp, QHBoxLayout
@@ -8,8 +7,7 @@ from PyQt5.QtGui import *  # QDesktopServices
 import pyqtgraph.opengl as gl
 import pyqtgraph as qtg
 
-from stl import mesh
-
+from src.framework.graph import *
 from src.viewer.Drawer import Drawer
 
 
@@ -36,21 +34,31 @@ class GraphViewer(QMainWindow):
         # widgets
         self.central_widget = QWidget(self)
         self.setCentralWidget(self.central_widget)
+        # left:
         self.viewer = self.init_viewer()
-        self.menubar = self.init_menubar()
         self.terminal = self.init_terminal()
-        self.sidebar = self.init_sidebar()
+        # top:
+        self.menubar = self.init_menubar()
+        # right:
+        self.load = self.init_load()
+        self.browser = self.init_browser()
+        self.properties = self.init_properties()
+        # bottom:
         self.statusbar = self.statusBar()
 
         # layout
         self.layout = QHBoxLayout(self.central_widget)
-        # left-layout
+        # left-layout:
         self.left_layout = QVBoxLayout()
         self.left_layout.addWidget(self.viewer)
         self.left_layout.addWidget(self.terminal)
         self.layout.addLayout(self.left_layout)
-        # right-layout
-        self.layout.addLayout(self.sidebar)
+        # right-layout:
+        self.right_layout = QVBoxLayout()
+        self.right_layout.addWidget(self.load)
+        self.right_layout.addWidget(self.browser)
+        self.right_layout.addWidget(self.properties)
+        self.layout.addLayout(self.right_layout)
 
         # show
         self.show()
@@ -72,22 +80,12 @@ class GraphViewer(QMainWindow):
         terminal.setFont(QFont('Courier New', 10))
         return terminal
 
-    def init_sidebar(self) -> QVBoxLayout:
-        layout = QVBoxLayout()
-
-        # button
+    def init_load(self) -> QPushButton:
         button_load = QPushButton(self.central_widget)
         button_load.setText('Load file')
         button_load.setSizePolicy(QSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed))
         button_load.clicked.connect(self.handle_load)
-        layout.addWidget(button_load)
-
-        # text
-        info_pane = QTextEdit(self.central_widget)
-        info_pane.setSizePolicy(QSizePolicy(QSizePolicy.Maximum, QSizePolicy.Preferred))
-        layout.addWidget(info_pane)
-
-        return layout
+        return button_load
 
     def init_menubar(self):
         menubar = self.menuBar()
@@ -166,14 +164,30 @@ class GraphViewer(QMainWindow):
 
         return menubar
 
+    def init_browser(self):
+        browser = QTreeWidget(self.central_widget)
+        browser.setSizePolicy(QSizePolicy(QSizePolicy.Maximum, QSizePolicy.Preferred))
+        browser.headerItem().setText(0, 'Object')
+        browser.headerItem().setText(1, 'Type')
+        browser.setColumnWidth(0, 140)
+        browser.itemClicked.connect(self.handle_browser_clicked)
+        return browser
+
+    def init_properties(self):
+        properties = QTreeWidget(self.central_widget)
+        properties.setSizePolicy(QSizePolicy(QSizePolicy.Maximum, QSizePolicy.Preferred))
+        properties.headerItem().setText(0, 'Property')
+        properties.headerItem().setText(1, 'Value')
+        return properties
+
     # actions
     def handle_load(self):
         print("Loading file...")
         # path = Path().absolute()
-        file_name = QFileDialog.getOpenFileName(self, 'Select file', '', 'STL (*.stl)')
+        file_name = QFileDialog.getOpenFileName(self, 'Select file', '', 'g2o (*.g2o)')
         if file_name[0]:
             self.load_file(file_name[0])
-        self.load_file()
+        # self.load_file()
 
     def handle_quit(self):
         print('Exiting application...')
@@ -190,6 +204,13 @@ class GraphViewer(QMainWindow):
     def handle_isometric(self):
         print(self.viewer.cameraPosition())
         print('Moved camera to isometric view')
+
+    def handle_browser_clicked(self, item, column):
+        element = item.instance_item
+        if isinstance(element, FactorGraph.Node):
+            self.construct_node_tree(element)
+        elif isinstance(element, FactorGraph.Edge):
+            self.construct_edge_tree(element)
 
     # methods
     def set_grid(self, is_grid):
@@ -216,11 +237,96 @@ class GraphViewer(QMainWindow):
         frame_geometry.moveCenter(centre)
         self.move(frame_geometry.topLeft())
 
-    def load_file(self, file='data/torus.stl'):
-        self.viewer.setCameraPosition(distance=40)
-        m = mesh.Mesh.from_file(file)
-        points = m.points.reshape(-1, 3)
-        faces = np.arange(points.shape[0]).reshape(-1, 3)
-        meshdata = gl.MeshData(vertexes=points, faces=faces)
-        mesh_ = gl.GLMeshItem(meshdata=meshdata, smooth=True, drawFaces=False, drawEdges=True, edgeColor=(0, 1, 0, 1))
-        self.viewer.addItem(mesh_)
+    def load_file(self, filename):
+        assert isinstance(filename, str)
+        graph = Graph()
+        graph.load(filename)
+        self.add_graph(graph, filename)
+
+    def add_graph(self, graph, filename):
+        assert isinstance(graph, Graph)
+        assert isinstance(filename, str)
+
+        # add graph
+        self.graphs.append(graph)
+
+        # update tree
+        name = pathlib.Path(filename).name
+        browser_graph = QTreeWidgetItem(self.browser)
+        browser_graph.setToolTip(0, name)
+        browser_graph.setText(0, name)
+        browser_graph.setText(1, 'Graph')
+        # nodes:
+        browser_nodes = QTreeWidgetItem(browser_graph)
+        nodes = graph.get_nodes()
+        browser_nodes.setText(0, 'nodes')
+        browser_nodes.setText(1, '({})'.format(len(nodes)))
+        for node in graph.get_nodes():
+            browser_node = QTreeWidgetItem(browser_nodes)
+            browser_node.setText(0, 'id: {}'.format(node.id()))
+            browser_node.setText(1, type(node).__name__)
+            browser_node.instance_item = node
+        # edges:
+        browser_edges = QTreeWidgetItem(browser_graph)
+        edges = graph.get_edges()
+        browser_edges.setText(0, 'edges')
+        browser_edges.setText(1, '({})'.format(len(edges)))
+        for edge in edges:
+            browser_edge = QTreeWidgetItem(browser_edges)
+            browser_edge.setText(0, '({})'.format(', '.join([str(node.id()) for node in edge.get_nodes()])))
+            browser_edge.setText(1, type(edge).__name__)
+            browser_edge.instance_item = edge
+
+    def construct_node_tree(self, node):
+        assert isinstance(node, FactorGraph.Node)
+        self.properties.clear()
+
+        # tag:
+        properties_tag = QTreeWidgetItem(self.properties)
+        properties_tag.setText(0, 'tag:')
+        properties_tag.setText(1, "'{}'".format(type(node).tag))
+        properties_tag.setFont(1, QFont('Courier New', 10))
+        # id:
+        properties_id = QTreeWidgetItem(self.properties)
+        properties_id.setText(0, 'id:')
+        properties_id.setText(1, '{}'.format(node.id()))
+        properties_id.setFont(1, QFont('Courier New', 10))
+        # value:
+        properties_value = QTreeWidgetItem(self.properties)
+        properties_value.setText(0, 'value:')
+        properties_value.setText(1, '{}'.format(node.get_value()))
+        properties_value.setFont(1, QFont('Courier New', 10))
+
+    def construct_edge_tree(self, edge):
+        assert isinstance(edge, FactorGraph.Edge)
+        self.properties.clear()
+
+        # tag:
+        properties_tag = QTreeWidgetItem(self.properties)
+        properties_tag.setText(0, 'tag:')
+        properties_tag.setText(1, "'{}'".format(type(edge).tag))
+        properties_tag.setFont(1, QFont('Courier New', 10))
+        # nodes:
+        properties_nodes = QTreeWidgetItem(self.properties)
+        properties_nodes.setText(0, 'nodes:')
+        nodes = edge.get_nodes()
+        properties_nodes.setText(1, '({})'.format(len(nodes)))
+        for i, node in enumerate(nodes):
+            properties_node = QTreeWidgetItem(properties_nodes)
+            properties_node.setText(0, '{}:'.format(i))
+            properties_node.setText(1, '{}'.format(node))
+            properties_node.setFont(1, QFont('Courier New', 10))
+            properties_node.instance_item = node
+        # value:
+        properties_value = QTreeWidgetItem(self.properties)
+        properties_value.setText(0, 'value:')
+        properties_value.setText(1, '{}'.format(edge.get_value()))
+        properties_value.setFont(1, QFont('Courier New', 10))
+        if edge.is_uncertain():
+            # information:
+            properties_information = QTreeWidgetItem(self.properties)
+            properties_information.setText(0, 'information:')
+            properties_information.setText(1, '{}'.format(edge.get_information()))
+            properties_information.setFont(1, QFont('Courier New', 10))
+
+

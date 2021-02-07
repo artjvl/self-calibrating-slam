@@ -16,6 +16,9 @@ class BaseGraph(object):
             assert isinstance(id, int)
             self._id = id
 
+        def __repr__(self):
+            return '{}({})'.format(self.__class__.__name__, self.id())
+
     # subclass: BaseEdge
     class BaseEdge(object):
 
@@ -36,6 +39,9 @@ class BaseGraph(object):
             raise Exception('No node found at index {}'.format(index))
             # return None
 
+        def __repr__(self):
+            return '{}({})'.format(self.__class__.__name__, ', '.join([str(node.id()) for node in self.get_nodes()]))
+
     # constructor
     def __init__(self):
         self._nodes = dict()
@@ -43,7 +49,7 @@ class BaseGraph(object):
 
     # public methods
     def get_nodes(self):
-        return self._nodes
+        return self._nodes.values()
 
     def get_node(self, id):
         assert isinstance(id, int)

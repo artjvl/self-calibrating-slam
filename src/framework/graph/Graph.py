@@ -62,7 +62,7 @@ class Graph(FactorGraph):
             file.unlink()
         file = open(filename, 'x')
 
-        for node in self.get_nodes().values():
+        for node in self.get_nodes():
             file.write(node.to_string() + '\n')
         for edge in self.get_edges():
             file.write(edge.to_string() + '\n')

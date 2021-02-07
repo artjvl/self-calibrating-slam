@@ -114,6 +114,9 @@ class FactorGraph(BaseGraph):
             assert isinstance(value, (Vector, SO, SE))
             self._value = value
 
+        def is_uncertain(self):
+            return self._is_uncertain
+
         def get_information(self):
             return self._information
 
