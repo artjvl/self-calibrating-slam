@@ -4,7 +4,7 @@ class BaseGraph(object):
     class BaseNode(object):
 
         # constructor
-        def __init__(self, id):
+        def __init__(self, id, **kwargs):
             assert isinstance(id, int)
             self._id = id
 
@@ -23,7 +23,7 @@ class BaseGraph(object):
     class BaseEdge(object):
 
         # constructor
-        def __init__(self, nodes):
+        def __init__(self, nodes, **kwargs):
             assert isinstance(nodes, list)
             assert all(isinstance(node, BaseGraph.BaseNode) for node in nodes)
             self._nodes = nodes

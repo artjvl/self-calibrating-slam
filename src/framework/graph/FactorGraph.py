@@ -11,6 +11,19 @@ class FactorGraph(BaseGraph):
     # sub-class: Element
     class Element(ABC):
 
+        # constructor
+        def __init__(self, value, **kwargs):
+            assert isinstance(value, (Vector, SO, SE))
+            self._value = value
+
+        # public methods
+        def get_value(self):
+            return self._value
+
+        def set_value(self, value):
+            assert isinstance(value, (Vector, SO, SE))
+            self._value = value
+
         # private static-methods
         @staticmethod
         def _array_to_elements(array):
@@ -78,16 +91,7 @@ class FactorGraph(BaseGraph):
         def __init__(self, id, value):
             assert isinstance(id, int)
             assert isinstance(value, (Vector, SO, SE))
-            super().__init__(id)
-            self._value = value
-
-        # public methods
-        def get_value(self):
-            return self._value
-
-        def set_value(self, value):
-            assert isinstance(value, (Vector, SO, SE))
-            self._value = value
+            super().__init__(id=id, value=value)
 
     # sub-class: Edge
     class Edge(BaseGraph.BaseEdge, Element, ABC):
@@ -97,8 +101,7 @@ class FactorGraph(BaseGraph):
             assert isinstance(nodes, list)
             assert all(isinstance(node, FactorGraph.Node) for node in nodes)
             assert isinstance(value, (Vector, SO, SE))
-            super().__init__(nodes)
-            self._value = value
+            super().__init__(nodes=nodes, value=value)
             if information is None:
                 self._is_uncertain = False
             else:
@@ -107,13 +110,6 @@ class FactorGraph(BaseGraph):
             self._information = information
 
         # public methods
-        def get_value(self):
-            return self._value
-
-        def set_value(self, value):
-            assert isinstance(value, (Vector, SO, SE))
-            self._value = value
-
         def is_uncertain(self):
             return self._is_uncertain
 

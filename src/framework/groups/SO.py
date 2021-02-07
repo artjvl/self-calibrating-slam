@@ -26,6 +26,10 @@ class SO(Group, ABC):
 
     # abstract methods
     @abstractmethod
+    def angle(self):
+        pass
+
+    @abstractmethod
     def jacobian(self):
         """ returns the left Jacobian of the group element """
         pass
