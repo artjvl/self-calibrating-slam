@@ -38,7 +38,10 @@ class Browser(QTreeWidget):
         self.insertTopLevelItem(index, new_item)
 
     def remove_graph(self, graph: Graph):
-        pass
+        item = self._graphs[graph.get_id()]
+        self._graphs.pop(graph.get_id())
+        index = self.indexOfTopLevelItem(item)
+        self.takeTopLevelItem(index)
 
     # handlers
     def handle_selection(self):
