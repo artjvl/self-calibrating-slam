@@ -19,22 +19,51 @@ class Viewer(gl.GLViewWidget):
         self._main = window
         self._grid = self.init_grid()
         self._is_grid = True
-        self.set_grid(self._is_grid)
+        self._is_axes = True
+        self._is_edges = True
         self._axes = dict()
         self._edges = dict()
+        self.set_grid(self._is_grid)
 
     # public methods
+    def is_empty(self):
+        return not (self._axes and self._edges)
+
     def is_grid(self):
         return self._is_grid
 
+    def is_axes(self):
+        return self._is_axes
+
+    def is_edges(self):
+        return self._is_edges
+
     def set_grid(self, is_grid):
         self._is_grid = is_grid
-        if is_grid and self._grid not in self.items:
-            self.addItem(self._grid)
-            print('Grid enabled')
-        elif not is_grid and self._grid in self.items:
-            self.removeItem(self._grid)
-            print('Grid disabled')
+        self.update_items()
+
+    def set_axes(self, is_axes):
+        self._is_axes = is_axes
+        self.update_items()
+
+    def set_edges(self, is_edges):
+        self._is_edges = is_edges
+        self.update_items()
+
+    def update_items(self):
+        items = []
+        if self.is_grid():
+            items.append(self._grid)
+        if self.is_axes():
+            items.extend(self._axes.values())
+        if self.is_edges():
+            items.extend(self._edges.values())
+        for item in self.items:
+            item._setView(None)
+        for item in items:
+            item._setView(self)
+        self.items = items
+        self.update()
 
     # initialisers
     def init_grid(self):
@@ -47,17 +76,16 @@ class Viewer(gl.GLViewWidget):
     def add_graph(self, graph: Graph):
         axes = Axes(graph)
         self._axes[graph.get_id()] = axes
-        self.addItem(axes)
         edges = Edges(graph)
         self._edges[graph.get_id()] = edges
-        self.addItem(edges)
+        self.update_items()
 
     def replace_graph(self, old: Graph, graph: Graph):
         self.remove_graph(old)
         self.add_graph(graph)
+        self.update_items()
 
     def remove_graph(self, graph: Graph):
-        axes = self._axes[graph.get_id()]
-        self.removeItem(axes)
-        edges = self._edges[graph.get_id()]
-        self.removeItem(edges)
+        self._axes.pop(graph.get_id())
+        self._edges.pop(graph.get_id())
+        self.update_items()

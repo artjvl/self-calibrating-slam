@@ -124,13 +124,13 @@ class MainWindow(QMainWindow):
 
         action_view_axes = self.create_action('&Axis systems', 'Show/hide robot pose axis systems', self.handle_toggle_axes)
         action_view_axes.setCheckable(True)
-        # action_view_axes.setChecked(viewer.is_grid())
+        action_view_axes.setChecked(viewer.is_axes())
         menu_view.addAction(action_view_axes)
 
         action_view_edges = self.create_action('&Edges', 'Show/hide graph edges', self.handle_toggle_edges)
         action_view_edges.setCheckable(True)
-        action_view_edges.setEnabled(False)
-        # action_view_grid.setChecked(viewer.is_grid())
+        # action_view_edges.setEnabled(False)
+        action_view_edges.setChecked(viewer.is_edges())
         menu_view.addAction(action_view_edges)
 
         # view: (separator)
@@ -167,10 +167,10 @@ class MainWindow(QMainWindow):
         self.viewer.set_grid(not self.viewer.is_grid())
 
     def handle_toggle_axes(self):
-        print('toggle axes')
+        self.viewer.set_axes(not self.viewer.is_axes())
 
     def handle_toggle_edges(self):
-        print('toggle edges')
+        self.viewer.set_edges(not self.viewer.is_edges())
 
     def handle_top(self):
         print(self.viewer.cameraPosition())
