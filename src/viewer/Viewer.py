@@ -20,7 +20,8 @@ class Viewer(gl.GLViewWidget):
         self._grid = self.init_grid()
         self._is_grid = True
         self.set_grid(self._is_grid)
-        self._graphs = []
+        self._axes = dict()
+        self._edges = dict()
 
     # public methods
     def is_grid(self):
@@ -44,12 +45,19 @@ class Viewer(gl.GLViewWidget):
 
     # helper-methods
     def add_graph(self, graph: Graph):
-        self._graphs.append(graph)
-        self.addItem(Axes(graph))
-        self.addItem(Edges(graph))
+        axes = Axes(graph)
+        self._axes[graph.get_id()] = axes
+        self.addItem(axes)
+        edges = Edges(graph)
+        self._edges[graph.get_id()] = edges
+        self.addItem(edges)
 
     def replace_graph(self, old: Graph, graph: Graph):
-        pass
+        self.remove_graph(old)
+        self.add_graph(graph)
 
     def remove_graph(self, graph: Graph):
-        pass
+        axes = self._axes[graph.get_id()]
+        self.removeItem(axes)
+        edges = self._edges[graph.get_id()]
+        self.removeItem(edges)
