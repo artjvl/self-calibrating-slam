@@ -8,8 +8,7 @@ from src.viewer.items.Drawer import Drawer
 class Edges(GLGraphicsItem, Drawer):
 
     # constructor
-    def __init__(self, graph, width=2, anti_alias=True, gl_options='translucent'):
-        assert isinstance(graph, Graph)
+    def __init__(self, graph: Graph, width: float = 2, anti_alias: bool = True, gl_options: str = 'translucent'):
         super().__init__()
         self.setGLOptions(gl_options)
         self._anti_alias = anti_alias

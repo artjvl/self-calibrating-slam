@@ -13,7 +13,7 @@ class Inspector(QTreeWidget):
         super().__init__(*args, **kwargs)
         self.headerItem().setText(0, 'Property')
         self.headerItem().setText(1, 'Value')
-        self.setColumnWidth(0, 140)
+        self.setColumnWidth(0, 128)
         self.setAlternatingRowColors(True)
 
     # helper-methods

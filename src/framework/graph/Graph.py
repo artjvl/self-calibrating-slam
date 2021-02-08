@@ -8,9 +8,11 @@ from src.framework.types.EdgeSE2 import EdgeSE2
 class Graph(FactorGraph):
 
     # constructor
-    def __init__(self):
+    def __init__(self, id: int = 0):
         super().__init__()
         self.types = self.init_types()
+        self._id = id
+        self._name = None
 
     # initialisation
     def init_types(self):
@@ -19,8 +21,24 @@ class Graph(FactorGraph):
         types['EDGE_SE2'] = EdgeSE2
         return types
 
+    # public methods
+    def get_id(self):
+        return self._id
+
+    def set_id(self, id: int):
+        self._id = id
+
+    def get_name(self, short: bool = False):
+        if self._name is None:
+            return self.__repr__()
+        else:
+            if short:
+                return pathlib.Path(self._name).name
+            return self._name
+
     # loading / saving
-    def load(self, filename):
+    def load(self, filename: str):
+        self._name = filename
         print('Reading file: {}'.format(filename))
         file = open(filename, 'r')
         lines = file.readlines()
@@ -55,7 +73,8 @@ class Graph(FactorGraph):
                 edge.read(rest)
                 self.add_edge(edge)
 
-    def save(self, filename):
+    def save(self, filename: str):
+        self._name = filename
         print('Saving to file: {}'.format(filename))
         file = pathlib.Path(filename)
         if file.exists():

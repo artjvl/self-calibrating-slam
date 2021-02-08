@@ -20,53 +20,63 @@ class MainWindow(QMainWindow):
     # constructor
     def __init__(self):
         super(MainWindow, self).__init__()
-        self._graphs = []
+        self._graphs = dict()
+        self._id_counter = 0
 
         # window
-        self.setGeometry(200, 200, 1000, 800)
+        self.setGeometry(200, 200, 1200, 1000)
         # self.centre()
         self.setWindowTitle('Graph-Viewer')
 
         # widgets:
-        self.central_widget = QWidget(self)
-        self.setCentralWidget(self.central_widget)
+        central_widget = QWidget(self)
+        self.setCentralWidget(central_widget)
         # left:
-        self.viewer = self.init_viewer(self.central_widget)
-        self.terminal = self.init_terminal(self.central_widget)
+        self.viewer = self.init_viewer(self, central_widget)
+        self.terminal = self.init_terminal(central_widget)
         # right:
-        self.load = self.init_load(self.central_widget)
-        self.inspector = self.init_inspector(self.central_widget)
-        self.browser = self.init_browser(self.inspector, self.central_widget)
+        self.load = self.init_load(central_widget)
+        self.inspector = self.init_inspector(central_widget)
+        self.browser = self.init_browser(self, self.inspector, central_widget)
 
         # window:
-        self.menubar = self.init_menubar(self, self.viewer)
+        self.menubar = self.init_menubar(self.viewer)
         self.statusbar = self.statusBar()
 
         # layout
-        self.layout = QHBoxLayout(self.central_widget)
+        layout = QHBoxLayout(central_widget)
         # left-layout:
-        self.left_layout = QVBoxLayout()
-        self.left_layout.addWidget(self.viewer)
-        self.left_layout.addWidget(self.terminal)
-        self.layout.addLayout(self.left_layout)
+        left_layout = QVBoxLayout()
+        left_layout.addWidget(self.viewer)
+        left_layout.addWidget(self.terminal)
+        layout.addLayout(left_layout)
         # right-layout:
-        self.right_layout = QVBoxLayout()
-        self.right_layout.addWidget(self.load)
-        self.right_layout.addWidget(self.browser)
-        self.right_layout.addWidget(self.inspector)
-        self.layout.addLayout(self.right_layout)
+        right_layout = QVBoxLayout()
+        right_layout.addWidget(self.load)
+        right_layout.addWidget(self.browser)
+        right_layout.addWidget(self.inspector)
+        layout.addLayout(right_layout)
 
         # show
         self.show()
         # self.add_line()
 
     # widgets
-    def init_viewer(self, widget) -> Viewer:
-        assert isinstance(widget, QWidget)
+    def init_viewer(self, window: QMainWindow, widget: QWidget) -> Viewer:
         # reference: https://pyqtgraph.readthedocs.io/en/latest/
-        viewer = Viewer(widget)
+        viewer = Viewer(window, widget)
         viewer.setSizePolicy(QSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored))
         return viewer
+
+    def init_browser(self, window: QMainWindow, inspector: Inspector, widget: QWidget) -> Browser:
+        browser = Browser(window, inspector, widget)
+        browser.setSizePolicy(QSizePolicy(QSizePolicy.Maximum, QSizePolicy.Preferred))
+        return browser
+
+    def init_inspector(self, widget: QWidget) -> Inspector:
+        properties = Inspector(widget)
+        properties.setSizePolicy(QSizePolicy(QSizePolicy.Maximum, QSizePolicy.Preferred))
+        return properties
 
     def init_terminal(self, widget) -> QTextEdit:
         terminal = QTextEdit(widget)
@@ -81,10 +91,7 @@ class MainWindow(QMainWindow):
         button_load.clicked.connect(self.handle_load)
         return button_load
 
-    def init_menubar(self, window, viewer) -> QMenuBar:
-        assert isinstance(window, QMainWindow)
-        assert isinstance(viewer, Viewer)
-
+    def init_menubar(self, viewer: Viewer) -> QMenuBar:
         menubar = self.menuBar()
 
         # file-menu
@@ -92,7 +99,7 @@ class MainWindow(QMainWindow):
         menu_file.setToolTipsVisible(True)
 
         # file: load
-        action_file_load = self.create_action(window, '&Load', 'Load a file', self.handle_load)
+        action_file_load = self.create_action('&Load', 'Load a file', self.handle_load)
         action_file_load.setShortcut('Ctrl+L')
         menu_file.addAction(action_file_load)
 
@@ -101,7 +108,7 @@ class MainWindow(QMainWindow):
 
         # file: exit
 
-        action_file_exit = self.create_action(window, '&Quit', 'Exit application', self.handle_quit)
+        action_file_exit = self.create_action('&Quit', 'Exit application', self.handle_quit)
         action_file_exit.setShortcut('Ctrl+Q')
         menu_file.addAction(action_file_exit)
 
@@ -110,20 +117,31 @@ class MainWindow(QMainWindow):
         menu_view.setToolTipsVisible(True)
 
         # view: grid
-        action_view_grid = self.create_action(window, '&Grid', 'Show/hide grid', self.handle_toggle_grid)
+        action_view_grid = self.create_action('&Grid', 'Show/hide grid', self.handle_toggle_grid)
         action_view_grid.setCheckable(True)
         action_view_grid.setChecked(viewer.is_grid())
         menu_view.addAction(action_view_grid)
+
+        action_view_axes = self.create_action('&Axis systems', 'Show/hide robot pose axis systems', self.handle_toggle_axes)
+        action_view_axes.setCheckable(True)
+        # action_view_axes.setChecked(viewer.is_grid())
+        menu_view.addAction(action_view_axes)
+
+        action_view_edges = self.create_action('&Edges', 'Show/hide graph edges', self.handle_toggle_edges)
+        action_view_edges.setCheckable(True)
+        action_view_edges.setEnabled(False)
+        # action_view_grid.setChecked(viewer.is_grid())
+        menu_view.addAction(action_view_edges)
 
         # view: (separator)
         menu_view.addSeparator()
 
         # view: top
-        action_view_top = self.create_action(window, '&Top', 'Move camera to top view', self.handle_top)
+        action_view_top = self.create_action('&Top', 'Move camera to top view', self.handle_top)
         menu_view.addAction(action_view_top)
 
         # view: isometric
-        action_view_isometric = self.create_action(window, '&Isometric', 'Move camera to isometric view', self.handle_isometric)
+        action_view_isometric = self.create_action('&Isometric', 'Move camera to isometric view', self.handle_isometric)
         menu_view.addAction(action_view_isometric)
 
         # about-menu
@@ -132,32 +150,14 @@ class MainWindow(QMainWindow):
 
         # about: GitHub
         url = QUrl('https://github.com/artjvl/self-calibrating-slam')
-        action_about_github = self.create_action(window, 'Go to GitHub', 'Redirect to source-code on GitHub', lambda: QDesktopServices.openUrl(url))
+        action_about_github = self.create_action('Go to GitHub', 'Redirect to source-code on GitHub', lambda: QDesktopServices.openUrl(url))
         menu_about.addAction(action_about_github)
 
         return menubar
 
-    def init_browser(self, inspector, widget) -> Browser:
-        assert isinstance(inspector, Inspector)
-        assert isinstance(widget, QWidget)
-        browser = Browser(inspector, widget)
-        browser.setSizePolicy(QSizePolicy(QSizePolicy.Maximum, QSizePolicy.Preferred))
-        return browser
-
-    def init_inspector(self, widget) -> Inspector:
-        assert isinstance(widget, QWidget)
-        properties = Inspector(widget)
-        properties.setSizePolicy(QSizePolicy(QSizePolicy.Maximum, QSizePolicy.Preferred))
-        return properties
-
     # actions
     def handle_load(self):
-        print("Loading file...")
-        # path = Path().absolute()
-        file_name = QFileDialog.getOpenFileName(self, 'Select file', '', 'g2o (*.g2o)')
-        if file_name[0]:
-            self.load_file(file_name[0])
-        # self.load_file()
+        self.add_graph()
 
     def handle_quit(self):
         print('Exiting application...')
@@ -165,6 +165,12 @@ class MainWindow(QMainWindow):
 
     def handle_toggle_grid(self):
         self.viewer.set_grid(not self.viewer.is_grid())
+
+    def handle_toggle_axes(self):
+        print('toggle axes')
+
+    def handle_toggle_edges(self):
+        print('toggle edges')
 
     def handle_top(self):
         print(self.viewer.cameraPosition())
@@ -183,33 +189,47 @@ class MainWindow(QMainWindow):
         self.move(frame_geometry.topLeft())
 
     # helper-methods: menubar
-    @staticmethod
-    def create_action(parent, text, tip, connection):
-        assert isinstance(parent, QMainWindow)
-        assert isinstance(text, str)
-        assert isinstance(tip, str)
-        action = QAction(text, parent)
+    def create_action(self, text: str, tip: str, connection):
+        action = QAction(text, self)
         action.setStatusTip(tip)
         action.setToolTip(tip)
         action.triggered.connect(connection)
         return action
 
     # helper-methods: load
-    def load_file(self, filename):
-        assert isinstance(filename, str)
-        graph = Graph()
-        graph.load(filename)
-        self.add_graph(graph, filename)
+    def load_graph(self):
+        print("Loading file...")
+        # path = Path().absolute()
+        filename = QFileDialog.getOpenFileName(self, 'Select file', '', 'g2o (*.g2o)')
+        if filename[0]:
+            graph = Graph()
+            graph.load(filename[0])
+            return graph
+        return None
 
-    def add_graph(self, graph, filename):
-        assert isinstance(graph, Graph)
-        assert isinstance(filename, str)
+    def add_graph(self):
+        graph = self.load_graph()
+        if graph is not None:
+            graph.set_id(self._id_counter)
+            self._id_counter += 1
+            self._graphs[graph.get_id()] = graph
+            self.browser.add_graph(graph)
+            self.viewer.add_graph(graph)
 
-        # add graph
-        self._graphs.append(graph)
+    def replace_graph(self, old: Graph):
+        graph = self.load_graph()
+        if graph is not None:
+            print('Replacing graph: {}\n{}with: {}'.format(old.get_name(), ' ' * 11, graph.get_name()))
+            graph.set_id(old.get_id())
+            self._graphs[graph.get_id()] = graph
+            self.browser.replace_graph(old, graph)
+            self.viewer.replace_graph(old, graph)
 
-        # update tree
-        self.browser.add_graph(graph, filename)
-        self.viewer.add_graph(graph)
-
-    # def remove_graph(self, graph):
+    def remove_graph(self, graph: Graph):
+        if graph.get_id() in self._graphs:
+            print('Removing graph: {}'.format(graph.get_name()))
+            self._graphs.pop(graph.get_id())
+            self.browser.remove_graph(graph)
+            self.viewer.remove_graph(graph)
+        else:
+            raise Exception('This Graph does not exist!')
