@@ -14,7 +14,11 @@ class Edges(GLGraphicsItem, Drawer):
         self.setGLOptions(gl_options)
         self._anti_alias = anti_alias
         self._width = width
-        self._graph = graph
+        self._vertices = []
+        for edge in graph.get_edges():
+            nodes = edge.get_nodes()
+            self._vertices.append((nodes[0].get_value().to_se3().translation(),
+                                   nodes[1].get_value().to_se3().translation()))
 
     # public method
     def paint(self):
@@ -28,10 +32,7 @@ class Edges(GLGraphicsItem, Drawer):
 
         glBegin(GL_LINES)
 
-        for edge in self._graph.get_edges():
-            a = edge.get_nodes()[0]
-            b = edge.get_nodes()[1]
-            self.line(a.get_value().to_se3().translation(),
-                      b.get_value().to_se3().translation())
+        for pair in self._vertices:
+            self.line(*pair)
 
         glEnd()

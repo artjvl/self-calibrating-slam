@@ -13,7 +13,7 @@ class Axes(GLGraphicsItem, Drawer):
         super().__init__()
         self.setGLOptions(gl_options)
         self._anti_alias = anti_alias
-        self._graph = graph
+        self._poses = [pose.get_value().to_se3() for pose in graph.get_nodes()]
         self._width = width
         self._size = size
 
@@ -29,7 +29,7 @@ class Axes(GLGraphicsItem, Drawer):
 
         glBegin(GL_LINES)
 
-        for pose in self._graph.get_nodes():
-            self.axis(pose.get_value().to_se3(), self._size)
+        for pose in self._poses:
+            self.axis(pose, self._size)
 
         glEnd()
