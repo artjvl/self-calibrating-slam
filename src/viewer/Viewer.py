@@ -1,9 +1,12 @@
+import numpy as np
+
 from PyQt5.QtCore import *  # QSize
+from PyQt5.QtWidgets import *  # QMainWindow
+from PyQt5.QtGui import *
 
 import pyqtgraph.opengl as gl
 import pyqtgraph as qtg
 
-from PyQt5.QtWidgets import *  # QMainWindow
 
 from src.framework.graph import *
 from src.viewer.items import *
@@ -16,6 +19,7 @@ class Viewer(gl.GLViewWidget):
         super().__init__(*args, **kwargs)
         self.setMinimumSize(QSize(600, 400))
         self.setCameraPosition(distance=40)
+        self.set_isometric_view()
         self._main = window
         self._grid = self.init_grid()
         self._is_grid = True
@@ -49,6 +53,16 @@ class Viewer(gl.GLViewWidget):
     def set_edges(self, is_edges):
         self._is_edges = is_edges
         self.update_items()
+
+    def set_top_view(self):
+        self.setCameraPosition(elevation=90, azimuth=-90)
+
+    def set_isometric_view(self):
+        self.setCameraPosition(elevation=60, azimuth=-120)
+
+    def set_home_view(self):
+        self.setCameraPosition(pos=QVector3D(0, 0, 0))
+        # self.set_isometric_view()
 
     def update_items(self):
         items = []
@@ -89,3 +103,21 @@ class Viewer(gl.GLViewWidget):
         self._axes.pop(graph.get_id())
         self._edges.pop(graph.get_id())
         self.update_items()
+
+    # PyQtGraph override:
+    def pan(self, dx, dy, dz, relative='global'):
+        if relative == 'view-upright':
+            cPos = self.cameraPosition()
+            cVec = self.opts['center'] - cPos
+            dist = cVec.length()  ## distance from camera to center
+            xDist = dist * 2. * np.tan(0.5 * self.opts['fov'] * np.pi / 180.)  ## approx. width of view at distance of center point
+            xScale = xDist / self.width()
+            zVec = QVector3D(0, 0, 1)
+            az = self.opts['azimuth']
+            azimuth = np.radians(self.opts['azimuth'])
+            xVec = QVector3D(np.sin(azimuth), -np.cos(azimuth), 0)
+            yVec = QVector3D.crossProduct(xVec, zVec).normalized()
+            self.opts['center'] = self.opts['center'] + xVec * xScale * dx + yVec * xScale * dy + zVec * xScale * dz
+            self.update()
+        else:
+            super().pan(dx, dy, dz, relative)

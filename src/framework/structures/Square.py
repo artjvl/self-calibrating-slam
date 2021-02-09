@@ -15,6 +15,9 @@ class Square(np.ndarray):
         if obj is None:
             return
 
+    def __str__(self):
+        return np.array2string(self, precision=3)
+
     # public methods
     def inverse(self):
         return type(self)(linalg.inv(self))

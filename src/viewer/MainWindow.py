@@ -144,6 +144,10 @@ class MainWindow(QMainWindow):
         action_view_isometric = self.create_action('&Isometric', 'Move camera to isometric view', self.handle_isometric)
         menu_view.addAction(action_view_isometric)
 
+        # view: home
+        action_view_home = self.create_action('&Home', 'Move camera to the home view', self.handle_home)
+        menu_view.addAction(action_view_home)
+
         # about-menu
         menu_about = menubar.addMenu('&About')
         menu_about.setToolTipsVisible(True)
@@ -173,12 +177,16 @@ class MainWindow(QMainWindow):
         self.viewer.set_edges(not self.viewer.is_edges())
 
     def handle_top(self):
-        print(self.viewer.cameraPosition())
+        print(self.viewer.set_top_view())
         print('Moved camera to top view')
 
     def handle_isometric(self):
-        print(self.viewer.cameraPosition())
+        print(self.viewer.set_isometric_view())
         print('Moved camera to isometric view')
+
+    def handle_home(self):
+        print(self.viewer.set_home_view())
+        print('Moved camera to the home position')
 
     # helper-methods: window
     def centre(self):

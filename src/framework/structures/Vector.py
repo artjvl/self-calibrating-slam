@@ -13,6 +13,9 @@ class Vector(np.ndarray):
         if obj is None:
             return
 
+    def __str__(self):
+        return np.array2string(self, precision=3)
+
     # public methods
     def get(self, index):
         return self[index][0]
