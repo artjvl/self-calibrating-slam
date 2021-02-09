@@ -7,7 +7,7 @@ from PyQt5.QtGui import *
 import pyqtgraph.opengl as gl
 import pyqtgraph as qtg
 
-
+from src.framework.structures import *
 from src.framework.graph import *
 from src.viewer.items import *
 
@@ -63,6 +63,9 @@ class Viewer(gl.GLViewWidget):
     def set_home_view(self):
         self.setCameraPosition(pos=QVector3D(0, 0, 0))
         # self.set_isometric_view()
+
+    def set_camera_pos(self, pos: Vector):
+        self.setCameraPosition(pos=QVector3D(*(pos.to_list())))
 
     def update_items(self):
         items = []

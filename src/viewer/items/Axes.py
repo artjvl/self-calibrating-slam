@@ -1,6 +1,7 @@
 from OpenGL.GL import *
 from pyqtgraph.opengl.GLGraphicsItem import GLGraphicsItem
 
+from src.framework.groups import *
 from src.framework.graph import *
 from src.viewer.items.Drawer import Drawer
 
@@ -12,7 +13,13 @@ class Axes(GLGraphicsItem, Drawer):
         super().__init__()
         self.setGLOptions(gl_options)
         self._anti_alias = anti_alias
-        self._poses = [pose.get_value().to_se3() for pose in graph.get_nodes()]
+        self._poses = []
+        for node in graph.get_nodes():
+            pose = node.get_value()
+            if isinstance(pose, SE2):
+                pose = pose.to_se3()
+            self._poses.append(pose)
+        # self._poses = [pose.get_value().to_se3() for pose in graph.get_nodes()]
         self._width = width
         self._size = size
 

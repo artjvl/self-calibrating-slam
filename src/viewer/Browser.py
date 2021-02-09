@@ -3,6 +3,7 @@ import pathlib
 from PyQt5.QtWidgets import *  # QMainWindow, QWidget, QDesktopWidget, QAction, qApp, QHBoxLayout
 from PyQt5.QtCore import *  # Qt.CustomContextMenu
 
+from src.framework.groups import *
 from src.framework.graph import *
 from src.viewer.Inspector import Inspector
 
@@ -75,6 +76,17 @@ class Browser(QTreeWidget):
                         self._main.remove_graph(element)
                     elif action == action_save:
                         print('save')
+                if isinstance(element, FactorGraph.Node):
+                    menu = QMenu()
+                    action_focus = QAction('&Focus', self)
+                    menu.addAction(action_focus)
+                    action = menu.exec_(self.mapToGlobal(point))
+                    if action == action_focus:
+                        pose = element.get_value()
+                        if isinstance(pose, SE2):
+                            pose = pose.to_se3()
+                        self._main.viewer.set_camera_pos(pose.translation())
+
 
     # helper-methods:
     @classmethod

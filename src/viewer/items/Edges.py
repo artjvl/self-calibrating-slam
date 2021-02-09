@@ -1,6 +1,7 @@
 from OpenGL.GL import *
 from pyqtgraph.opengl.GLGraphicsItem import GLGraphicsItem
 
+from src.framework.groups import *
 from src.framework.graph import *
 from src.viewer.items.Drawer import Drawer
 
@@ -16,8 +17,15 @@ class Edges(GLGraphicsItem, Drawer):
         self._vertices = []
         for edge in graph.get_edges():
             nodes = edge.get_nodes()
-            self._vertices.append((nodes[0].get_value().to_se3().translation(),
-                                   nodes[1].get_value().to_se3().translation()))
+            translations = []
+            for node in nodes:
+                pose = node.get_value()
+                if isinstance(pose, SE2):
+                    pose = pose.to_se3()
+                translations.append(pose.translation())
+            self._vertices.append(tuple(translations))
+            # self._vertices.append((nodes[0].get_value().to_se3().translation(),
+            #                        nodes[1].get_value().to_se3().translation()))
 
     # public method
     def paint(self):
