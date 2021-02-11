@@ -36,7 +36,7 @@ class SO2(SO):
     # abstract implementations
     def vector(self) -> Vector:
         matrix = self.matrix()
-        return Vector(np.arctan2(matrix[1][0], matrix[0][0]))
+        return Vector(np.arctan2(matrix[1, 0], matrix[0, 0]))
 
     def jacobian(self) -> Square:
         angle = self.angle()
@@ -50,8 +50,8 @@ class SO2(SO):
 
     def inverse_jacobian(self) -> Square:
         jacobian = self.jacobian()
-        a = jacobian[0][0]
-        b = jacobian[1][0]
+        a = jacobian[0, 0]
+        b = jacobian[1, 0]
         matrix = (1 / (a**2 + b**2)) * Square([[a, b],
                                                [-b, a]])
         return Square(matrix)
@@ -82,4 +82,4 @@ class SO2(SO):
     @staticmethod
     def algebra_to_vector(algebra):
         assert isinstance(algebra, Square)
-        return Vector(algebra[1][0])
+        return Vector(algebra[1, 0])

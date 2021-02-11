@@ -38,7 +38,7 @@ class SE(Group, ABC):
 
     def minus(self, transformation):
         assert isinstance(transformation, SE)
-        difference = transformation * self.inverse()
+        difference = transformation.inverse() * self
         return difference.vector()
 
     # public class-methods
@@ -65,13 +65,13 @@ class SE(Group, ABC):
     @classmethod
     def _extract_translation(cls, matrix):
         assert isinstance(matrix, Square)
-        translation = Vector(matrix[-1][0: cls._dim])
+        translation = Vector(matrix[: cls._dim, cls._dim:])
         return translation
 
     @classmethod
     def _extract_rotation(cls, matrix):
         assert isinstance(matrix, Square)
-        matrix = Square(matrix[0: cls._dim][0: cls._dim])
+        matrix = Square(matrix[: cls._dim, : cls._dim])
         rotation = cls._rotation_type.from_matrix(matrix)
         return rotation
 
@@ -90,7 +90,7 @@ class SE(Group, ABC):
         translation = self.translation()
         rotation = self.rotation()
         inverse_rotation = rotation.inverse()
-        inverse_translation = - inverse_rotation @ translation
+        inverse_translation = - inverse_rotation * translation
         return type(self)(inverse_translation, inverse_rotation)
 
     @classmethod

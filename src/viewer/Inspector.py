@@ -47,6 +47,8 @@ class Inspector(QTreeWidget):
         if edge.is_uncertain():
             # information:
             cls.construct_tree_property(root, 'information', '{}'.format(edge.get_information()))
+        # error:
+        cls.construct_tree_property(root, 'error', '{}'.format(edge.compute_error()))
         root.expandAll()
 
     @classmethod

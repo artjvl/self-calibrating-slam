@@ -46,6 +46,6 @@ class SE2(SE):
     @staticmethod
     def algebra_to_vector(algebra):
         assert isinstance(algebra, Square)
-        return Vector([algebra[0][2],
-                       algebra[1][2],
-                       algebra[1][0]])
+        return Vector([algebra[0, 2],
+                       algebra[1, 2],
+                       algebra[1, 0]])

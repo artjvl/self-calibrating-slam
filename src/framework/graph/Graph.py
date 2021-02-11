@@ -82,6 +82,6 @@ class Graph(FactorGraph):
         file = open(filename, 'x')
 
         for node in self.get_nodes():
-            file.write(node.to_string() + '\n')
+            file.write(node.write() + '\n')
         for edge in self.get_edges():
-            file.write(edge.to_string() + '\n')
+            file.write(edge.write() + '\n')

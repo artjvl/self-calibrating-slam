@@ -54,8 +54,8 @@ class FactorElement(ABC):
         count = 0
         for i in indices:
             for j in indices[i:]:
-                matrix[i][j] = elements[count]
-                matrix[j][i] = matrix[i][j]
+                matrix[i, j] = elements[count]
+                matrix[j, i] = matrix[i, j]
                 count += 1
         return matrix
 

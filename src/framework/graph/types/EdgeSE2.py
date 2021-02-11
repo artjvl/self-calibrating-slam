@@ -26,7 +26,11 @@ class EdgeSE2(FactorEdge):
 
     # abstract implementations
     def compute_error(self) -> float:
-        return 0.
+        measurement = self.get_transformation()
+        a = self.get_node(0).get_value()
+        b = self.get_node(1).get_value()
+        distance = a.inverse() * b
+        return distance.minus(measurement)
 
     def write(self):
         data_string = self._lst_to_string(self._array_to_lst(self.get_transformation().vector()))

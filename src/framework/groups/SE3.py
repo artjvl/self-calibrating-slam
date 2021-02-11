@@ -69,9 +69,9 @@ class SE3(SE):
     @staticmethod
     def algebra_to_vector(algebra):
         assert isinstance(algebra, Square)
-        return Vector([algebra[0][3],
-                       algebra[1][3],
-                       algebra[2][3],
-                       algebra[2][1],
-                       algebra[0][2],
-                       algebra[1][0]])
+        return Vector([algebra[0, 3],
+                       algebra[1, 3],
+                       algebra[2, 3],
+                       algebra[2, 1],
+                       algebra[0, 2],
+                       algebra[1, 0]])

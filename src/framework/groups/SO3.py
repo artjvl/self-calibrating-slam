@@ -22,33 +22,33 @@ class SO3(SO):
 
     def quaternion(self) -> Quaternion:
         m = self.matrix()
-        if m[2][2] < 0:                 # is |(x, y)| bigger than |(z, w)|?
-            if m[0][0] > m[1][1]:       # is |x| bigger than |y|?
-                t = 1 + m[0][0] - m[1][1] - m[2][2]
-                quaternion = Quaternion(w=m[2][1] - m[1][2], x=t, y=m[1][0] + m[0][1], z=m[0][2] + m[2][0])
+        if m[2, 2] < 0:                 # is |(x, y)| bigger than |(z, w)|?
+            if m[0, 0] > m[1, 1]:       # is |x| bigger than |y|?
+                t = 1 + m[0, 0] - m[1, 1] - m[2, 2]
+                quaternion = Quaternion(w=m[2, 1] - m[1, 2], x=t, y=m[1, 0] + m[0, 1], z=m[0, 2] + m[2, 0])
             else:                       # is |y| bigger than |x|?
-                t = 1 - m[0][0] + m[1][1] - m[2][2]
-                quaternion = Quaternion(w=m[0][2] - m[2][0], x=m[1][0] + m[0][1], y=t, z=m[2][1] + m[1][2])
+                t = 1 - m[0, 0] + m[1, 1] - m[2, 2]
+                quaternion = Quaternion(w=m[0, 2] - m[2, 0], x=m[1, 0] + m[0, 1], y=t, z=m[2, 1] + m[1, 2])
         else:                           # is |(z, w)| bigger than |(x, y)|?
-            if m[0][0] < - m[1][1]:     # is |z| bigger than |w|?
-                t = 1 - m[0][0] - m[1][1] + m[2][2]
-                quaternion = Quaternion(w=m[1][0] - m[0][1], x=m[0][2] + m[2][0], y=m[2][1] + m[1][2], z=t)
+            if m[0, 0] < - m[1, 1]:     # is |z| bigger than |w|?
+                t = 1 - m[0, 0] - m[1, 1] + m[2, 2]
+                quaternion = Quaternion(w=m[1, 0] - m[0, 1], x=m[0, 2] + m[2, 0], y=m[2, 1] + m[1, 2], z=t)
             else:                       # is |w| bigger than |z|?
-                t = 1 + m[0][0] + m[1][1] + m[2][2]
-                quaternion = Quaternion(w=t, x=m[2][1] - m[1][2], y=m[0][2] - m[2][0], z=m[1][0] - m[0][1])
+                t = 1 + m[0, 0] + m[1, 1] + m[2, 2]
+                quaternion = Quaternion(w=t, x=m[2, 1] - m[1, 2], y=m[0, 2] - m[2, 0], z=m[1, 0] - m[0, 1])
         return (0.5 / np.sqrt(t)) * quaternion
 
     def euler(self):
         # reference: https://www.gregslabaugh.net/publications/euler.pdf
         m = self.matrix()
-        pitch = np.arctan2(-m[2][0], np.sqrt(m[0][0]**2 + m[1][0]**2))
+        pitch = np.arctan2(-m[2, 0], np.sqrt(m[0, 0]**2 + m[1, 0]**2))
         if np.isclose(np.abs(pitch), 0.5 * np.pi):
             yaw = 0.
-            roll = np.sign(pitch) * np.arctan2(m[0][1], m[1][1])
+            roll = np.sign(pitch) * np.arctan2(m[0, 1], m[1, 1])
         else:
             sec_pitch = 1. / np.cos(pitch)
-            yaw = np.arctan2(m[1][0] * sec_pitch, m[0][0] * sec_pitch)
-            roll = np.arctan2(m[2][1] * sec_pitch, m[2][2] * sec_pitch)
+            yaw = np.arctan2(m[1, 0] * sec_pitch, m[0, 0] * sec_pitch)
+            roll = np.arctan2(m[2, 1] * sec_pitch, m[2, 2] * sec_pitch)
         return Vector([roll, pitch, yaw])
 
     # public class-methods
@@ -155,6 +155,6 @@ class SO3(SO):
     @staticmethod
     def algebra_to_vector(algebra):
         assert isinstance(algebra, Square)
-        return Vector([algebra[2][1],
-                       algebra[0][2],
-                       algebra[1][0]])
+        return Vector([algebra[2, 1],
+                       algebra[0, 2],
+                       algebra[1, 0]])

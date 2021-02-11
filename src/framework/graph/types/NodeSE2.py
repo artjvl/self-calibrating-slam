@@ -24,8 +24,11 @@ class NodeSE2(FactorNode):
 
     # abstract implementations
     def write(self):
-        pose_string = self._lst_to_string(self._array_to_lst(self.get_pose().vector()))
-        return ' '.join([self.tag, str(self.id()), pose_string])
+        pose = self.get_pose()
+        rotation = pose.rotation()
+        translation_string = self._lst_to_string(self._array_to_lst(pose.translation()))
+        rotation_string = self._lst_to_string(self._array_to_lst(pose.rotation().vector()))
+        return ' '.join([self.tag, str(self.id()), translation_string, rotation_string])
 
     def read(self, words: List[str]):
         elements = [float(word) for word in words]
