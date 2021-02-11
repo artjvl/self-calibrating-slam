@@ -1,3 +1,5 @@
+from typing import *
+
 from PyQt5.QtWidgets import *  # QMainWindow, QWidget, QDesktopWidget, QAction, qApp, QHBoxLayout
 from PyQt5.QtGui import *  # QDesktopServices
 
@@ -18,9 +20,11 @@ class Inspector(QTreeWidget):
 
     # helper-methods
     @classmethod
-    def construct_node_tree(cls, root, node):
-        assert isinstance(node, FactorNode)
+    def construct_graph_tree(cls, root: Union[QTreeWidget, QTreeWidgetItem], graph: Graph):
+        cls.construct_tree_property(root, 'error', '{}'.format(graph.compute_error()))
 
+    @classmethod
+    def construct_node_tree(cls, root: Union[QTreeWidget, QTreeWidgetItem], node: FactorNode):
         # tag:
         cls.construct_tree_property(root, 'tag', "'{}'".format(type(node).tag))
         # id:
@@ -30,9 +34,7 @@ class Inspector(QTreeWidget):
         root.expandAll()
 
     @classmethod
-    def construct_edge_tree(cls, root, edge):
-        assert isinstance(edge, FactorEdge)
-
+    def construct_edge_tree(cls, root: Union[QTreeWidget, QTreeWidgetItem], edge: FactorEdge):
         # tag:
         cls.construct_tree_property(root, 'tag', "'{}'".format(type(edge).tag))
         # nodes:
@@ -52,19 +54,14 @@ class Inspector(QTreeWidget):
         root.expandAll()
 
     @classmethod
-    def construct_value_tree(cls, root, value_string, value):
-        assert isinstance(root, (QTreeWidget, QTreeWidgetItem))
-        assert isinstance(value, (Vector, SO, SE))
+    def construct_value_tree(cls, root: Union[QTreeWidget, QTreeWidgetItem], value_string: str, value: Union[Vector, SO, SE]):
         if isinstance(value, Vector):
             cls.construct_tree_property(root, value_string, '{}'.format(value))
         else:
             cls.construct_group_tree(root, value_string, value)
 
     @classmethod
-    def construct_group_tree(cls, root, group_string, group):
-        assert isinstance(root, (QTreeWidget, QTreeWidgetItem))
-        assert isinstance(group_string, str)
-        assert isinstance(group, (SO, SE))
+    def construct_group_tree(cls, root: Union[QTreeWidget, QTreeWidgetItem], group_string: str, group: Union[SO, SE]):
         values = QTreeWidgetItem(root)
         values.setText(0, group_string)
         # vector:
@@ -88,10 +85,7 @@ class Inspector(QTreeWidget):
         values.setText(1, '({})'.format(counter))
 
     @staticmethod
-    def construct_tree_property(root, property_string, value_string):
-        assert isinstance(root, (QTreeWidget, QTreeWidgetItem))
-        assert isinstance(property_string, str)
-        assert isinstance(value_string, str)
+    def construct_tree_property(root: Union[QTreeWidget, QTreeWidgetItem], property_string: str, value_string: str):
         item = QTreeWidgetItem(root)
         item.setText(0, '{}:'.format(property_string))
         item.setText(1, value_string)

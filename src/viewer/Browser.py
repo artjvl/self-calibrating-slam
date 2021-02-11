@@ -50,7 +50,9 @@ class Browser(QTreeWidget):
         item = self.currentItem()
         if hasattr(item, 'instance_item'):
             element = item.instance_item
-            if isinstance(element, FactorNode):
+            if isinstance(element, Graph):
+                self._inspector.construct_graph_tree(self._inspector, element)
+            elif isinstance(element, FactorNode):
                 self._inspector.construct_node_tree(self._inspector, element)
             elif isinstance(element, FactorEdge):
                 self._inspector.construct_edge_tree(self._inspector, element)

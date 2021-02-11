@@ -10,6 +10,6 @@ class FactorGraph(BaseGraph):
     # public methods
     def compute_error(self) -> float:
         error = 0
-        for edge in self.get_nodes():
+        for edge in self.get_edges():
             error += edge.compute_error()
         return error
