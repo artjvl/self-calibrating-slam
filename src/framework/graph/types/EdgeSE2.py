@@ -33,16 +33,22 @@ class EdgeSE2(FactorEdge):
         return distance.minus(measurement)
 
     def write(self):
-        data_string = self._lst_to_string(self._array_to_lst(self.get_transformation().vector()))
+        transformation = self.get_transformation()
+        translation_string = self._lst_to_string(self._array_to_lst(transformation.translation()))
+        rotation_string = self._lst_to_string(self._array_to_lst(transformation.rotation().vector()))
+        data_string = ' '.join([translation_string, rotation_string])
         if self._is_uncertain:
             data_string += ' {}'.format(self._lst_to_string(self._symmetric_to_lst(self._information)))
         return ' '.join([self.tag, str(self.get_node(0).id()), str(self.get_node(1).id()), data_string])
 
     def read(self, words: List[str]):
         elements = [float(word) for word in words]
+        translation = Vector(elements[:2])
+        angle = elements[2]
+        rotation = SO2.from_elements(angle)
+        self.set_transformation(SE2(translation, rotation))
         if len(elements) != 3:
             self.set_information(self._lst_to_symmetric(elements[3:]))
-        self.set_transformation(SE2.from_vector(Vector(elements[: 3])))
 
     @classmethod
     def from_nodes(cls, nodes: List[NodeSE2]):
