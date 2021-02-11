@@ -1,2 +1,3 @@
-from src.framework.graph.FactorGraph import FactorGraph
+from src.framework.graph.factor import *
+from src.framework.graph.types import *
 from src.framework.graph.Graph import Graph

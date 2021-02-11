@@ -1,28 +1,28 @@
 import pathlib
+from typing import *
 
-from src.framework.graph.FactorGraph import FactorGraph
-from src.framework.types.NodeSE2 import NodeSE2
-from src.framework.types.EdgeSE2 import EdgeSE2
+from src.framework.graph.factor import *
+from src.framework.graph.types import *
 
 
 class Graph(FactorGraph):
 
     # constructor
-    def __init__(self, id: int = 0):
+    def __init__(self, id: Optional[int] = 0):
         super().__init__()
         self.types = self.init_types()
         self._id = id
         self._name = None
 
     # initialisation
-    def init_types(self):
+    def init_types(self) -> dict:
         types = dict()
         types['VERTEX_SE2'] = NodeSE2
         types['EDGE_SE2'] = EdgeSE2
         return types
 
     # public methods
-    def get_id(self):
+    def get_id(self) -> int:
         return self._id
 
     def set_id(self, id: int):
@@ -58,13 +58,13 @@ class Graph(FactorGraph):
 
             # handle parameters
 
-            if issubclass(element_type, FactorGraph.Node):
+            if issubclass(element_type, FactorNode):
                 id = int(words[1])
                 node = element_type(id)
                 rest = words[2:]
                 node.read(rest)
                 self.add_node(node)
-            elif issubclass(element_type, FactorGraph.Edge):
+            elif issubclass(element_type, FactorEdge):
                 size = element_type.size
                 ids = words[1: 1 + size]
                 nodes = [self.get_node(int(id)) for id in ids]

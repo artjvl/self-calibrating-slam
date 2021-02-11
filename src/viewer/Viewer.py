@@ -116,10 +116,9 @@ class Viewer(gl.GLViewWidget):
             xDist = dist * 2. * np.tan(0.5 * self.opts['fov'] * np.pi / 180.)  ## approx. width of view at distance of center point
             xScale = xDist / self.width()
             zVec = QVector3D(0, 0, 1)
-            az = self.opts['azimuth']
             azimuth = np.radians(self.opts['azimuth'])
             xVec = QVector3D(np.sin(azimuth), -np.cos(azimuth), 0)
-            yVec = QVector3D.crossProduct(xVec, zVec).normalized()
+            yVec = np.sign(self.opts['elevation']) * QVector3D.crossProduct(xVec, zVec).normalized()
             self.opts['center'] = self.opts['center'] + xVec * xScale * dx + yVec * xScale * dy + zVec * xScale * dz
             self.update()
         else:

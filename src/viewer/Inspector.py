@@ -19,7 +19,7 @@ class Inspector(QTreeWidget):
     # helper-methods
     @classmethod
     def construct_node_tree(cls, root, node):
-        assert isinstance(node, FactorGraph.Node)
+        assert isinstance(node, FactorNode)
 
         # tag:
         cls.construct_tree_property(root, 'tag', "'{}'".format(type(node).tag))
@@ -31,7 +31,7 @@ class Inspector(QTreeWidget):
 
     @classmethod
     def construct_edge_tree(cls, root, edge):
-        assert isinstance(edge, FactorGraph.Edge)
+        assert isinstance(edge, FactorEdge)
 
         # tag:
         cls.construct_tree_property(root, 'tag', "'{}'".format(type(edge).tag))

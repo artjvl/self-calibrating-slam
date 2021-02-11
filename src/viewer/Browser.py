@@ -50,9 +50,9 @@ class Browser(QTreeWidget):
         item = self.currentItem()
         if hasattr(item, 'instance_item'):
             element = item.instance_item
-            if isinstance(element, FactorGraph.Node):
+            if isinstance(element, FactorNode):
                 self._inspector.construct_node_tree(self._inspector, element)
-            elif isinstance(element, FactorGraph.Edge):
+            elif isinstance(element, FactorEdge):
                 self._inspector.construct_edge_tree(self._inspector, element)
 
     def handle_context_menu(self, point):
@@ -76,7 +76,7 @@ class Browser(QTreeWidget):
                         self._main.remove_graph(element)
                     elif action == action_save:
                         print('save')
-                if isinstance(element, FactorGraph.Node):
+                if isinstance(element, FactorNode):
                     menu = QMenu()
                     action_focus = QAction('&Focus', self)
                     menu.addAction(action_focus)

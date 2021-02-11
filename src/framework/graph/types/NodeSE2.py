@@ -1,36 +1,33 @@
+from typing import *
+
 from src.framework.structures import *
 from src.framework.groups import *
-from src.framework.graph.FactorGraph import FactorGraph
+from src.framework.graph.factor import *
 
 
-class NodeSE2(FactorGraph.Node):
+class NodeSE2(FactorNode):
 
     tag = 'VERTEX_SE2'
 
     # constructor
-    def __init__(self, id, pose=None):
-        assert isinstance(id, int)
+    def __init__(self, id: int, pose: Optional[SE2] = None):
         if pose is None:
             pose = SE2.from_elements(0, 0, 0)
-        assert isinstance(pose, SE2)
         super().__init__(id, pose)
 
     # public methods
-    def get_pose(self):
+    def get_pose(self) -> SE2:
         return self.get_value()
 
-    def set_pose(self, pose):
-        assert isinstance(pose, SE2)
+    def set_pose(self, pose: SE2):
         self.set_value(pose)
 
     # abstract implementations
-    def to_string(self):
-        pose_string = self._elements_to_string(self._array_to_elements(self.get_pose().vector()))
+    def write(self):
+        pose_string = self._lst_to_string(self._array_to_lst(self.get_pose().vector()))
         return ' '.join([self.tag, str(self.id()), pose_string])
 
-    def read(self, words):
-        assert isinstance(words, list)
-        assert all(isinstance(word, str) for word in words)
+    def read(self, words: List[str]):
         elements = [float(word) for word in words]
         translation = Vector(elements[:2])
         angle = elements[2]
