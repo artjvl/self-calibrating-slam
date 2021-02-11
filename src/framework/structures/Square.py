@@ -16,7 +16,7 @@ class Square(np.ndarray):
             return
 
     def __str__(self):
-        return np.array2string(self, precision=3)
+        return np.array2string(self, precision=3, suppress_small=True)
 
     # public methods
     def inverse(self):

@@ -1,16 +1,18 @@
-import pathlib
+import sys
 
 from PyQt5.QtCore import *  # QSize
 from PyQt5.QtWidgets import *  # QMainWindow, QWidget, QDesktopWidget, QAction, qApp, QHBoxLayout
 from PyQt5.QtGui import *  # QDesktopServices
+from PyQt5 import QtCore
 
-import pyqtgraph.opengl as gl
+import pyqtgraph.console
 
 from src.framework.graph import *
 
 from src.viewer.Browser import Browser
 from src.viewer.Inspector import Inspector
 from src.viewer.Viewer import Viewer
+from src.viewer.Stream import Stream
 
 
 class MainWindow(QMainWindow):
@@ -33,6 +35,7 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(central_widget)
         # left:
         self.viewer = self.init_viewer(self, central_widget)
+        # self.stream = Stream()
         self.terminal = self.init_terminal(central_widget)
         # right:
         self.load = self.init_load(central_widget)
@@ -59,7 +62,9 @@ class MainWindow(QMainWindow):
 
         # show
         self.show()
-        # self.add_line()
+
+    def __del__(self):
+        print('Exiting application...')
 
     # widgets
     def init_viewer(self, window: QMainWindow, widget: QWidget) -> Viewer:
@@ -78,10 +83,12 @@ class MainWindow(QMainWindow):
         properties.setSizePolicy(QSizePolicy(QSizePolicy.Maximum, QSizePolicy.Preferred))
         return properties
 
-    def init_terminal(self, widget) -> QTextEdit:
+    def init_terminal(self, widget: QWidget) -> QTextEdit:
         terminal = QTextEdit(widget)
         terminal.setSizePolicy(QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Maximum))
         terminal.setFont(QFont('Courier New', 10))
+        terminal.setReadOnly(True)
+        sys.stdout = Stream(terminal)
         return terminal
 
     def init_load(self, widget) -> QPushButton:
@@ -164,8 +171,14 @@ class MainWindow(QMainWindow):
         self.add_graph()
 
     def handle_quit(self):
-        print('Exiting application...')
         qApp.quit()
+
+    def onUpdateText(self, text):
+        cursor = self.terminal.textCursor()
+        cursor.movePosition(QTextCursor.End)
+        cursor.insertText(text)
+        self.terminal.setTextCursor(cursor)
+        self.terminal.ensureCursorVisible()
 
     def handle_toggle_grid(self):
         self.viewer.set_grid(not self.viewer.is_grid())

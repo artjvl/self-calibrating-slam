@@ -1,7 +1,7 @@
 from OpenGL.GL import *
 
-from framework.structures import *
-from framework.groups import *
+from src.framework.structures import *
+from src.framework.groups import *
 
 
 class Drawer(object):
