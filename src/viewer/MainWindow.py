@@ -3,9 +3,6 @@ import sys
 from PyQt5.QtCore import *  # QSize
 from PyQt5.QtWidgets import *  # QMainWindow, QWidget, QDesktopWidget, QAction, qApp, QHBoxLayout
 from PyQt5.QtGui import *  # QDesktopServices
-from PyQt5 import QtCore
-
-import pyqtgraph.console
 
 from src.framework.graph import *
 
@@ -26,7 +23,7 @@ class MainWindow(QMainWindow):
         self._id_counter = 0
 
         # window
-        self.setGeometry(200, 200, 1200, 1000)
+        self.setGeometry(200, 200, 1400, 1000)
         # self.centre()
         self.setWindowTitle('Graph-Viewer')
 
@@ -34,16 +31,18 @@ class MainWindow(QMainWindow):
         central_widget = QWidget(self)
         self.setCentralWidget(central_widget)
         # left:
-        self.viewer = self.init_viewer(self, central_widget)
+        self.viewer = self._init_viewer(self, central_widget)
         # self.stream = Stream()
-        self.terminal = self.init_terminal(central_widget)
+        self.terminal = self._init_terminal(central_widget)
         # right:
-        self.load = self.init_load(central_widget)
-        self.inspector = self.init_inspector(central_widget)
-        self.browser = self.init_browser(self, self.inspector, central_widget)
+        self.load = self._init_load(central_widget)
+        self.inspector = self._init_inspector(central_widget)
+        self.browser = self._init_browser(self, self.inspector, central_widget)
 
         # window:
-        self.menubar = self.init_menubar(self.viewer)
+        self.menu_file_replace = None
+        self.menu_file_delete = None
+        self.menubar = self._init_menubar(self.viewer)
         self.statusbar = self.statusBar()
 
         # layout
@@ -66,24 +65,24 @@ class MainWindow(QMainWindow):
     def __del__(self):
         print('Exiting application...')
 
-    # widgets
-    def init_viewer(self, window: QMainWindow, widget: QWidget) -> Viewer:
+    # initialisers
+    def _init_viewer(self, window: QMainWindow, widget: QWidget) -> Viewer:
         # reference: https://pyqtgraph.readthedocs.io/en/latest/
         viewer = Viewer(window, widget)
         viewer.setSizePolicy(QSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored))
         return viewer
 
-    def init_browser(self, window: QMainWindow, inspector: Inspector, widget: QWidget) -> Browser:
+    def _init_browser(self, window: QMainWindow, inspector: Inspector, widget: QWidget) -> Browser:
         browser = Browser(window, inspector, widget)
         browser.setSizePolicy(QSizePolicy(QSizePolicy.Maximum, QSizePolicy.Preferred))
         return browser
 
-    def init_inspector(self, widget: QWidget) -> Inspector:
+    def _init_inspector(self, widget: QWidget) -> Inspector:
         properties = Inspector(widget)
         properties.setSizePolicy(QSizePolicy(QSizePolicy.Maximum, QSizePolicy.Preferred))
         return properties
 
-    def init_terminal(self, widget: QWidget) -> QTextEdit:
+    def _init_terminal(self, widget: QWidget) -> QTextEdit:
         terminal = QTextEdit(widget)
         terminal.setSizePolicy(QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Maximum))
         terminal.setFont(QFont('Courier New', 10))
@@ -91,14 +90,14 @@ class MainWindow(QMainWindow):
         sys.stdout = Stream(terminal)
         return terminal
 
-    def init_load(self, widget) -> QPushButton:
+    def _init_load(self, widget) -> QPushButton:
         button_load = QPushButton(widget)
         button_load.setText('Load file')
         button_load.setSizePolicy(QSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed))
-        button_load.clicked.connect(self.handle_load)
+        button_load.clicked.connect(self.add_graph)
         return button_load
 
-    def init_menubar(self, viewer: Viewer) -> QMenuBar:
+    def _init_menubar(self, viewer: Viewer) -> QMenuBar:
         menubar = self.menuBar()
 
         # file-menu
@@ -106,15 +105,22 @@ class MainWindow(QMainWindow):
         menu_file.setToolTipsVisible(True)
 
         # file: load
-        action_file_load = self.create_action('&Load', 'Load a file', self.handle_load)
+        action_file_load = self.create_action('&Load', 'Load a file', self.add_graph)
         action_file_load.setShortcut('Ctrl+L')
         menu_file.addAction(action_file_load)
+
+        # file: replace
+        self.menu_file_replace = menu_file.addMenu('&Replace')
+        self.menu_file_replace.setEnabled(False)
+
+        # file: delete
+        self.menu_file_delete = menu_file.addMenu('&Delete')
+        self.menu_file_delete.setEnabled(False)
 
         # file: (separator)
         menu_file.addSeparator()
 
         # file: exit
-
         action_file_exit = self.create_action('&Quit', 'Exit application', self.handle_quit)
         action_file_exit.setShortcut('Ctrl+Q')
         menu_file.addAction(action_file_exit)
@@ -167,18 +173,8 @@ class MainWindow(QMainWindow):
         return menubar
 
     # actions
-    def handle_load(self):
-        self.add_graph()
-
     def handle_quit(self):
         qApp.quit()
-
-    def onUpdateText(self, text):
-        cursor = self.terminal.textCursor()
-        cursor.movePosition(QTextCursor.End)
-        cursor.insertText(text)
-        self.terminal.setTextCursor(cursor)
-        self.terminal.ensureCursorVisible()
 
     def handle_toggle_grid(self):
         self.viewer.set_grid(not self.viewer.is_grid())
@@ -190,15 +186,15 @@ class MainWindow(QMainWindow):
         self.viewer.set_edges(not self.viewer.is_edges())
 
     def handle_top(self):
-        print(self.viewer.set_top_view())
+        self.viewer.set_top_view()
         print('Moved camera to top view')
 
     def handle_isometric(self):
-        print(self.viewer.set_isometric_view())
+        self.viewer.set_isometric_view()
         print('Moved camera to isometric view')
 
     def handle_home(self):
-        print(self.viewer.set_home_view())
+        self.viewer.set_home_view()
         print('Moved camera to the home position')
 
     # helper-methods: window
@@ -236,6 +232,7 @@ class MainWindow(QMainWindow):
             self._graphs[graph.get_id()] = graph
             self.browser.add_graph(graph)
             self.viewer.add_graph(graph)
+            self.update_menus()
 
     def replace_graph(self, old: Graph):
         graph = self.load_graph()
@@ -245,6 +242,7 @@ class MainWindow(QMainWindow):
             self._graphs[graph.get_id()] = graph
             self.browser.replace_graph(old, graph)
             self.viewer.replace_graph(old, graph)
+            self.update_menus()
 
     def remove_graph(self, graph: Graph):
         if graph.get_id() in self._graphs:
@@ -252,5 +250,24 @@ class MainWindow(QMainWindow):
             self._graphs.pop(graph.get_id())
             self.browser.remove_graph(graph)
             self.viewer.remove_graph(graph)
+            self.update_menus()
         else:
             raise Exception('This Graph does not exist!')
+
+    def update_menus(self):
+        self.menu_file_replace.clear()
+        self.menu_file_delete.clear()
+        if len(self._graphs.values()) > 0:
+            self.menu_file_replace.setEnabled(True)
+            self.menu_file_delete.setEnabled(True)
+            self.create_graph_menu(self.menu_file_replace, self.replace_graph)
+            self.create_graph_menu(self.menu_file_delete, self.remove_graph)
+        else:
+            self.menu_file_replace.setEnabled(False)
+            self.menu_file_delete.setEnabled(False)
+
+    def create_graph_menu(self, menu: QMenu, handler):
+        for graph in self._graphs.values():
+            action = QAction('{}'.format(graph.get_name(short=True)), self)
+            action.triggered.connect(lambda: handler(graph))
+            menu.addAction(action)

@@ -8,6 +8,7 @@ from src.framework.graph.factor import *
 class NodeSE2(FactorNode):
 
     tag = 'VERTEX_SE2'
+    has_rotation = True
 
     # constructor
     def __init__(self, id: int, pose: Optional[SE2] = None):
@@ -23,6 +24,9 @@ class NodeSE2(FactorNode):
         self.set_value(pose)
 
     # abstract implementations
+    def get_point(self) -> Vector:
+        return self.get_pose().translation()
+
     def write(self):
         pose = self.get_pose()
         translation_string = self._lst_to_string(self._array_to_lst(pose.translation()))
@@ -35,3 +39,9 @@ class NodeSE2(FactorNode):
         angle = elements[2]
         rotation = SO2.from_elements(angle)
         self.set_pose(SE2(translation, rotation))
+
+    def get_point3(self) -> Vector:
+        return self.get_pose().translation().extend(0)
+
+    def get_rotation3(self) -> SO3:
+        return self.get_pose().rotation().to_so3()

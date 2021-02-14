@@ -9,20 +9,18 @@ from src.framework.groups.SO import SO
 class SE(Group, ABC):
 
     # constructor
-    def __init__(self, translation, rotation):
-        assert isinstance(translation, Vector)
-        assert isinstance(rotation, SO)
+    def __init__(self, translation: Vector, rotation: SO):
         self._translation = translation
         self._rotation = rotation
 
     # public methods
-    def translation(self):
+    def translation(self) -> Vector:
         return self._translation
 
-    def rotation(self):
+    def rotation(self) -> SO:
         return self._rotation
 
-    def vector(self):
+    def vector(self) -> Vector:
         rotation = self.rotation()
         translation = self.translation()
         rotation_vector = rotation.vector()
@@ -31,31 +29,26 @@ class SE(Group, ABC):
         vector = Vector(np.vstack((translation_vector, rotation_vector)))
         return vector
 
-    def plus(self, vector):
-        assert isinstance(vector, Vector)
+    def plus(self, vector: Vector):
         increment = type(self).from_vector(vector)
         return self * increment
 
-    def minus(self, transformation):
+    def minus(self, transformation) -> Vector:
         assert isinstance(transformation, SE)
         difference = transformation.inverse() * self
         return difference.vector()
 
-    # public class-methods
+    # alternative constructors
     @classmethod
-    def from_vectors(cls, translation_vector, rotation_vector):
-        assert isinstance(translation_vector, Vector)
-        assert isinstance(rotation_vector, Vector)
+    def from_vectors(cls, translation_vector: Vector, rotation_vector: Vector):
         rotation = cls._rotation_type.from_vector(rotation_vector)
         jacobian = rotation.jacobian()
         translation = Vector(jacobian @ translation_vector)
         return cls(translation, rotation)
 
-    # private class-methods
+    # helper-methods
     @classmethod
-    def _construct_matrix(cls, translation, rotation):
-        assert isinstance(translation, Vector)
-        assert isinstance(rotation, SO)
+    def _construct_matrix(cls, translation: Vector, rotation: SO) -> Square:
         rotation_matrix = rotation.matrix()
         pad = np.zeros((1, cls._dim))
         matrix = np.block([[rotation_matrix, translation],
@@ -63,14 +56,12 @@ class SE(Group, ABC):
         return Square(matrix)
 
     @classmethod
-    def _extract_translation(cls, matrix):
-        assert isinstance(matrix, Square)
+    def _extract_translation(cls, matrix: Square) -> Vector:
         translation = Vector(matrix[: cls._dim, cls._dim:])
         return translation
 
     @classmethod
-    def _extract_rotation(cls, matrix):
-        assert isinstance(matrix, Square)
+    def _extract_rotation(cls, matrix: Square) -> SO:
         matrix = Square(matrix[: cls._dim, : cls._dim])
         rotation = cls._rotation_type.from_matrix(matrix)
         return rotation
@@ -83,7 +74,7 @@ class SE(Group, ABC):
         pass
 
     # abstract implementations
-    def matrix(self):
+    def matrix(self) -> Square:
         return self._construct_matrix(self._translation, self._rotation)
 
     def inverse(self):

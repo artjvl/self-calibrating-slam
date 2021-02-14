@@ -1,4 +1,4 @@
-from abc import ABC
+from abc import ABC, abstractmethod
 from typing import *
 
 from src.framework.structures import *
@@ -12,3 +12,18 @@ class FactorNode(BaseNode, FactorElement, ABC):
     # constructor
     def __init__(self, id: int, value: Union[Vector, SO, SE]):
         super().__init__(id=id, value=value)
+
+    # abstract methods
+    @abstractmethod
+    def get_point3(self) -> Vector:
+        pass
+
+    @property
+    @classmethod
+    @abstractmethod
+    def has_rotation(cls) -> bool:
+        pass
+
+    @abstractmethod
+    def get_rotation3(self) -> SO3:
+        pass

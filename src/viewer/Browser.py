@@ -84,11 +84,7 @@ class Browser(QTreeWidget):
                     menu.addAction(action_focus)
                     action = menu.exec_(self.mapToGlobal(point))
                     if action == action_focus:
-                        pose = element.get_value()
-                        if isinstance(pose, SE2):
-                            pose = pose.to_se3()
-                        self._main.viewer.set_camera_pos(pose.translation())
-
+                        self._main.viewer.focus(element)
 
     # helper-methods:
     @classmethod

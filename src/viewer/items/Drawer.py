@@ -38,5 +38,5 @@ class Drawer(object):
         assert isinstance(b, Vector)
 
         glColor4f(*colour)
-        glVertex3f(*(a.to_list()))
-        glVertex3f(*(b.to_list()))
+        glVertex3f(*(a.to_lst()))
+        glVertex3f(*(b.to_lst()))

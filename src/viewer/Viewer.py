@@ -23,7 +23,7 @@ class Viewer(gl.GLViewWidget):
         self._main = window
         self._grid = self.init_grid()
         self._is_grid = True
-        self._is_axes = True
+        self._is_axes = False
         self._is_edges = True
         self._axes = dict()
         self._edges = dict()
@@ -81,6 +81,9 @@ class Viewer(gl.GLViewWidget):
             item._setView(self)
         self.items = items
         self.update()
+
+    def focus(self, element: FactorNode):
+        self._main.viewer.set_camera_pos(element.get_point3())
 
     # initialisers
     def init_grid(self):

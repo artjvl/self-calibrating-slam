@@ -16,16 +16,8 @@ class Edges(GLGraphicsItem, Drawer):
         self._width = width
         self._vertices = []
         for edge in graph.get_edges():
-            nodes = edge.get_nodes()
-            translations = []
-            for node in nodes:
-                pose = node.get_value()
-                if isinstance(pose, SE2):
-                    pose = pose.to_se3()
-                translations.append(pose.translation())
-            self._vertices.append(tuple(translations))
-            # self._vertices.append((nodes[0].get_value().to_se3().translation(),
-            #                        nodes[1].get_value().to_se3().translation()))
+            connected_set = [node.get_point3() for node in edge.get_nodes()]
+            self._vertices.append(tuple(connected_set))
 
     # public method
     def paint(self):

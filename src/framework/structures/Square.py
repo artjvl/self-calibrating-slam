@@ -6,7 +6,7 @@ from typing import *
 class Square(np.ndarray):
 
     # constructor
-    def __new__(cls, elements: List):
+    def __new__(cls, elements: Union[list, np.ndarray]):
         array = np.asarray(elements)
         assert len(array.shape) == 2
         assert array.shape[0] == array.shape[1]
@@ -32,7 +32,7 @@ class Square(np.ndarray):
     def inverse(self):
         return type(self)(linalg.inv(self))
 
-    # public class-methods
+    # alternative constructors
     @classmethod
     def zeros(cls, dimension):
         return cls(np.zeros((dimension, dimension)))

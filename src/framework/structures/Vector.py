@@ -1,5 +1,6 @@
 import numpy as np
 from scipy import linalg
+from typing import *
 
 
 class Vector(np.ndarray):
@@ -26,7 +27,7 @@ class Vector(np.ndarray):
     def normal(self):
         return self.unit(self)
 
-    def to_list(self):
+    def to_lst(self):
         return list(self.flatten())
 
     # public class-methods
@@ -42,19 +43,26 @@ class Vector(np.ndarray):
         if np.isclose(magnitude, 0.):
             unit = np.zeros(vector.shape)
             unit[0] = 1
-            return cls.from_list(unit)
+            return cls.from_lst(unit)
         return vector / magnitude
 
-    @classmethod
-    def from_list(cls, elements):
-        assert isinstance(elements, (list, np.ndarray))
-        return cls(elements)
+    def insert(self, element: Optional[float] = 0., index: Optional[int] = -1):
+        lst = self.to_lst()
+        if index < 0 or index >= len(lst):
+            lst.append(element)
+        else:
+            lst.insert(index, element)
+        return self.from_lst(lst)
 
-    # public static-methods
-    @staticmethod
-    def axes(size):
-        axes = list()
-        for index in range(size):
-            axis = np.zeros(size, 1)
-            axis[index] = 1
-            axes.append(axis)
+    def extend(self, element: Optional[float] = 0.):
+        return self.insert(element, -1)
+
+    # alternative constructors
+    @classmethod
+    def from_lst(cls, lst):
+        assert isinstance(lst, (list, np.ndarray))
+        return cls(lst)
+
+    @classmethod
+    def zeros(cls, dimension):
+        return cls(np.zeros((dimension, 1)))

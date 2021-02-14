@@ -25,7 +25,7 @@ class EdgeSE2(FactorEdge):
         self.set_value(transformation)
 
     # abstract implementations
-    def compute_error(self) -> float:
+    def compute_error(self) -> Vector:
         measurement = self.get_transformation()
         a = self.get_node(0).get_value()
         b = self.get_node(1).get_value()

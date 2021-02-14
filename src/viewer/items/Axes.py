@@ -15,10 +15,11 @@ class Axes(GLGraphicsItem, Drawer):
         self._anti_alias = anti_alias
         self._poses = []
         for node in graph.get_nodes():
-            pose = node.get_value()
-            if isinstance(pose, SE2):
-                pose = pose.to_se3()
-            self._poses.append(pose)
+            if node.has_rotation:
+                pose = node.get_value()
+                if isinstance(pose, SE2):
+                    pose = pose.to_se3()
+                self._poses.append(pose)
         # self._poses = [pose.get_value().to_se3() for pose in graph.get_nodes()]
         self._width = width
         self._size = size

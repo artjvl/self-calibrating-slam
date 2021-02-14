@@ -3,8 +3,8 @@ from abc import ABC, abstractmethod
 
 from src.framework.structures import *
 from src.framework.groups import *
-from src.framework.graph import *
-from src.framework.graph.types import *
+from src.framework.graph import Graph
+from framework.graph.types import *
 
 
 class Simulator(ABC):
@@ -19,7 +19,7 @@ class Simulator(ABC):
 
     # public methods
     def current(self):
-        return self._current
+        return self._current_pose
 
     def add_odometry(self, motion, variance_vector):
         assert isinstance(motion, SE2)
