@@ -24,11 +24,11 @@ class FactorElement(Generic[T], ABC):
 
     # helper-methods
     @staticmethod
-    def _array_to_lst(array: np.ndarray) -> List[float]:
+    def _array_to_list(array: np.ndarray) -> List[float]:
         return list(array.flatten())
 
     @staticmethod
-    def _lst_to_string(elements: List[float]) -> str:
+    def _list_to_string(elements: List[float]) -> str:
         elements = [float('{:.5e}'.format(element)) for element in elements]
         for i, element in enumerate(elements):
             if element.is_integer():
@@ -37,7 +37,7 @@ class FactorElement(Generic[T], ABC):
         # return ' '.join([str(float('{:.5e}'.format(element))) for element in elements])
 
     @classmethod
-    def _symmetric_to_lst(cls, matrix: Square) -> List[float]:
+    def _symmetric_to_list(cls, matrix: Square) -> List[float]:
         elements = []
         indices = np.arange(matrix.shape[0])
         for i in indices:
@@ -46,7 +46,7 @@ class FactorElement(Generic[T], ABC):
         return elements
 
     @classmethod
-    def _lst_to_symmetric(cls, elements: List[float]) -> Square:
+    def _list_to_symmetric(cls, elements: List[float]) -> Square:
         length = len(elements)
         dimension = -0.5 + 0.5 * np.sqrt(1 + 8 * length)
         assert dimension.is_integer()

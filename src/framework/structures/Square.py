@@ -1,3 +1,4 @@
+from __future__ import annotations
 import numpy as np
 from scipy import linalg
 from typing import *
@@ -34,5 +35,5 @@ class Square(np.ndarray):
 
     # alternative constructors
     @classmethod
-    def zeros(cls, dimension: int):
+    def zeros(cls, dimension: int) -> Square:
         return cls(np.zeros((dimension, dimension)))

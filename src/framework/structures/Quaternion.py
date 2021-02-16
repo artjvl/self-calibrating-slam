@@ -1,4 +1,6 @@
+from __future__ import annotations
 import numpy as np
+from typing import *
 
 from src.framework.structures.Vector import Vector
 
@@ -6,24 +8,25 @@ from src.framework.structures.Vector import Vector
 class Quaternion(Vector):
 
     # constructor
-    def __new__(cls, w, x, y, z):
-        return super(Vector, cls).__new__(cls, [w, x, y, z])
+    def __new__(cls, elements: Union[Tuple[float, ...], List[float], np.ndarray]):
+        column = np.reshape(elements, (-1, 1))
+        assert len(column) == 4
+        super().__new__(cls, elements)
 
-    # public methods
+    # getters
     def w(self):
-        return self[0][0]
+        return self.get(0)
 
     def x(self):
-        return self[1][0]
+        return self.get(1)
 
     def y(self):
-        return self[2][0]
+        return self.get(2)
 
     def z(self):
-        return self[3][0]
+        return self.get(3)
 
-    # public class-methods
+    # alternative constructor
     @classmethod
-    def from_list(cls, elements):
-        assert isinstance(elements, (list, np.ndarray))
-        return cls(elements[0], elements[1], elements[2], elements[3])
+    def from_elements(cls, w: float, x: float, y: float, z: float) -> Quaternion:
+        return cls([w, x, y, z])

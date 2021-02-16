@@ -8,11 +8,11 @@ from src.framework.graph.types import *
 class Graph(FactorGraph):
 
     # constructor
-    def __init__(self, id: Optional[int] = 0):
+    def __init__(self, id: Optional[int] = 0, name: Optional[str] = None):
         super().__init__()
         self.types = self.init_types()
         self._id = id
-        self._name = None
+        self._name = name
 
     # initialisation
     def init_types(self) -> dict:
