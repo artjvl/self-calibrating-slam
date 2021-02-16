@@ -8,33 +8,32 @@ from src.framework.groups.Group import Group
 class SO(Group, ABC):
 
     # constructor
-    def __init__(self, matrix):
-        assert isinstance(matrix, Square)
+    def __init__(self, matrix: Square):
         self._matrix = matrix
 
-    # abstract implementations
-    def matrix(self):
-        return self._matrix
-
+    # public methods
     def inverse(self):
-        return type(self).from_matrix(np.transpose(self.matrix()))
+        return type(self).from_matrix(Square(np.transpose(self.matrix())))
 
-    @classmethod
-    def from_matrix(cls, matrix):
-        assert isinstance(matrix, Square)
-        return cls(matrix)
-
-    # abstract methods
     @abstractmethod
-    def angle(self):
+    def angle(self) -> float:
         pass
 
     @abstractmethod
-    def jacobian(self):
+    def jacobian(self) -> Square:
         """ returns the left Jacobian of the group element """
         pass
 
     @abstractmethod
-    def inverse_jacobian(self):
+    def inverse_jacobian(self) -> Square:
         """ returns the inverse left Jacobian of the group element """
         pass
+
+    # alternative representations
+    def matrix(self) -> Square:
+        return self._matrix
+
+    # alternative constructors
+    @classmethod
+    def from_matrix(cls, matrix: Square):
+        return cls(matrix)

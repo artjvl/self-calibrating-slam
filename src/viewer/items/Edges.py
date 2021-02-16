@@ -1,7 +1,6 @@
 from OpenGL.GL import *
 from pyqtgraph.opengl.GLGraphicsItem import GLGraphicsItem
 
-from src.framework.groups import *
 from src.framework.graph import *
 from src.viewer.items.Drawer import Drawer
 

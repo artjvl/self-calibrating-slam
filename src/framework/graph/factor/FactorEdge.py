@@ -1,11 +1,10 @@
 from abc import ABC, abstractmethod
 from typing import *
 
-from src.framework.structures import *
-from src.framework.groups import *
 from src.framework.graph.base import *
 from src.framework.graph.factor.FactorElement import FactorElement
 from src.framework.graph.factor.FactorNode import FactorNode
+from src.framework.structures import *
 
 T = TypeVar('T')
 

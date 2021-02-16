@@ -1,7 +1,6 @@
 import sys
-from PyQt5.QtCore import *
+
 from PyQt5.QtWidgets import QTextEdit
-from PyQt5.QtGui import *
 
 
 # class Stream(QObject):

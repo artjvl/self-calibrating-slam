@@ -6,7 +6,7 @@ from typing import *
 class Vector(np.ndarray):
 
     # constructor
-    def __new__(cls, elements):
+    def __new__(cls, elements: Union[float, List[float], np.ndarray]):
         column = np.reshape(elements, (-1, 1))
         return column.view(cls)
 
@@ -18,33 +18,11 @@ class Vector(np.ndarray):
         return np.array2string(self, precision=3, suppress_small=True)
 
     # public methods
-    def get(self, index):
-        return self[index][0]
+    def get(self, index: int) -> float:
+        return self[index, 0]
 
-    def magnitude(self):
-        return self.norm(self)
-
-    def normal(self):
-        return self.unit(self)
-
-    def to_lst(self):
-        return list(self.flatten())
-
-    # public class-methods
-    @classmethod
-    def norm(cls, vector):
-        assert isinstance(vector, cls)
-        return linalg.norm(vector)
-
-    @classmethod
-    def unit(cls, vector):
-        assert isinstance(vector, cls)
-        magnitude = cls.norm(vector)
-        if np.isclose(magnitude, 0.):
-            unit = np.zeros(vector.shape)
-            unit[0] = 1
-            return cls.from_lst(unit)
-        return vector / magnitude
+    def set(self, index: int, value: float):
+        self[index] = value
 
     def insert(self, element: Optional[float] = 0., index: Optional[int] = -1):
         lst = self.to_lst()
@@ -57,12 +35,33 @@ class Vector(np.ndarray):
     def extend(self, element: Optional[float] = 0.):
         return self.insert(element, -1)
 
+    def magnitude(self) -> float:
+        return linalg.norm(self)
+
+    def normal(self):
+        magnitude = self.magnitude()
+        if np.isclose(magnitude, 0.):
+            unit = type(self).zeros(self.get_dimension())
+            unit.set(0, 1.)
+            return type(self)(unit)
+        return self / magnitude
+
+    def get_dimension(self):
+        return self.shape[0]
+
+    # alternative representations
+    def to_lst(self) -> List[float]:
+        return list(self.flatten())
+
     # alternative constructors
     @classmethod
-    def from_lst(cls, lst):
-        assert isinstance(lst, (list, np.ndarray))
+    def from_lst(cls, lst: List[float]):
         return cls(lst)
 
     @classmethod
-    def zeros(cls, dimension):
+    def from_array(cls, array: np.ndarray):
+        return cls(array)
+
+    @classmethod
+    def zeros(cls, dimension: int):
         return cls(np.zeros((dimension, 1)))

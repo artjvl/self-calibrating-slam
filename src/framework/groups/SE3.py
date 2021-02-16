@@ -5,7 +5,7 @@ from src.framework.groups.SO3 import SO3
 from src.framework.groups.SE import SE
 
 
-class SE3(SE):
+class SE3(SE[SO3]):
     # reference: https://github.com/utiasSTARS/liegroups
 
     # static properties
@@ -14,47 +14,40 @@ class SE3(SE):
     _rotation_type = SO3
 
     # constructor
-    def __init__(self, translation, rotation):
-        assert isinstance(translation, Vector)
-        assert isinstance(rotation, SO3)
+    def __init__(self, translation: Vector, rotation: SO3):
         super().__init__(translation, rotation)
 
-    # public methods
-    def quaternion_vector(self):
+    # alternative representations
+    def quaternion_vector(self) -> Vector:
         translation = self.translation()
         quaternion = self.rotation().quaternion()
         return Vector(np.vstack((translation, quaternion)))
 
-    def euler_vector(self):
+    def euler_vector(self) -> Vector:
         translation = self.translation()
         euler = self.rotation().euler()
         return Vector(np.vstack((translation, euler)))
 
-    # public class-methods
+    # alternative constructors
     @classmethod
-    def from_quaternion(cls, translation, quaternion):
-        assert isinstance(translation, Vector)
-        assert isinstance(quaternion, Quaternion)
-        rotation = SO3.from_quaternion(quaternion)
-        return cls(translation, rotation)
-
-    @classmethod
-    def from_euler(cls, translation, euler):
-        assert isinstance(translation, Vector)
-        assert isinstance(euler, Vector)
-        rotation = SO3.from_euler(euler)
-        return cls(translation, rotation)
-
-    # abstract implementations
-    @classmethod
-    def from_elements(cls, x, y, z, a, b, c):
+    def from_elements(cls, x: float, y: float, z: float, a: float, b: float, c: float):
         translation_vector = Vector([x, y, z])
         rotation_vector = Vector([a, b, c])
         return cls.from_vectors(translation_vector, rotation_vector)
 
+    @classmethod
+    def from_quaternion(cls, translation: Vector, quaternion: Quaternion):
+        rotation = SO3.from_quaternion(quaternion)
+        return cls(translation, rotation)
+
+    @classmethod
+    def from_euler(cls, translation: Vector, euler: Vector):
+        rotation = SO3.from_euler(euler)
+        return cls(translation, rotation)
+
+    # helper-methods
     @staticmethod
-    def vector_to_algebra(vector):
-        assert isinstance(vector, Vector)
+    def _vector_to_algebra(vector: Vector) -> Square:
         x = vector.get(0)
         y = vector.get(1)
         z = vector.get(2)
@@ -67,8 +60,7 @@ class SE3(SE):
                        [0, 0, 0, 0]])
 
     @staticmethod
-    def algebra_to_vector(algebra):
-        assert isinstance(algebra, Square)
+    def _algebra_to_vector(algebra: Square) -> Vector:
         return Vector([algebra[0, 3],
                        algebra[1, 3],
                        algebra[2, 3],

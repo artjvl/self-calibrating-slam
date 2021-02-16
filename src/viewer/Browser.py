@@ -1,9 +1,6 @@
-import pathlib
-
-from PyQt5.QtWidgets import *  # QMainWindow, QWidget, QDesktopWidget, QAction, qApp, QHBoxLayout
 from PyQt5.QtCore import *  # Qt.CustomContextMenu
+from PyQt5.QtWidgets import *  # QMainWindow, QWidget, QDesktopWidget, QAction, qApp, QHBoxLayout
 
-from src.framework.groups import *
 from src.framework.graph import *
 from src.viewer.Inspector import Inspector
 

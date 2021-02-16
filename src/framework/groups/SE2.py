@@ -6,7 +6,7 @@ from src.framework.groups.SE import SE
 from src.framework.groups.SE3 import SE3
 
 
-class SE2(SE):
+class SE2(SE[SO2]):
     # reference: https://github.com/utiasSTARS/liegroups
 
     # static properties
@@ -15,9 +15,7 @@ class SE2(SE):
     _rotation_type = SO2
 
     # constructor
-    def __init__(self, translation, rotation):
-        assert isinstance(translation, Vector)
-        assert isinstance(rotation, SO2)
+    def __init__(self, translation: Vector, rotation: SO2):
         super().__init__(translation, rotation)
 
     # public methods
@@ -26,16 +24,16 @@ class SE2(SE):
         translation = self.translation()
         return SE3(Vector(np.vstack((translation, 0))), rotation.to_so3())
 
-    # abstract implementations
+    # alternative constructors
     @classmethod
-    def from_elements(cls, x, y, a):
+    def from_elements(cls, x: float, y: float, a: float):
         translation_vector = Vector([x, y])
         rotation_vector = Vector(a)
         return cls.from_vectors(translation_vector, rotation_vector)
 
+    # helper-methods
     @staticmethod
-    def vector_to_algebra(vector):
-        assert isinstance(vector, Vector)
+    def _vector_to_algebra(vector: Vector) -> Square:
         x = vector.get(0)
         y = vector.get(1)
         a = vector.get(2)
@@ -44,8 +42,7 @@ class SE2(SE):
                        [0, 0, 0]])
 
     @staticmethod
-    def algebra_to_vector(algebra):
-        assert isinstance(algebra, Square)
+    def _algebra_to_vector(algebra: Square) -> Vector:
         return Vector([algebra[0, 2],
                        algebra[1, 2],
                        algebra[1, 0]])

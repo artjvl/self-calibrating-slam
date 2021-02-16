@@ -65,7 +65,7 @@ class Viewer(gl.GLViewWidget):
         # self.set_isometric_view()
 
     def set_camera_pos(self, pos: Vector):
-        self.setCameraPosition(pos=QVector3D(*(pos.to_list())))
+        self.setCameraPosition(pos=QVector3D(*(pos.to_lst())))
 
     def update_items(self):
         items = []
@@ -113,16 +113,16 @@ class Viewer(gl.GLViewWidget):
     # PyQtGraph override:
     def pan(self, dx, dy, dz, relative='global'):
         if relative == 'view-upright':
-            cPos = self.cameraPosition()
-            cVec = self.opts['center'] - cPos
-            dist = cVec.length()  ## distance from camera to center
-            xDist = dist * 2. * np.tan(0.5 * self.opts['fov'] * np.pi / 180.)  ## approx. width of view at distance of center point
-            xScale = xDist / self.width()
-            zVec = QVector3D(0, 0, 1)
+            camera_pos = self.cameraPosition()
+            camera_vector = self.opts['center'] - camera_pos
+            distance = camera_vector.length()  # distance from camera to center
+            distance_x = distance * 2. * np.tan(0.5 * self.opts['fov'] * np.pi / 180.)  # approx. width of view at distance of center point
+            scale_x = distance_x / self.width()
+            z = QVector3D(0, 0, 1)
             azimuth = np.radians(self.opts['azimuth'])
-            xVec = QVector3D(np.sin(azimuth), -np.cos(azimuth), 0)
-            yVec = np.sign(self.opts['elevation']) * QVector3D.crossProduct(xVec, zVec).normalized()
-            self.opts['center'] = self.opts['center'] + xVec * xScale * dx + yVec * xScale * dy + zVec * xScale * dz
+            x = QVector3D(np.sin(azimuth), -np.cos(azimuth), 0)
+            y = np.sign(self.opts['elevation']) * QVector3D.crossProduct(x, z).normalized()
+            self.opts['center'] = self.opts['center'] + x * scale_x * dx + y * scale_x * dy + z * scale_x * dz
             self.update()
         else:
             super().pan(dx, dy, dz, relative)

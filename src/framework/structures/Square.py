@@ -6,8 +6,8 @@ from typing import *
 class Square(np.ndarray):
 
     # constructor
-    def __new__(cls, elements: Union[list, np.ndarray]):
-        array = np.asarray(elements)
+    def __new__(cls, array: Union[List[List[float]], np.ndarray]):
+        array = np.asarray(array)
         assert len(array.shape) == 2
         assert array.shape[0] == array.shape[1]
         return array.view(cls)
@@ -17,8 +17,8 @@ class Square(np.ndarray):
             return
 
     # object methods
-    def __getitem__(self, item):
-        sub = super().__getitem__(item)
+    def __getitem__(self, key):
+        sub = super().__getitem__(key)
         if len(sub.shape) == 1:
             return np.array(sub)
         elif len(sub.shape) == 2 and sub.shape[0] != sub.shape[1]:
@@ -34,5 +34,5 @@ class Square(np.ndarray):
 
     # alternative constructors
     @classmethod
-    def zeros(cls, dimension):
+    def zeros(cls, dimension: int):
         return cls(np.zeros((dimension, dimension)))

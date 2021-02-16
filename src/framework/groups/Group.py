@@ -5,6 +5,21 @@ from src.framework.structures import *
 
 class Group(ABC):
 
+    # static attributes
+    @property
+    @classmethod
+    @abstractmethod
+    def _dim(cls) -> int:
+        """ number of dimensions """
+        pass
+
+    @property
+    @classmethod
+    @abstractmethod
+    def _dof(cls) -> int:
+        """ number of degrees of freedom """
+        pass
+
     # operators
     def __mul__(self, other):
         assert isinstance(other, (Group, Vector))
@@ -24,31 +39,16 @@ class Group(ABC):
     # public methods
     def algebra(self):
         vector = self.vector()
-        algebra = type(self).vector_to_algebra(vector)
+        algebra = type(self)._vector_to_algebra(vector)
         return algebra
 
-    # abstract properties
-    @property
-    @classmethod
+    # alternative representations
     @abstractmethod
-    def _dim(cls) -> int:
-        """ number of dimensions """
-        pass
-
-    @property
-    @classmethod
-    @abstractmethod
-    def _dof(cls) -> int:
-        """ number of degrees of freedom """
-        pass
-
-    # abstract methods
-    @abstractmethod
-    def matrix(self):
+    def matrix(self) -> Square:
         """ returns the matrix representation """
         pass
 
-    def vector(self):
+    def vector(self) -> Vector:
         """ returns the vector representation """
         pass
 
@@ -56,15 +56,16 @@ class Group(ABC):
         """ returns the inverted group element """
         pass
 
+    # alternative constructors
     @classmethod
     @abstractmethod
-    def from_matrix(cls, matrix):
+    def from_matrix(cls, matrix: Square):
         """ generates group element from matrix """
         pass
 
     @classmethod
     @abstractmethod
-    def from_vector(cls, vector):
+    def from_vector(cls, vector: Vector):
         """ generates group element from vector """
         pass
 
@@ -74,14 +75,15 @@ class Group(ABC):
         """ generates group element from vector elements """
         pass
 
+    # helper-methods
     @staticmethod
     @abstractmethod
-    def vector_to_algebra(vector):
+    def _vector_to_algebra(vector: Vector) -> Square:
         """ returns the algebra corresponding to the vector """
         pass
 
     @staticmethod
     @abstractmethod
-    def algebra_to_vector(algebra):
+    def _algebra_to_vector(algebra: Square) -> Vector:
         """ returns the vector corresponding to the algebra """
         pass

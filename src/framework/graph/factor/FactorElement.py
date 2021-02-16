@@ -1,9 +1,9 @@
-import numpy as np
 from abc import ABC, abstractmethod
 from typing import *
 
+import numpy as np
+
 from src.framework.structures import *
-from src.framework.groups import *
 
 T = TypeVar('T')
 

@@ -4,8 +4,11 @@ import warnings
 from src.framework.graph.base.BaseNode import BaseNode
 from src.framework.graph.base.BaseEdge import BaseEdge
 
+N = TypeVar('N', bound=BaseNode)
+E = TypeVar('E', bound=BaseEdge)
 
-class BaseGraph(object):
+
+class BaseGraph(Generic[N, E], object):
 
     # constructor
     def __init__(self):
@@ -13,26 +16,26 @@ class BaseGraph(object):
         self._edges = list()
 
     # public methods
-    def get_nodes(self) -> List[BaseEdge]:
+    def get_nodes(self) -> List[N]:
         return list(self._nodes.values())
 
-    def get_node(self, id: int) -> BaseEdge:
+    def get_node(self, id: int) -> N:
         assert id in self._nodes
         return self._nodes[id]
 
-    def add_node(self, node: BaseNode):
+    def add_node(self, node: N):
         if node.id() in self._nodes:
             warnings.warn('Node with id {} already present in Graph {}'.format(node.id(), self))
         self._nodes[node.id()] = node
 
-    def get_edges(self) -> List[BaseEdge]:
+    def get_edges(self) -> List[E]:
         return self._edges
 
-    def get_edge(self, index: int) -> BaseEdge:
+    def get_edge(self, index: int) -> E:
         assert index < len(self._edges)
         return self._edges[index]
 
-    def add_edge(self, edge: BaseEdge):
+    def add_edge(self, edge: E):
         assert all(node in self._nodes.values() for node in edge.get_nodes())
         if edge in self._edges:
             warnings.warn('{} already present in Graph {}'.format(edge, self))
