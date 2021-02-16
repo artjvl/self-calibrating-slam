@@ -5,7 +5,7 @@ from src.framework.structures import *
 from src.framework.graph.factor import *
 
 
-class NodeXY(FactorNode):
+class NodeXY(FactorNode[Vector]):
 
     tag = 'VERTEX_POINT_XY'
     has_rotation = False

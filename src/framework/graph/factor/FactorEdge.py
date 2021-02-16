@@ -7,11 +7,13 @@ from src.framework.graph.base import *
 from src.framework.graph.factor.FactorElement import FactorElement
 from src.framework.graph.factor.FactorNode import FactorNode
 
+T = TypeVar('T')
 
-class FactorEdge(BaseEdge, FactorElement, ABC):
+
+class FactorEdge(Generic[T], BaseEdge, FactorElement[T], ABC):
 
     # constructor
-    def __init__(self, nodes: List[FactorNode], value: Union[Vector, SO, SE], information: Optional[Square] = None):
+    def __init__(self, nodes: List[FactorNode], value: T, information: Optional[Square] = None):
         super().__init__(nodes=nodes, value=value)
         if information is None:
             self._is_uncertain = False

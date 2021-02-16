@@ -6,7 +6,7 @@ from src.framework.graph.factor import *
 from src.framework.graph.types import NodeSE2, NodeXY
 
 
-class EdgeSE2XY(FactorEdge):
+class EdgeSE2XY(FactorEdge[Vector]):
 
     tag = 'EDGE_SE2_POINT_XY'
     size = 2

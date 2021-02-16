@@ -6,11 +6,13 @@ from src.framework.groups import *
 from src.framework.graph.base import *
 from src.framework.graph.factor.FactorElement import FactorElement
 
+T = TypeVar('T')
 
-class FactorNode(BaseNode, FactorElement, ABC):
+
+class FactorNode(Generic[T], BaseNode, FactorElement[T], ABC):
 
     # constructor
-    def __init__(self, id: int, value: Union[Vector, SO, SE]):
+    def __init__(self, id: int, value: T):
         super().__init__(id=id, value=value)
 
     # abstract methods

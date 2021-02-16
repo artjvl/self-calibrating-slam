@@ -5,19 +5,21 @@ from typing import *
 from src.framework.structures import *
 from src.framework.groups import *
 
+T = TypeVar('T')
 
-class FactorElement(ABC):
+
+class FactorElement(Generic[T], ABC):
 
     # constructor
-    def __init__(self, value: Union[Vector, SO, SE], **kwargs):
+    def __init__(self, value: T, **kwargs):
         super().__init__(**kwargs)
         self._value = value
 
     # public methods
-    def get_value(self) -> Union[Vector, SO, SE]:
+    def get_value(self) -> T:
         return self._value
 
-    def set_value(self, value: Union[Vector, SO, SE]):
+    def set_value(self, value: T):
         self._value = value
 
     # helper-methods

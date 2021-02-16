@@ -5,7 +5,7 @@ from src.framework.groups import *
 from src.framework.graph.factor import *
 
 
-class NodeSE2(FactorNode):
+class NodeSE2(FactorNode[SE2]):
 
     tag = 'VERTEX_SE2'
     has_rotation = True
