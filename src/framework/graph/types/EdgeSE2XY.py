@@ -35,9 +35,9 @@ class EdgeSE2XY(FactorEdge[Vector]):
 
     def write(self):
         distance = self.get_distance()
-        data_string = self._lst_to_string(self._array_to_lst(distance))
+        data_string = self._list_to_string(self._array_to_list(distance))
         if self._is_uncertain:
-            data_string += ' {}'.format(self._lst_to_string(self._symmetric_to_lst(self._information)))
+            data_string += ' {}'.format(self._list_to_string(self._symmetric_to_list(self._information)))
         return ' '.join([self.tag, str(self.get_node(0).id()), str(self.get_node(1).id()), data_string])
 
     def read(self, words: List[str]):
@@ -45,8 +45,11 @@ class EdgeSE2XY(FactorEdge[Vector]):
         distance = Vector(elements[:2])
         self.set_distance(distance)
         if len(elements) != 2:
-            self.set_information(self._lst_to_symmetric(elements[2:]))
+            self.set_information(self._list_to_symmetric(elements[2:]))
 
     @classmethod
     def from_nodes(cls, nodes: list):
         return cls(nodes[0], nodes[1])
+
+    def get_endpoints3(self):
+        return self.get_node(0).get_point3(), self.get_node(1).get_point3()

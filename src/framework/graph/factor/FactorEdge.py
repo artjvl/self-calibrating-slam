@@ -32,7 +32,7 @@ class FactorEdge(Generic[T], BaseEdge, FactorElement[T], ABC):
         self._is_uncertain = True
 
     @abstractmethod
-    def compute_error(self) -> float:
+    def compute_error(self) -> Vector:
         pass
 
     # abstract properties
@@ -46,4 +46,8 @@ class FactorEdge(Generic[T], BaseEdge, FactorElement[T], ABC):
     @classmethod
     @abstractmethod
     def from_nodes(cls, nodes):
+        pass
+
+    @abstractmethod
+    def get_endpoints3(self) -> Tuple[Vector, Vector]:
         pass

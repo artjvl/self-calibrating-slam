@@ -1,6 +1,6 @@
 from typing import *
 
-from src.framework.groups import SO3
+from src.framework.groups import SO3, SE3
 from src.framework.structures import *
 from src.framework.graph.factor import *
 
@@ -38,4 +38,7 @@ class NodeXY(FactorNode[Vector]):
         return self.get_point().extend(0)
 
     def get_rotation3(self) -> SO3:
+        pass
+
+    def get_pose3(self) -> SE3:
         pass

@@ -1,4 +1,5 @@
 import numpy as np
+from typing import *
 
 from PyQt5.QtCore import *  # QSize
 from PyQt5.QtWidgets import *  # QMainWindow
@@ -25,8 +26,10 @@ class Viewer(gl.GLViewWidget):
         self._is_grid = True
         self._is_axes = False
         self._is_edges = True
-        self._axes = dict()
-        self._edges = dict()
+        self._graphs: Dict[int, Graph] = dict()
+        self._points: Dict[int, Dict[Type[FactorNode], Points]] = dict()
+        self._axes: Dict[int, Dict[Type[FactorNode], Axes]] = dict()
+        self._edges: Dict[int, Dict[Type[FactorEdge], Edges]] = dict()
         self.set_grid(self._is_grid)
 
     # public methods
@@ -65,16 +68,21 @@ class Viewer(gl.GLViewWidget):
         # self.set_isometric_view()
 
     def set_camera_pos(self, pos: Vector):
-        self.setCameraPosition(pos=QVector3D(*(pos.to_lst())))
+        self.setCameraPosition(pos=QVector3D(*(pos.to_list())))
 
     def update_items(self):
         items = []
-        if self.is_grid():
-            items.append(self._grid)
-        if self.is_axes():
-            items.extend(self._axes.values())
-        if self.is_edges():
-            items.extend(self._edges.values())
+        for id, graph in self._graphs.items():
+            if id in self._points:
+                for points in self._points[id].values():
+                    items.append(points)
+            if id in self._axes:
+                for axes in self._axes[id].values():
+                    items.append(axes)
+            if id in self._edges:
+                for edges in self._edges[id].values():
+                    items.append(edges)
+
         for item in self.items:
             item._setView(None)
         for item in items:
@@ -94,10 +102,29 @@ class Viewer(gl.GLViewWidget):
 
     # helper-methods
     def add_graph(self, graph: Graph):
-        axes = Axes(graph)
-        self._axes[graph.get_id()] = axes
-        edges = Edges(graph)
-        self._edges[graph.get_id()] = edges
+        id = graph.get_id()
+        self._graphs[id] = graph
+        for node_type in graph.get_node_types():
+            nodes = graph.get_nodes_of_type(node_type)
+
+            # points
+            points = Points([node.get_point3() for node in nodes])
+            self._points[id] = dict()
+            self._points[id][node_type] = points
+
+            # axes
+            if node_type.has_rotation:
+                axes = Axes([node.get_pose3() for node in nodes])
+                self._axes[id] = dict()
+                self._axes[id][node_type] = axes
+
+        # edges
+        for edge_type in graph.get_edge_types():
+            edges = graph.get_edges_of_type(edge_type)
+            points = Edges([edge.get_endpoints3() for edge in edges])
+            self._edges[id] = dict()
+            self._edges[id][edge_type] = points
+
         self.update_items()
 
     def replace_graph(self, old: Graph, graph: Graph):
@@ -106,8 +133,11 @@ class Viewer(gl.GLViewWidget):
         self.update_items()
 
     def remove_graph(self, graph: Graph):
-        self._axes.pop(graph.get_id())
-        self._edges.pop(graph.get_id())
+        id = graph.get_id()
+        self._graphs.pop(id)
+        self._points.pop(id)
+        self._axes.pop(id)
+        self._edges.pop(id)
         self.update_items()
 
     # PyQtGraph override:

@@ -29,3 +29,7 @@ class FactorNode(Generic[T], BaseNode, FactorElement[T], ABC):
     @abstractmethod
     def get_rotation3(self) -> SO3:
         pass
+
+    @abstractmethod
+    def get_pose3(self) -> SE3:
+        pass

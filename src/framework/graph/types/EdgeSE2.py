@@ -48,8 +48,11 @@ class EdgeSE2(FactorEdge[SE2]):
         rotation = SO2.from_elements(angle)
         self.set_transformation(SE2(translation, rotation))
         if len(elements) != 3:
-            self.set_information(self._lst_to_symmetric(elements[3:]))
+            self.set_information(self._list_to_symmetric(elements[3:]))
 
     @classmethod
     def from_nodes(cls, nodes: List[NodeSE2]):
         return cls(nodes[0], nodes[1])
+
+    def get_endpoints3(self) -> Tuple[Vector, Vector]:
+        return self.get_node(0).get_point3(), self.get_node(1).get_point3()

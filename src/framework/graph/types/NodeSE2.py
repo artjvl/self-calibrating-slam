@@ -45,3 +45,6 @@ class NodeSE2(FactorNode[SE2]):
 
     def get_rotation3(self) -> SO3:
         return self.get_pose().rotation().to_so3()
+
+    def get_pose3(self) -> SE3:
+        return self.get_pose().to_se3()

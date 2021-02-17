@@ -1,14 +1,15 @@
 from OpenGL.GL import *
+from typing import *
 
 from src.framework.structures import *
 from src.framework.groups import *
+from src.viewer.colours import *
 
 
 class Drawer(object):
 
     @staticmethod
-    def axis(pose, size=0.2):
-        assert isinstance(pose, SE3)
+    def axis(pose: SE3, size: Optional[float] = 0.2):
         centre = pose.translation()
         matrix = pose.rotation().matrix()
         units = [Vector([1, 0, 0]),
@@ -33,10 +34,13 @@ class Drawer(object):
         glVertex3f(*(centre + z))
 
     @staticmethod
-    def line(a, b, colour=(1, 1, 1, 0.6)):
-        assert isinstance(a, Vector)
-        assert isinstance(b, Vector)
+    def line(a: Vector, b: Vector, colour: Optional[Colour] = Colours.WHITE):
+        glColor4f(*(colour.value.tuple()))
+        glVertex3f(*(a.to_list()))
+        glVertex3f(*(b.to_list()))
 
-        glColor4f(*colour)
-        glVertex3f(*(a.to_lst()))
-        glVertex3f(*(b.to_lst()))
+    @staticmethod
+    def point(point: Vector, colour: Optional[Colour] = Colours.WHITE):
+
+        glColor4f(*(colour.value.tuple()))
+        glVertex3f(*(point.to_list()))
