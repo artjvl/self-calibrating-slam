@@ -5,6 +5,7 @@ from OpenGL.GL import *
 from src.framework.graph.factor import FactorElement, FactorNode
 from src.framework.structures import *
 from src.gui.viewer.Colour import Colour
+from src.gui.viewer.Drawer import Drawer
 from src.gui.viewer.items.GraphicsItem import GraphicsItem
 
 
@@ -13,12 +14,16 @@ class Points(GraphicsItem):
     name = 'Node points'
 
     # constructor
-    def __init__(self, points: List[Vector], width: float = 4, colour: Optional[Colour] = Colour.WHITE):
-        super().__init__()
+    def __init__(
+            self,
+            points: List[Vector],
+            colour: Optional[Tuple[float, ...]] = Colour.WHITE,
+            width: float = 4
+    ):
+        super().__init__(colour)
         self._points: List[Vector] = points
         # settings
         self._width: float = width
-        self._colour: Colour = colour
 
     # public method
     def paint(self):
@@ -36,7 +41,7 @@ class Points(GraphicsItem):
         glBegin(GL_POINTS)
 
         for point in self._points:
-            type(self).point(point, self._colour)
+            Drawer.point(point, colour=self._colour)
 
         glEnd()
         glDisable(GL_POINT_SMOOTH)
@@ -45,7 +50,7 @@ class Points(GraphicsItem):
 
     # eligibility method
     @staticmethod
-    def check(element_type: Type[FactorElement]) -> bool:
+    def check(element_type: Type[Any]) -> bool:
         if issubclass(element_type, FactorNode) and element_type.is_physical:
             return True
         return False

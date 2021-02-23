@@ -4,6 +4,8 @@ from OpenGL.GL import *
 
 from src.framework.graph.factor import FactorElement, FactorEdge
 from src.framework.structures import *
+from src.gui.viewer.Colour import Colour
+from src.gui.viewer.Drawer import Drawer
 from src.gui.viewer.items.GraphicsItem import GraphicsItem
 
 
@@ -12,12 +14,18 @@ class Edges(GraphicsItem):
     name = 'Constraint edges'
 
     # constructor
-    def __init__(self, pairs: List[Tuple[Vector, Vector]], width: float = 1, gl_options: str = 'translucent'):
-        super().__init__()
+    def __init__(
+            self,
+            pairs: List[Tuple[Vector, Vector]],
+            colour: Optional[Tuple[float, ...]] = Colour.WHITE,
+            width: float = 2,
+            gl_options: str = 'translucent'
+    ):
+        super().__init__(colour)
         self._pairs: List[Tuple[Vector, Vector]] = pairs
         # settings
-        self.setGLOptions(gl_options)
         self._width: float = width
+        self.setGLOptions(gl_options)
 
     # public method
     def paint(self):
@@ -32,18 +40,18 @@ class Edges(GraphicsItem):
         glBegin(GL_LINES)
 
         for pair in self._pairs:
-            self.line(*pair)
+            Drawer.line(*pair, colour=self._colour)
 
         glEnd()
 
     # eligibility method
     @staticmethod
-    def check(element: Type[FactorElement]) -> bool:
+    def check(element: Type[Any]) -> bool:
         if issubclass(element, FactorEdge) and element.is_physical:
             return True
         return False
 
     # constructor method
     @classmethod
-    def from_elements(cls, elements: List[FactorElement]) -> GraphicsItem:
+    def from_elements(cls, elements: List[Any]) -> GraphicsItem:
         return cls([edge.get_endpoints3() for edge in elements])

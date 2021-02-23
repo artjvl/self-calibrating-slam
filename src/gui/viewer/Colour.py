@@ -19,7 +19,7 @@ class Colour(object):
             cls,
             pastel: Optional[float] = 0.5
     ) -> Tuple[float, ...]:
-        return cls.pastelify(tuple(np.random.uniform(0., 1., 3)))
+        return cls.pastelify(tuple(np.random.uniform(0., 1., 3)), pastel)
 
     @classmethod
     def similar(

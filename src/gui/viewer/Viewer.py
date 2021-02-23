@@ -1,11 +1,11 @@
 import numpy as np
-import pyqtgraph as qtg
 import pyqtgraph.opengl as gl
 from PyQt5.QtCore import QSize
 from PyQt5.QtGui import QVector3D
 
 from src.framework.structures import Vector
 from src.gui.GraphContainer import GraphContainer
+from src.gui.viewer.Grid import Grid
 
 
 class Viewer(gl.GLViewWidget):
@@ -19,7 +19,7 @@ class Viewer(gl.GLViewWidget):
         self._container: GraphContainer = container
         self._container.signal_update.connect(self.update_items)
         self._is_grid = True
-        self._grid = self.init_grid()
+        self._grid = Grid(size=(100, 100), spacing=(1, 1))
         self.update_items()
 
     # public methods
@@ -54,13 +54,6 @@ class Viewer(gl.GLViewWidget):
     def toggle_grid(self):
         self._is_grid = not self._is_grid
         self.update_items()
-
-    # initialisers
-    def init_grid(self):
-        grid = gl.GLGridItem(color=qtg.mkColor((255, 255, 255, 40)))
-        grid.setSize(100, 100)
-        grid.setSpacing(1, 1)
-        return grid
 
     # PyQtGraph override:
     def pan(self, dx, dy, dz, relative='global'):
