@@ -1,13 +1,15 @@
 from typing import *
 
+from src.framework.graph.factor import FactorNode
+from src.framework.graph.types.Parser import Parser
 from src.framework.groups import SO3, SE3
-from src.framework.structures import *
-from src.framework.graph.factor import *
+from src.framework.structures import Vector
 
 
 class NodeXY(FactorNode[Vector]):
 
     tag = 'VERTEX_POINT_XY'
+    is_physical = True
     has_rotation = False
 
     # constructor
@@ -16,29 +18,30 @@ class NodeXY(FactorNode[Vector]):
             point = Vector.zeros(2)
         super().__init__(id, point)
 
-    # public methods
-    def get_point(self) -> Vector:
+    # getters/setters
+    def get_translation(self) -> Vector:
         return self.get_value()
 
-    def set_point(self, point: Vector):
+    def set_translation(self, point: Vector):
         self.set_value(point)
 
-    # abstract implementations
-    def write(self):
-        point = self.get_point()
-        string = self._lst_to_string(self._array_to_lst(point))
-        return ' '.join([self.tag, str(self.id()), string])
-
-    def read(self, words: List[str]):
-        elements = [float(word) for word in words]
-        point = Vector(elements[:2])
-        self.set_point(point)
-
-    def get_point3(self) -> Vector:
-        return self.get_point().extend(0)
+    # 3-dimensional getters
+    def get_translation3(self) -> Vector:
+        return self.get_translation().extend(0)
 
     def get_rotation3(self) -> SO3:
         pass
 
     def get_pose3(self) -> SE3:
         pass
+
+    # read/write methods
+    def write(self):
+        translation = self.get_translation()
+        string = Parser.list_to_string(Parser.array_to_list(translation))
+        return ' '.join([self.tag, str(self.id()), string])
+
+    def read(self, words: List[str]):
+        elements = [float(word) for word in words]
+        point = Vector(elements[:2])
+        self.set_translation(point)

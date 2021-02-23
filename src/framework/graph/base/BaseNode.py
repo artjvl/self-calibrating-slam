@@ -1,20 +1,17 @@
-class BaseNode(object):
+from src.framework.graph.base.BaseElement import BaseElement
 
-    # constructor
+
+class BaseNode(BaseElement):
+
     def __init__(self, id: int, **kwargs):
-        super().__init__(**kwargs)
-        self._id = id
+        self._id: int = id
 
-    # public methods
+    def id_string(self) -> str:
+        return str(self.id())
+
+    # getters/setters
     def id(self) -> int:
         return self._id
 
     def set_id(self, id: int):
         self._id = id
-
-    # object methods
-    def __str__(self) -> str:
-        return '{}({})'.format(self.__class__.__name__, self.id())
-
-    def __repr__(self) -> str:
-        return '{} <at {}>'.format(str(self), hex(id(self)))

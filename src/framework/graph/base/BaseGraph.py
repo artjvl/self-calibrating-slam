@@ -1,24 +1,45 @@
 from __future__ import annotations
-from typing import *
-import warnings
 
-from src.framework.graph.base.BaseNode import BaseNode
+import warnings
+from typing import *
+
 from src.framework.graph.base.BaseEdge import BaseEdge
+from src.framework.graph.base.BaseElement import BaseElement
+from src.framework.graph.base.BaseNode import BaseNode
 
 N = TypeVar('N', bound=BaseNode)
 E = TypeVar('E', bound=BaseEdge)
 
 
-class BaseGraph(Generic[N, E], object):
+class BaseGraph(Generic[N, E], BaseElement):
 
-    # constructor
     def __init__(self):
-        self._nodes: Dict[int, N] = dict()
-        self._edges: List[E] = list()
-        self._nodes_sorted: Dict[Type[N], List[N]] = dict()
-        self._edges_sorted: Dict[Type[E], List[E]] = dict()
+        self._nodes: Dict[int, N] = {}
+        self._edges: List[E] = []
+        self._nodes_sorted: Dict[Type[N], List[N]] = {}
+        self._edges_sorted: Dict[Type[E], List[E]] = {}
 
-    # public methods
+    def id_string(self):
+        node_string: str = ', '.join(
+            ['{}: {}'.format(key.__name__, len(value)) for key, value in self._nodes_sorted.items()]
+        )
+        edge_string: str = ', '.join(
+            ['{}: {}'.format(key.__name__, len(value)) for key, value in self._edges_sorted.items()]
+        )
+        return '; '.join(list(filter(lambda s: s != '', [node_string, edge_string])))
+
+    # node methods
+    def add_node(self, node: N):
+        if node.id() in self._nodes:
+            warnings.warn('Node with id {} already present in Graph {}'.format(node.id(), self))
+        self._nodes[node.id()] = node
+
+        # sorting
+        node_type: Type[N] = type(node)
+        if node_type not in self._nodes_sorted:
+            self._nodes_sorted[node_type] = []
+        self._nodes_sorted[node_type].append(node)
+
     def get_nodes(self) -> List[N]:
         return list(self._nodes.values())
 
@@ -33,14 +54,19 @@ class BaseGraph(Generic[N, E], object):
         assert node_type in self._nodes_sorted
         return self._nodes_sorted[node_type]
 
-    def add_node(self, node: N):
-        if node.id() in self._nodes:
-            warnings.warn('Node with id {} already present in Graph {}'.format(node.id(), self))
-        self._nodes[node.id()] = node
-        node_type = type(node)
-        if node_type not in self._nodes_sorted:
-            self._nodes_sorted[node_type] = list()
-        self._nodes_sorted[node_type].append(node)
+    # edge methods
+    def add_edge(self, edge: E):
+        assert all(node in self._nodes.values() for node in edge.get_nodes())
+        if edge in self._edges:
+            warnings.warn('{} already present in Graph {}'.format(edge, self))
+        else:
+            self._edges.append(edge)
+
+            # sorting
+            edge_type: Type[E] = type(edge)
+            if edge_type not in self._edges_sorted:
+                self._edges_sorted[edge_type] = []
+            self._edges_sorted[edge_type].append(edge)
 
     def get_edges(self) -> List[E]:
         return self._edges
@@ -56,22 +82,15 @@ class BaseGraph(Generic[N, E], object):
         assert edge_type in self._edges_sorted
         return self._edges_sorted[edge_type]
 
-    def add_edge(self, edge: E):
-        assert all(node in self._nodes.values() for node in edge.get_nodes())
-        if edge in self._edges:
-            warnings.warn('{} already present in Graph {}'.format(edge, self))
-        else:
-            self._edges.append(edge)
-            edge_type = type(edge)
-            if edge_type not in self._edges_sorted:
-                self._edges_sorted[edge_type] = list()
-            self._edges_sorted[edge_type].append(edge)
+    # element methods
+    def get_elements(self) -> List[Any]:
+        return self.get_nodes() + self.get_edges()
 
-    # object methods
-    def __str__(self) -> str:
-        node_string = ', '.join(['{}: {}'.format(key.__name__, len(value)) for key, value in self._nodes_sorted.items()])
-        edge_string = ', '.join(['{}: {}'.format(key.__name__, len(value)) for key, value in self._edges_sorted.items()])
-        return '{}({})'.format(self.__class__.__name__, '; '.join(list(filter(lambda s: s != '', [node_string, edge_string]))))
+    def get_element_types(self) -> List[Type[Any]]:
+        return self.get_node_types() + self.get_edge_types()
 
-    def __repr__(self) -> str:
-        return '{} <at {}>'.format(str(self), hex(id(self)))
+    def get_elements_of_type(self, element_type: Type[Any]) -> List[Any]:
+        if element_type in self.get_node_types():
+            return self.get_nodes_of_type(element_type)
+        elif element_type in self.get_edge_types():
+            return self.get_edges_of_type(element_type)
