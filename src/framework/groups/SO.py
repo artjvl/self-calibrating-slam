@@ -1,8 +1,9 @@
-import numpy as np
 from abc import ABC, abstractmethod
 
-from src.framework.structures import *
+import numpy as np
+
 from src.framework.groups.Group import Group
+from src.framework.structures import *
 
 
 class SO(Group, ABC):

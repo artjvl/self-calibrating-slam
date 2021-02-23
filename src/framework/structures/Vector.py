@@ -1,13 +1,15 @@
 from __future__ import annotations
+
+from typing import *
+
 import numpy as np
 from scipy import linalg
-from typing import *
 
 
 class Vector(np.ndarray):
 
     # constructor
-    def __new__(cls, elements: Union[Tuple[float, ...], List[float], np.ndarray]):
+    def __new__(cls, elements: Union[float, Tuple[float, ...], List[float], np.ndarray]):
         column = np.reshape(elements, (-1, 1))
         return column.view(cls)
 

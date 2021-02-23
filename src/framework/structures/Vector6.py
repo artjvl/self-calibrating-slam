@@ -1,6 +1,8 @@
 from __future__ import annotations
-import numpy as np
+
 from typing import *
+
+import numpy as np
 
 from src.framework.structures.Vector import Vector
 from src.framework.structures.Vector3 import Vector3

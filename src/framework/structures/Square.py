@@ -1,7 +1,9 @@
 from __future__ import annotations
+
+from typing import *
+
 import numpy as np
 from scipy import linalg
-from typing import *
 
 
 class Square(np.ndarray):

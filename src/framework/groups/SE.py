@@ -1,10 +1,11 @@
-import numpy as np
 from abc import ABC, abstractmethod
 from typing import *
 
-from src.framework.structures import *
+import numpy as np
+
 from src.framework.groups.Group import Group
 from src.framework.groups.SO import SO
+from src.framework.structures import *
 
 R = TypeVar('R', bound=SO)
 
