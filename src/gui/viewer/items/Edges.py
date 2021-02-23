@@ -1,12 +1,15 @@
 from typing import *
+
 from OpenGL.GL import *
-from pyqtgraph.opengl.GLGraphicsItem import GLGraphicsItem
 
+from src.framework.graph.factor import FactorElement, FactorEdge
 from src.framework.structures import *
-from src.viewer.items.Drawer import Drawer
+from src.gui.viewer.items.GraphicsItem import GraphicsItem
 
 
-class Edges(GLGraphicsItem, Drawer):
+class Edges(GraphicsItem):
+
+    name = 'Constraint edges'
 
     # constructor
     def __init__(self, pairs: List[Tuple[Vector, Vector]], width: float = 1, gl_options: str = 'translucent'):
@@ -32,3 +35,15 @@ class Edges(GLGraphicsItem, Drawer):
             self.line(*pair)
 
         glEnd()
+
+    # eligibility method
+    @staticmethod
+    def check(element: Type[FactorElement]) -> bool:
+        if issubclass(element, FactorEdge) and element.is_physical:
+            return True
+        return False
+
+    # constructor method
+    @classmethod
+    def from_elements(cls, elements: List[FactorElement]) -> GraphicsItem:
+        return cls([edge.get_endpoints3() for edge in elements])

@@ -1,16 +1,19 @@
 from typing import *
+
 from OpenGL.GL import *
-from pyqtgraph.opengl.GLGraphicsItem import GLGraphicsItem
 
+from src.framework.graph.factor import FactorElement, FactorNode
 from src.framework.structures import *
-from src.viewer.items.Drawer import Drawer
-from src.viewer.colours import *
+from src.gui.viewer.Colour import Colour
+from src.gui.viewer.items.GraphicsItem import GraphicsItem
 
 
-class Points(GLGraphicsItem, Drawer):
+class Points(GraphicsItem):
+
+    name = 'Node points'
 
     # constructor
-    def __init__(self, points: List[Vector], width: float = 4, colour: Optional[Colour] = Colours.WHITE):
+    def __init__(self, points: List[Vector], width: float = 4, colour: Optional[Colour] = Colour.WHITE):
         super().__init__()
         self._points: List[Vector] = points
         # settings
@@ -39,3 +42,15 @@ class Points(GLGraphicsItem, Drawer):
         glDisable(GL_POINT_SMOOTH)
         glBlendFunc(GL_NONE, GL_NONE)
         glDisable(GL_BLEND)
+
+    # eligibility method
+    @staticmethod
+    def check(element_type: Type[FactorElement]) -> bool:
+        if issubclass(element_type, FactorNode) and element_type.is_physical:
+            return True
+        return False
+
+    # constructor method
+    @classmethod
+    def from_elements(cls, elements: List[Any]) -> GraphicsItem:
+        return cls([node.get_translation3() for node in elements])

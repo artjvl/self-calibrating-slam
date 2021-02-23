@@ -1,11 +1,14 @@
 from typing import *
 
-from PyQt5.QtWidgets import *  # QMainWindow, QWidget, QDesktopWidget, QAction, qApp, QHBoxLayout
 from PyQt5.QtGui import *  # QDesktopServices
+from PyQt5.QtWidgets import *  # QMainWindow, QWidget, QDesktopWidget, QAction, qApp, QHBoxLayout
 
+from src.framework.graph import Graph
+from src.framework.graph.factor import FactorNode, FactorEdge
+from src.framework.groups import SO3
+from src.framework.groups.SE import SE
+from src.framework.groups.SO import SO
 from src.framework.structures import *
-from src.framework.groups import *
-from src.framework.graph import *
 
 
 class Inspector(QTreeWidget):
@@ -20,11 +23,19 @@ class Inspector(QTreeWidget):
 
     # helper-methods
     @classmethod
-    def construct_graph_tree(cls, root: Union[QTreeWidget, QTreeWidgetItem], graph: Graph):
+    def construct_graph_tree(
+            cls,
+            root: Union[QTreeWidget, QTreeWidgetItem],
+            graph: Graph
+    ):
         cls.construct_tree_property(root, 'error', '{}'.format(graph.compute_error()))
 
     @classmethod
-    def construct_node_tree(cls, root: Union[QTreeWidget, QTreeWidgetItem], node: FactorNode):
+    def construct_node_tree(
+            cls,
+            root: Union[QTreeWidget, QTreeWidgetItem],
+            node: FactorNode
+    ):
         # tag:
         cls.construct_tree_property(root, 'tag', "'{}'".format(type(node).tag))
         # id:
@@ -34,7 +45,11 @@ class Inspector(QTreeWidget):
         root.expandAll()
 
     @classmethod
-    def construct_edge_tree(cls, root: Union[QTreeWidget, QTreeWidgetItem], edge: FactorEdge):
+    def construct_edge_tree(
+            cls,
+            root: Union[QTreeWidget, QTreeWidgetItem],
+            edge: FactorEdge
+    ):
         # tag:
         cls.construct_tree_property(root, 'tag', "'{}'".format(type(edge).tag))
         # nodes:
@@ -50,18 +65,28 @@ class Inspector(QTreeWidget):
             # information:
             cls.construct_tree_property(root, 'information', '{}'.format(edge.get_information()))
         # error:
-        cls.construct_tree_property(root, 'error', '{}'.format(edge.compute_error()))
+        cls.construct_tree_property(root, 'error', '{}'.format(edge.compute_error_vector()))
         root.expandAll()
 
     @classmethod
-    def construct_value_tree(cls, root: Union[QTreeWidget, QTreeWidgetItem], value_string: str, value: Union[Vector, SO, SE]):
+    def construct_value_tree(
+            cls,
+            root: Union[QTreeWidget, QTreeWidgetItem],
+            value_string: str,
+            value: Union[Vector, SO, SE]
+    ):
         if isinstance(value, Vector):
             cls.construct_tree_property(root, value_string, '{}'.format(value))
         else:
             cls.construct_group_tree(root, value_string, value)
 
     @classmethod
-    def construct_group_tree(cls, root: Union[QTreeWidget, QTreeWidgetItem], group_string: str, group: Union[SO, SE]):
+    def construct_group_tree(
+            cls,
+            root: Union[QTreeWidget, QTreeWidgetItem],
+            group_string: str,
+            group: Union[SO, SE]
+    ):
         values = QTreeWidgetItem(root)
         values.setText(0, group_string)
         # vector:
@@ -85,7 +110,11 @@ class Inspector(QTreeWidget):
         values.setText(1, '({})'.format(counter))
 
     @staticmethod
-    def construct_tree_property(root: Union[QTreeWidget, QTreeWidgetItem], property_string: str, value_string: str):
+    def construct_tree_property(
+            root: Union[QTreeWidget, QTreeWidgetItem],
+            property_string: str,
+            value_string: str
+    ):
         item = QTreeWidgetItem(root)
         item.setText(0, '{}:'.format(property_string))
         item.setText(1, value_string)
