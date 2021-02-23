@@ -6,6 +6,7 @@ from src.framework.graph.types.NodeXY import NodeXY
 from src.framework.graph.types.Parser import Parser
 from src.framework.groups import SE2
 from src.framework.structures import Vector, Square
+from src.gui.viewer.Colour import Colour
 
 
 class EdgeSE2XY(FactorEdge[Vector]):
@@ -13,6 +14,7 @@ class EdgeSE2XY(FactorEdge[Vector]):
     tag = 'EDGE_SE2_POINT_XY'
     size = 2
     is_physical = True
+    colour = Colour.ORANGE
 
     # constructor
     def __init__(

@@ -4,6 +4,7 @@ from src.framework.graph.factor import FactorNode
 from src.framework.graph.types.Parser import Parser
 from src.framework.groups import SO3, SE3
 from src.framework.structures import Vector
+from src.gui.viewer.Colour import Colour
 
 
 class NodeXY(FactorNode[Vector]):
@@ -11,6 +12,7 @@ class NodeXY(FactorNode[Vector]):
     tag = 'VERTEX_POINT_XY'
     is_physical = True
     has_rotation = False
+    colour = Colour.GREEN
 
     # constructor
     def __init__(self, id: int, point: Optional[Vector] = None):

@@ -4,6 +4,7 @@ from src.framework.graph.factor import FactorNode
 from src.framework.graph.types.Parser import Parser
 from src.framework.groups import SO2, SE2, SO3, SE3
 from src.framework.structures import Vector
+from src.gui.viewer.Colour import Colour
 
 
 class NodeSE2(FactorNode[SE2]):
@@ -11,6 +12,7 @@ class NodeSE2(FactorNode[SE2]):
     tag = 'VERTEX_SE2'
     is_physical = True
     has_rotation = True
+    colour = Colour.WHITE
 
     # constructor
     def __init__(self, id: int, pose: Optional[SE2] = None):

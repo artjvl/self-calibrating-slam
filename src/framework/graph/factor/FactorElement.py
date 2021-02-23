@@ -1,11 +1,14 @@
 from abc import ABC, abstractmethod
 from typing import *
 
+from src.gui.viewer.Colour import Colour
 
 T = TypeVar('T')
 
 
 class FactorElement(Generic[T], ABC):
+
+    colour = Colour.WHITE
 
     # constructor
     def __init__(self, value: Optional[T] = None, **kwargs):

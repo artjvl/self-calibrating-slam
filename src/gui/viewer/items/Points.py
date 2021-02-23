@@ -58,4 +58,8 @@ class Points(GraphicsItem):
     # constructor method
     @classmethod
     def from_elements(cls, elements: List[Any]) -> GraphicsItem:
-        return cls([node.get_translation3() for node in elements])
+        element_type = type(elements[0])
+        return cls(
+            [node.get_translation3() for node in elements],
+            colour=Colour.similar(element_type.colour)
+        )

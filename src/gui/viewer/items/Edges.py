@@ -54,4 +54,8 @@ class Edges(GraphicsItem):
     # constructor method
     @classmethod
     def from_elements(cls, elements: List[Any]) -> GraphicsItem:
-        return cls([edge.get_endpoints3() for edge in elements])
+        element_type = type(elements[0])
+        return cls(
+            [edge.get_endpoints3() for edge in elements],
+            colour=Colour.similar(element_type.colour)
+        )

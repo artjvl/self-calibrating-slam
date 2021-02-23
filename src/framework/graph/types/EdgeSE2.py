@@ -5,6 +5,7 @@ from src.framework.graph.types.NodeSE2 import NodeSE2
 from src.framework.graph.types.Parser import Parser
 from src.framework.groups import SO2, SE2
 from src.framework.structures import Vector, Square
+from src.gui.viewer.Colour import Colour
 
 
 class EdgeSE2(FactorEdge[SE2]):
@@ -12,6 +13,7 @@ class EdgeSE2(FactorEdge[SE2]):
     tag = 'EDGE_SE2'
     size = 2
     is_physical = True
+    colour = Colour.CYAN
 
     # constructor
     def __init__(
