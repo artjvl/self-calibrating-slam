@@ -200,6 +200,26 @@ class GraphContainer(QObject):
         value.toggle()
         self.signal_update.emit(-1)
 
+    def show_all(self, visible: bool = True):
+        # iterate over: Container -> GRAPHICS = graphics
+        for graphics_value in self._get_graphics_tree().values():
+            graphics_value.set_checked(visible)
+        # iterate over: Container -> GRAPHS = graphs
+        for graph_value in self._get_graph_tree().values():
+            graph_value.set_checked(visible)
+            graph = graph_value.get_object()
+            # iterate over: Container -> GRAPHS -> ELEMENTS = elements
+            for element_value in self._get_element_tree(graph.get_id()).values():
+                element_value.set_checked(visible)
+            # iterate over: Container -> GRAPHS -> GRAPHICS = graphics
+            for graphics_value in self._get_graphics_tree(graph.get_id()).values():
+                graphics_value.set_checked(visible)
+                graphics_type = graphics_value.get_object()
+                # iterate over: Container -> GRAPHS -> GRAPHICS -> Type[Graphics] = elements
+                for element_value in self._get_element_tree(graph.get_id(), graphics_type).values():
+                    element_value.set_checked(visible)
+        self.signal_update.emit(-1)
+
     # getter helper-methods: tree
     def _get_graph_tree(self) -> GraphDictTree:
         return self._tree[self.GRAPHS]

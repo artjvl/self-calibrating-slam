@@ -18,6 +18,7 @@ class ViewMenu(Menu):
         self._viewer = viewer
         self._construct_menu()
         self._container.signal_update.connect(self._handle_signal)
+        self._show_all: bool = True
 
     # helper-methods
     def _construct_menu(self):
@@ -28,6 +29,13 @@ class ViewMenu(Menu):
         self.addSeparator()
         for graph in self._container.get_graphs():
             self._construct_graph_menu(graph.get_id())
+        self.addSeparator()
+        self.add_action(
+            menu=self,
+            name='Show &All',
+            handler=self._handle_show_all,
+            checked=True
+        )
 
     def _construct_view_section(self):
         self.add_action(
@@ -114,3 +122,7 @@ class ViewMenu(Menu):
             self._construct_menu()
         else:
             self._update_menu(self)
+
+    def _handle_show_all(self):
+        self._show_all = not self._show_all
+        self._container.show_all(self._show_all)
