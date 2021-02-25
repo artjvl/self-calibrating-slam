@@ -1,14 +1,15 @@
-from PyQt5.QtWidgets import QMainWindow, QWidget, QDesktopWidget, QHBoxLayout, QSizePolicy, QVBoxLayout, QMenuBar, \
-    QPushButton, QStatusBar
+from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import QMainWindow, QWidget, QDesktopWidget, QSizePolicy, QMenuBar, \
+    QStatusBar, QSplitter
 
+from src.gui.action_pane.ActionPane import ActionPane
+from src.gui.info_pane.InfoPane import InfoPane
 from src.gui.menus import FileMenu, ViewMenu, AboutMenu
 from src.gui.modules.GraphContainer import GraphContainer
 from src.gui.modules.OptimisationHandler import OptimisationHandler
 from src.gui.modules.SimulationHandler import SimulationHandler
+from src.gui.terminal.TerminalText import TerminalText
 from src.gui.viewer.Viewer import Viewer
-from src.gui.widgets import BrowserTree, InspectorTree, TerminalText
-from src.gui.widgets.SelectBox import SelectBox
-from src.gui.widgets.SimulationBox import SimulationBox
 
 
 class MainWindow(QMainWindow):
@@ -24,46 +25,41 @@ class MainWindow(QMainWindow):
         # self.centre()
         self.setWindowTitle('Graph-Viewer')
 
-        # initialise central widget
-        central_widget = QWidget(self)
-
         # modules
         self._container = GraphContainer()
         self._simulation = SimulationHandler(self._container)
         self._optimisation = OptimisationHandler(self._container)
 
-        # widgets
-        self._viewer: Viewer = self._init_viewer(central_widget, self._container)
+        # layout = QHBoxLayout(self)
+        splitter = QSplitter(Qt.Horizontal)
+
+        # terminal
+        self._viewer: Viewer = self._init_viewer(splitter, self._container)
         self._menubar: QMenuBar = self._init_menubar(self._container, self._viewer)
         self._statusbar: QStatusBar = self.statusBar()
 
-        # layout
-        self.setCentralWidget(central_widget)
-        layout = QHBoxLayout(central_widget)
         # left-layout:
-        layout.addLayout(
-            self._init_create_layout(
-                central_widget,
-                self._container,
-                self._simulation,
-                self._optimisation
+        splitter.addWidget(
+            ActionPane(
+                self._container
             )
         )
         # centre-layout:
-        layout.addLayout(
+        splitter.addWidget(
             self._init_centre_layout(
-                central_widget,
+                splitter,
                 self._viewer
             )
         )
-        # right-layout:
-        layout.addLayout(
-            self._init_info_layout(
-                central_widget,
+        # right-layout
+        splitter.addWidget(
+            InfoPane(
                 self._container,
                 self._viewer
             )
         )
+        splitter.setSizes([50, 200, 200])
+        self.setCentralWidget(splitter)
 
         # show
         self.show()
@@ -83,37 +79,11 @@ class MainWindow(QMainWindow):
         return viewer
 
     @staticmethod
-    def _init_info_layout(
-            widget: QWidget,
-            container: GraphContainer,
-            viewer: Viewer
-    ) -> QVBoxLayout:
-        layout = QVBoxLayout()
-
-        # load-button
-        button_load = QPushButton(widget)
-        button_load.setText('Load file')
-        # button_load.setSizePolicy(QSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed))
-        button_load.clicked.connect(container.load_graph)
-        layout.addWidget(button_load)
-
-        # browser/inspector
-        inspector: InspectorTree = InspectorTree(widget)
-        inspector.setSizePolicy(QSizePolicy(QSizePolicy.Maximum, QSizePolicy.Preferred))
-        browser: BrowserTree = BrowserTree(container, inspector, viewer, widget)
-        browser.setSizePolicy(QSizePolicy(QSizePolicy.Maximum, QSizePolicy.Preferred))
-
-        layout.addWidget(browser)
-        layout.addWidget(inspector)
-
-        return layout
-
-    @staticmethod
     def _init_centre_layout(
             widget: QWidget,
             viewer: Viewer
-    ) -> QVBoxLayout:
-        layout = QVBoxLayout()
+    ) -> QSplitter:
+        layout = QSplitter(Qt.Vertical)
         layout.addWidget(viewer)
 
         # terminal
@@ -121,35 +91,7 @@ class MainWindow(QMainWindow):
         terminal.setSizePolicy(QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Maximum))
         layout.addWidget(terminal)
 
-        return layout
-
-    @staticmethod
-    def _init_create_layout(
-            widget: QWidget,
-            container: GraphContainer,
-            simulation: SimulationHandler,
-            optimisation: OptimisationHandler
-    ) -> QVBoxLayout:
-        layout = QVBoxLayout()
-
-        # graph simulation
-        simulator_box: SimulationBox = SimulationBox(simulation, widget)
-        layout.addWidget(simulator_box)
-
-        button_simulate = QPushButton(widget)
-        button_simulate.setText('Simulate graph')
-        button_simulate.clicked.connect(simulation.simulate)
-        layout.addWidget(button_simulate)
-
-        # graph optimisation
-        select_box: SelectBox = SelectBox(container, optimisation, widget)
-        layout.addWidget(select_box)
-
-        button_optimise = QPushButton(widget)
-        button_optimise.setText('Optimise graph')
-        button_optimise.clicked.connect(optimisation.optimise)
-        layout.addWidget(button_optimise)
-
+        layout.setSizes([400, 100])
         return layout
 
     def _init_menubar(

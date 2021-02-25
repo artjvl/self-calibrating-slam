@@ -9,7 +9,7 @@ from src.framework.graph.factor.FactorElement import FactorElement
 from src.framework.graph.factor.FactorNode import FactorNode
 from src.gui.modules.GraphContainer import GraphContainer, GraphDictTreeData
 from src.gui.viewer.Viewer import Viewer
-from src.gui.widgets.InspectorTree import InspectorTree
+from src.gui.info_pane.InspectorTree import InspectorTree
 
 
 class BrowserTree(QTreeWidget):
