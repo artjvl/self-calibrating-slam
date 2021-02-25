@@ -11,7 +11,7 @@ from src.framework.groups.SO import SO
 from src.framework.structures import *
 
 
-class Inspector(QTreeWidget):
+class InspectorTree(QTreeWidget):
 
     # constructor
     def __init__(self, *args, **kwargs):

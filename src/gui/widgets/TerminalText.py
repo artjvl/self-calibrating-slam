@@ -20,7 +20,7 @@ class Stream(object):
         pass
 
 
-class Terminal(QTextEdit):
+class TerminalText(QTextEdit):
 
     # constructor
     def __init__(self, *args, **kwargs):

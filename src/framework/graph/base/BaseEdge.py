@@ -7,6 +7,7 @@ from src.framework.graph.base.BaseNode import BaseNode
 class BaseEdge(BaseElement):
 
     def __init__(self, nodes: List[BaseNode], **kwargs):
+        super().__init__(**kwargs)
         self._nodes: List[BaseNode] = nodes
 
     def id_string(self):

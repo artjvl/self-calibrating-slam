@@ -1,7 +1,9 @@
 import pathlib
 from typing import *
 
-from src.framework.graph.factor import FactorNode, FactorEdge, FactorGraph
+from src.framework.graph.factor.FactorEdge import FactorEdge
+from src.framework.graph.factor.FactorGraph import FactorGraph
+from src.framework.graph.factor.FactorNode import FactorNode
 from src.framework.graph.types import *
 
 

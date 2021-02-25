@@ -1,6 +1,6 @@
 from typing import *
 
-from src.framework.graph.factor import FactorNode
+from src.framework.graph.factor.FactorNode import FactorNode
 from src.framework.graph.types.Parser import Parser
 from src.framework.groups import SO2, SE2, SO3, SE3
 from src.framework.structures import Vector

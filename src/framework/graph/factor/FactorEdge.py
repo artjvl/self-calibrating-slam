@@ -3,7 +3,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import *
 
-from src.framework.graph.base import BaseEdge
+from src.framework.graph.base.BaseEdge import BaseEdge
 from src.framework.graph.factor.FactorElement import FactorElement
 from src.framework.graph.factor.FactorNode import FactorNode
 from src.framework.groups.Group import Group

@@ -2,7 +2,7 @@ from functools import partial
 
 from PyQt5.QtWidgets import qApp
 
-from src.gui.GraphContainer import GraphContainer
+from src.gui.modules.GraphContainer import GraphContainer
 from src.gui.menus.Menu import Menu
 
 
@@ -22,7 +22,7 @@ class FileMenu(Menu):
         self.add_action(
             menu=self,
             name='&Load',
-            handler=self._container.add_graph
+            handler=self._container.load_graph
         )
         menu_replace = self.add_menu(
             menu=self,

@@ -1,4 +1,4 @@
-from src.framework.graph.base import BaseGraph
+from src.framework.graph.base.BaseGraph import BaseGraph
 from src.framework.graph.factor.FactorEdge import FactorEdge
 from src.framework.graph.factor.FactorNode import FactorNode
 

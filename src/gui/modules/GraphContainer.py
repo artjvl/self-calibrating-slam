@@ -5,7 +5,7 @@ from typing import *
 from PyQt5.QtCore import pyqtSignal, QObject
 from PyQt5.QtWidgets import QFileDialog
 
-from src.framework.graph import Graph
+from src.framework.graph.Graph import Graph
 from src.gui.viewer.items import GraphicsItem, Items
 from src.utils.DictTree import DictTree
 
@@ -74,34 +74,13 @@ class GraphContainer(QObject):
         self._tree.add_child(self.GRAPHS, DictTree())
 
     # graph management
-    def load_graph(self):
-        print("Loading file...")
-        filename = QFileDialog.getOpenFileName(caption='Select file', directory='', filter='g2o (*.g2o)')
-        if filename[0]:
-            graph = Graph()
-            graph.load(filename[0])
-            return graph
-        return None
-
-    def add_graph(self):
-        graph: Graph = self.load_graph()
-        if graph is not None:
-            graph_id = self._id_counter
-            self._id_counter += 1
-            graph.set_id(graph_id)
-            self._get_graph_tree().add_child(str(graph_id), self._construct_graph_tree(graph))
-            self.signal_update.emit(graph_id)
-
-    def replace_graph(
-            self,
-            old: Graph
-    ):
-        new: Graph = self.load_graph()
-        if new is not None:
-            graph_id = old.get_id()
-            new.set_id(graph_id)
-            self._get_graph_tree().set_child(str(graph_id), self._construct_graph_tree(new))
-            self.signal_update.emit(graph_id)
+    def add_graph(self, graph: Graph):
+        assert graph is not None
+        graph_id = self._id_counter
+        self._id_counter += 1
+        graph.set_id(graph_id)
+        self._get_graph_tree().add_child(str(graph_id), self._construct_graph_tree(graph))
+        self.signal_update.emit(graph_id)
 
     def remove_graph(
             self,
@@ -110,6 +89,33 @@ class GraphContainer(QObject):
         graph_id = graph.get_id()
         self._get_graph_tree().remove_child(str(graph_id))
         self.signal_update.emit(graph_id)
+
+    # graph management handlers
+    def load_graph(self):
+        graph: Graph = self.load_from_file()
+        if graph is not None:
+            self.add_graph(graph)
+
+    def replace_graph(
+            self,
+            old: Graph
+    ):
+        new: Graph = self.load_from_file()
+        if new is not None:
+            graph_id = old.get_id()
+            new.set_id(graph_id)
+            self._get_graph_tree().set_child(str(graph_id), self._construct_graph_tree(new))
+            self.signal_update.emit(graph_id)
+
+    @staticmethod
+    def load_from_file():
+        print("Loading file...")
+        filename = QFileDialog.getOpenFileName(caption='Select file', directory='', filter='g2o (*.g2o)')
+        if filename[0]:
+            graph = Graph()
+            graph.load(filename[0])
+            return graph
+        return None
 
     # getter: graphics
     def get_graphics(self) -> List[GraphicsItem]:

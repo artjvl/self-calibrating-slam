@@ -4,7 +4,7 @@ from PyQt5.QtCore import QSize
 from PyQt5.QtGui import QVector3D
 
 from src.framework.structures import Vector
-from src.gui.GraphContainer import GraphContainer
+from src.gui.modules.GraphContainer import GraphContainer
 from src.gui.viewer.Grid import Grid
 
 

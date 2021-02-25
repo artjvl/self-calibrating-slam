@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
 from typing import *
 
@@ -32,12 +34,13 @@ class SE(Generic[R], Group, ABC):
         return self._rotation
 
     def plus(self, vector: Vector):
-        increment = type(self).from_vector(vector)
-        return self * increment
+        increment: SE = type(self).from_vector(vector)
+        return self + increment
+        # return self * increment
 
-    def minus(self, transformation) -> Vector:
-        assert isinstance(transformation, SE)
-        difference = transformation.inverse() * self
+    def minus(self, transformation: SE) -> Vector:
+        # difference: SE = transformation.inverse() * self
+        difference: SE = self - transformation
         return difference.vector()
 
     def inverse(self):

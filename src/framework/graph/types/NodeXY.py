@@ -1,9 +1,9 @@
 from typing import *
 
-from src.framework.graph.factor import FactorNode
+from src.framework.graph.factor.FactorNode import FactorNode
 from src.framework.graph.types.Parser import Parser
 from src.framework.groups import SO3, SE3
-from src.framework.structures import Vector
+from src.framework.structures.Vector import Vector
 from src.gui.viewer.Colour import Colour
 
 

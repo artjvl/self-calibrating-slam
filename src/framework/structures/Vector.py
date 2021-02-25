@@ -5,6 +5,8 @@ from typing import *
 import numpy as np
 from scipy import linalg
 
+from src.framework.structures.Square import Square
+
 
 class Vector(np.ndarray):
 
@@ -55,8 +57,17 @@ class Vector(np.ndarray):
         return self.shape[0]
 
     # alternative representations
+    def to_1d(self) -> np.ndarray:
+        return self.flatten()
+
     def to_list(self) -> List[float]:
-        return list(self.flatten())
+        return list(self.to_1d())
+
+    def to_tuple(self) -> Tuple[float, ...]:
+        return tuple(self.to_list())
+
+    def to_diagonal(self) -> Square:
+        return Square(np.diag(self.to_1d()))
 
     # alternative constructors
     @classmethod

@@ -2,7 +2,7 @@ from typing import *
 
 from OpenGL.GL import *
 
-from src.framework.graph.factor import FactorElement, FactorNode
+from src.framework.graph.factor.FactorNode import FactorNode
 from src.framework.structures import *
 from src.gui.viewer.Colour import Colour
 from src.gui.viewer.Drawer import Drawer

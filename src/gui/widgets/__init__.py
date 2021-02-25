@@ -1,3 +1,3 @@
-from src.gui.widgets.Browser import Browser
-from src.gui.widgets.Inspector import Inspector
-from src.gui.widgets.Terminal import Terminal
+from src.gui.widgets.BrowserTree import BrowserTree
+from src.gui.widgets.InspectorTree import InspectorTree
+from src.gui.widgets.TerminalText import TerminalText

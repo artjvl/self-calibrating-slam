@@ -3,20 +3,22 @@ from typing import *
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QTreeWidget, QTreeWidgetItem, QMenu, QAction
 
-from src.framework.graph import Graph
-from src.framework.graph.factor import FactorElement, FactorNode, FactorEdge
-from src.gui.GraphContainer import GraphContainer, GraphDictTreeData
+from src.framework.graph.Graph import Graph
+from src.framework.graph.factor.FactorEdge import FactorEdge
+from src.framework.graph.factor.FactorElement import FactorElement
+from src.framework.graph.factor.FactorNode import FactorNode
+from src.gui.modules.GraphContainer import GraphContainer, GraphDictTreeData
 from src.gui.viewer.Viewer import Viewer
-from src.gui.widgets.Inspector import Inspector
+from src.gui.widgets.InspectorTree import InspectorTree
 
 
-class Browser(QTreeWidget):
+class BrowserTree(QTreeWidget):
 
     # constructor
     def __init__(
             self,
             container: GraphContainer,
-            inspector: Inspector,
+            inspector: InspectorTree,
             viewer: Viewer,
             *args, **kwargs
     ):
@@ -33,7 +35,7 @@ class Browser(QTreeWidget):
         # container
         self._container: GraphContainer = container
         self._container.signal_update.connect(self._handle_signal)
-        self._inspector: Inspector = inspector
+        self._inspector: InspectorTree = inspector
         self._viewer: Viewer = viewer
 
     def _handle_signal(self, signal: int):

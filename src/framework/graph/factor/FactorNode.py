@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import *
 
-from src.framework.graph.base import BaseNode
+from src.framework.graph.base.BaseNode import BaseNode
 from src.framework.graph.factor.FactorElement import FactorElement
 from src.framework.groups import SO3, SE3
 from src.framework.groups.Group import Group
@@ -15,6 +15,7 @@ class FactorNode(BaseNode, FactorElement[T], ABC):
     # constructor
     def __init__(self, id: int, value: T):
         super().__init__(id=id, value=value)
+        self._is_fixed = False
 
     # static properties
     @property
@@ -35,3 +36,7 @@ class FactorNode(BaseNode, FactorElement[T], ABC):
     @abstractmethod
     def get_pose3(self) -> SE3:
         pass
+
+    # public method
+    def set_fixed(self):
+        self._is_fixed = True

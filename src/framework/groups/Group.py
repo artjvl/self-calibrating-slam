@@ -1,3 +1,6 @@
+from __future__ import annotations
+
+from typing import *
 from abc import ABC, abstractmethod
 
 from src.framework.structures import *
@@ -21,8 +24,7 @@ class Group(ABC):
         pass
 
     # operators
-    def __mul__(self, other):
-        assert isinstance(other, (Group, Vector))
+    def __mul__(self, other: Union[Group, Vector]):
         if isinstance(other, Group):
             return self.from_matrix(self.matrix() @ other.matrix())
         if isinstance(other, Vector):
@@ -32,9 +34,11 @@ class Group(ABC):
         matrix = self.matrix()
         return type(self).from_matrix(- matrix)
 
-    def __str__(self):
-        matrix = self.matrix()
-        return str(matrix)
+    def __add__(self, other: Group) -> Group:
+        return self * other
+
+    def __sub__(self, other: Group) -> Group:
+        return other.inverse() * self
 
     # public methods
     def algebra(self):
@@ -87,3 +91,8 @@ class Group(ABC):
     def _algebra_to_vector(algebra: Square) -> Vector:
         """ returns the vector corresponding to the algebra """
         pass
+
+    # object methods
+    def __str__(self):
+        matrix = self.matrix()
+        return str(matrix)

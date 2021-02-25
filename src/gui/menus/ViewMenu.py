@@ -2,8 +2,8 @@ from functools import partial
 
 from PyQt5.QtWidgets import QMenu, QAction
 
-from src.gui.GraphContainer import GraphContainer
-from src.gui.GraphContainer import GraphDictTreeData
+from src.gui.modules.GraphContainer import GraphContainer
+from src.gui.modules.GraphContainer import GraphDictTreeData
 from src.gui.menus.Menu import Menu
 from src.gui.viewer.Viewer import Viewer
 
