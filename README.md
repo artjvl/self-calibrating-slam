@@ -35,8 +35,15 @@ g2o:
 - ```cmake ../```
 - ```make```
 
+# Framework
+
+## GUI
+
+The GUI intuitively allows for graph creation, optimisation and analysis.
+- ```python3 gui.py``` in ```src/gui/```
+
 # Contact Info
 
 Art van Liere\
 [artvanliere@gmail.com](mailto:artvanliere@gmail.com)\
-+316 5166 1875
++31 6 51 66 18 75
