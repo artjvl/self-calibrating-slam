@@ -13,7 +13,9 @@ MSc-Thesis work  of [Art van Liere](mailto:artvanliere@gmail.com)
 ## Requirements
 
 Requirements:
-- pip3 (package ```python3-pip```)
+- **pip3** (install package ```python3-pip``` with ```sudo apt install python3-pip```)
+- **pyqt5** (install package ```pyqt5``` with ```pip3 install pyqt5```)
+- **pyqtgraph** (install package ```pyqtgraph``` with ```pip3 install pyqtgraph```)
 
 ## Installation
 
