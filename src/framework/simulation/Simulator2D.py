@@ -149,7 +149,8 @@ class Simulator2D(object):
             if current.id() - neighbour.id() >= separation:
                 closures.append(neighbour)
         if closures:
-            return self._rng.choice(closures)
+            return closures[0]
+            # return self._rng.choice(closures)
         return None
 
     # public methods

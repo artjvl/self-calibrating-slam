@@ -23,8 +23,8 @@ class Graph(FactorGraph):
         types: Dict[str, Any] = dict()
         types['VERTEX_SE2'] = NodeSE2
         types['EDGE_SE2'] = EdgeSE2
-        types['VERTEX_POINT_XY'] = NodeXY
-        types['EDGE_SE2_POINT_XY'] = EdgeSE2XY
+        types['VERTEX_XY'] = NodeXY
+        types['EDGE_SE2_XY'] = EdgeSE2XY
         return types
 
     # getters/setters
@@ -58,25 +58,26 @@ class Graph(FactorGraph):
             # handle FIX
 
             token = words[0]
-            assert token in self._types
-            element_type = self._types[token]
+            if token != 'FIX':
+                assert token in self._types, 'unknown token: {}'.format(token)
+                element_type = self._types[token]
 
-            # handle parameters
+                # handle parameters
 
-            if issubclass(element_type, FactorNode):
-                id = int(words[1])
-                node = element_type(id)
-                rest = words[2:]
-                node.read(rest)
-                self.add_node(node)
-            elif issubclass(element_type, FactorEdge):
-                size = element_type.size
-                ids = words[1: 1 + size]
-                nodes = [self.get_node(int(id)) for id in ids]
-                edge = element_type.from_nodes(nodes)
-                rest = words[1 + size:]
-                edge.read(rest)
-                self.add_edge(edge)
+                if issubclass(element_type, FactorNode):
+                    id = int(words[1])
+                    node = element_type(id)
+                    rest = words[2:]
+                    node.read(rest)
+                    self.add_node(node)
+                elif issubclass(element_type, FactorEdge):
+                    size = element_type.size
+                    ids = words[1: 1 + size]
+                    nodes = [self.get_node(int(id)) for id in ids]
+                    edge = element_type.from_nodes(nodes)
+                    rest = words[1 + size:]
+                    edge.read(rest)
+                    self.add_edge(edge)
 
     def save(self, filename: str):
         self._name = filename

@@ -34,7 +34,8 @@ class Parser(object):
     def list_to_symmetric(cls, elements: List[float]) -> Square:
         length = len(elements)
         dimension = -0.5 + 0.5 * np.sqrt(1 + 8 * length)
-        assert dimension.is_integer()
+        assert dimension.is_integer(), \
+            'elements {} are not divisible to form a symmetric matrix ({})'.format(elements, dimension)
         dimension = int(dimension)
         matrix = Square.zeros(dimension)
         indices = np.arange(dimension)

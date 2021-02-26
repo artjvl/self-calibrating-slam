@@ -9,7 +9,7 @@ from src.gui.viewer.Colour import Colour
 
 class NodeXY(FactorNode[Vector]):
 
-    tag = 'VERTEX_POINT_XY'
+    tag = 'VERTEX_XY'
     is_physical = True
     has_rotation = False
     colour = Colour.GREEN

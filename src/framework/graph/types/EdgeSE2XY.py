@@ -11,7 +11,7 @@ from src.gui.viewer.Colour import Colour
 
 class EdgeSE2XY(FactorEdge[Vector]):
 
-    tag = 'EDGE_SE2_POINT_XY'
+    tag = 'EDGE_SE2_XY'
     size = 2
     is_physical = True
     colour = Colour.ORANGE
