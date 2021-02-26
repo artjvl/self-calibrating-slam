@@ -1,6 +1,8 @@
 from abc import ABC, abstractmethod
 from typing import *
 
+import numpy as np
+
 from src.framework.graph.Graph import Graph
 from src.framework.graph.types import EdgeSE2, NodeSE2
 from src.framework.groups import SE2
@@ -16,6 +18,7 @@ class Simulation2D(ABC):
             seed: Optional[int] = 0
     ):
         self._seed = seed
+        self._rng = np.random.RandomState(seed)
         self._true: Optional[Simulator2D] = None
         self._perturbed: Optional[Simulator2D] = None
         self.reset()
@@ -43,12 +46,13 @@ class Simulation2D(ABC):
 
     def add_proximity(
             self,
-            steps: int,
+            separation: int,
             variance: Optional[Vector] = None
     ):
-        edge: EdgeSE2 = self._true.add_proximity(steps)
-        transformation = edge.get_transformation()
-        self._perturbed.add_proximity(steps, transformation, variance)
+        edge: Optional[EdgeSE2] = self._true.add_proximity(separation)
+        if edge is not None:
+            transformation = edge.get_transformation()
+            self._perturbed.add_proximity(separation, transformation, variance)
 
     def fix_current(self):
         self._true.fix_current()
@@ -56,18 +60,21 @@ class Simulation2D(ABC):
 
     def add_loop_closure(
             self,
-            distance: float,
+            separation: int,
+            reach: float,
             variance: Optional[Vector] = None
     ):
-        node: NodeSE2 = self._true.find_loop_closure(distance)
-        edge: EdgeSE2 = self._true.add_edge(node)
+        node: Optional[NodeSE2] = self._true.find_loop_closure(separation, reach)
+        if node is not None:
+            edge: EdgeSE2 = self._true.add_edge(node)
+            print('loop closure: {} - {}'.format(edge.get_node(0).id(), edge.get_node(1).id()))
 
-        node_perturbed = self._perturbed.get_node(node.id())
-        self._perturbed.add_edge(
-            node_perturbed,
-            transformation=edge.get_transformation(),
-            variance=variance
-        )
+            node_perturbed = self._perturbed.get_node(node.id())
+            self._perturbed.add_edge(
+                node_perturbed,
+                transformation=edge.get_transformation(),
+                variance=variance
+            )
 
     # public methods
     def save(self, name: str):
@@ -85,6 +92,9 @@ class Simulation2D(ABC):
 
     def get_perturbed(self) -> Graph:
         return self._perturbed.get_graph()
+
+    def get_probability(self) -> float:
+        return self._rng.uniform(0, 1)
 
     # abstract methods
     @abstractmethod

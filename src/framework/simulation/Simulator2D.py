@@ -107,38 +107,50 @@ class Simulator2D(object):
             variance: Optional[Vector] = None
     ) -> Optional[EdgeSE2]:
         node_id = self._id_counter - steps - 1
-        assert node_id >= 0
+        if node_id >= 0:
+            # assert node_id >= 0
 
-        previous_node: NodeSE2 = self._graph.get_node(node_id)
-        edge: EdgeSE2 = self.add_edge(
-            previous_node,
-            transformation=transformation,
-            variance=variance
-        )
-        return edge
+            previous_node: NodeSE2 = self._graph.get_node(node_id)
+            edge: EdgeSE2 = self.add_edge(
+                previous_node,
+                transformation=transformation,
+                variance=variance
+            )
+            return edge
+        return None
 
     def fix_current(self):
         self._current.set_fixed()
 
     def add_loop_closure(
             self,
-            distance: float,
+            separation: int,
+            reach: float,
             transformation: Optional[SE2],
             variance: Optional[Vector]
     ) -> EdgeSE2:
-        node: NodeSE2 = self.find_loop_closure(distance)
-        self.add_edge(
+        node: NodeSE2 = self.find_loop_closure(separation, reach)
+        edge = self.add_edge(
             node,
             transformation=transformation,
             variance=variance
         )
+        return edge
 
     def find_loop_closure(
             self,
-            distance: float
-    ) -> NodeSE2:
-        neighbours = self._find_within(self._current, distance)
-        return self._rng.choice(neighbours)
+            separation: int,
+            reach: float
+    ) -> Optional[NodeSE2]:
+        current: NodeSE2 = self._current
+        neighbours: List[NodeSE2] = self._find_within(current, reach)
+        closures: List[NodeSE2] = []
+        for neighbour in neighbours:
+            if current.id() - neighbour.id() >= separation:
+                closures.append(neighbour)
+        if closures:
+            return self._rng.choice(closures)
+        return None
 
     # public methods
     def save(self, filename: str):

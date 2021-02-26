@@ -27,13 +27,19 @@ class TutorialSimulation(Simulation2D):
         translation_noise_x = float(self._parameters['translation_noise_x'])
         translation_noise_y = float(self._parameters['translation_noise_y'])
         rotation_noise_deg = float(self._parameters['rotation_noise_deg'])
+        proximity_probability = float(self._parameters['proximity_probability'])
+        proximity_separation = int(self._parameters['proximity_separation'])
+        reach = float(self._parameters['reach'])
+        closure_probability = float(self._parameters['closure_probability'])
+        closure_separation = int(self._parameters['closure_separation'])
+
         variance = Vector([
             translation_noise_x,
             translation_noise_y,
             np.deg2rad(rotation_noise_deg)
         ])
 
-        num_nodes = 300
+        num_nodes = 100
 
         angle: float = np.deg2rad(0)
         while self.get_node_count() < num_nodes:
@@ -41,6 +47,10 @@ class TutorialSimulation(Simulation2D):
                 motion = SE2.from_elements(step_length, 0, angle)
                 angle = np.deg2rad(0)
                 self.add_odometry(motion, variance=variance)
+                if self.get_probability() >= proximity_probability:
+                    self.add_proximity(proximity_separation, variance)
+                if self.get_probability() >= closure_probability:
+                    self.add_loop_closure(closure_separation, reach, variance)
                 if self.get_node_count() >= num_nodes:
                     break
             angle = np.deg2rad(np.random.choice([90, -90]))
