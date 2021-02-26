@@ -1,4 +1,5 @@
 import pathlib
+from datetime import datetime
 from typing import *
 
 from src.framework.graph.factor.FactorEdge import FactorEdge
@@ -14,7 +15,7 @@ class Graph(FactorGraph):
         super().__init__()
         self._types = self._init_types()
         self._id = id
-        self._name = name
+        self._name = None
 
     # initialisation
     @staticmethod
@@ -36,7 +37,7 @@ class Graph(FactorGraph):
 
     def get_name(self, short: bool = False):
         if self._name is None:
-            return self.__repr__()
+            return '{}_Graph'.format(datetime.now().strftime('%Y%m%d-%H%M%S'))
         else:
             if short:
                 return pathlib.Path(self._name).name
@@ -89,3 +90,7 @@ class Graph(FactorGraph):
             writer.write(node.write() + '\n')
         for edge in self.get_edges():
             writer.write(edge.write() + '\n')
+
+    # object methods
+    def __str__(self):
+        return '{}({}, {})'.format(self.__class__.__name__, self.get_id(), self.id_string())
