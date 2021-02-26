@@ -15,6 +15,20 @@ class Simulation2D(ABC):
             self,
             seed: Optional[int] = 0
     ):
+        self._seed = seed
+        self._true: Optional[Simulator2D] = None
+        self._perturbed: Optional[Simulator2D] = None
+        self.reset()
+
+    def simulate(self):
+        graphs = self._simulate()
+        self.reset()
+        return graphs
+
+    def reset(self, seed: Optional[int] = None):
+        if seed is None:
+            seed = self._seed
+        self._seed = seed
         self._true = Simulator2D(seed)
         self._perturbed = Simulator2D(seed)
 
@@ -74,5 +88,5 @@ class Simulation2D(ABC):
 
     # abstract methods
     @abstractmethod
-    def simulate(self):
+    def _simulate(self):
         pass

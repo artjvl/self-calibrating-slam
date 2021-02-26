@@ -15,7 +15,7 @@ class HardcodedSimulation(Simulation2D):
         super().__init__()
 
     # public methods
-    def simulate(self) -> Tuple[Graph, Graph]:
+    def _simulate(self) -> Tuple[Graph, Graph]:
         variance = Vector([0.1, 0.2, np.deg2rad(3)])
         self.add_odometry(SE2.from_elements(1., 0.2, 0.4), variance)
         self.add_odometry(SE2.from_elements(0.2, 1., 0.8), variance)

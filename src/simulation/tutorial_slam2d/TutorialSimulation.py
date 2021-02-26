@@ -22,7 +22,7 @@ class TutorialSimulation(Simulation2D):
         self._parameters = config['PARAMETERS']
 
     # public methods
-    def simulate(self) -> Tuple[Graph, Graph]:
+    def _simulate(self) -> Tuple[Graph, Graph]:
         step_length = float(self._parameters['step_length'])
         translation_noise_x = float(self._parameters['translation_noise_x'])
         translation_noise_y = float(self._parameters['translation_noise_y'])
@@ -32,16 +32,18 @@ class TutorialSimulation(Simulation2D):
             translation_noise_y,
             np.deg2rad(rotation_noise_deg)
         ])
-        motion = SE2.from_elements(step_length, 0, 0)
-        self.add_odometry(motion, variance=variance)
 
-        # num_nodes = 3
-        # while self.get_node_count() < num_nodes:
-        #     for _ in range(int(self._parameters['step_count'])):
-        #
-        #
-        #         if self.get_node_count() >= num_nodes:
-        #             break
+        num_nodes = 300
+
+        angle: float = np.deg2rad(0)
+        while self.get_node_count() < num_nodes:
+            for _ in range(int(self._parameters['step_count'])):
+                motion = SE2.from_elements(step_length, 0, angle)
+                angle = np.deg2rad(0)
+                self.add_odometry(motion, variance=variance)
+                if self.get_node_count() >= num_nodes:
+                    break
+            angle = np.deg2rad(np.random.choice([90, -90]))
 
         self.save('test')
         return self.get_graphs()

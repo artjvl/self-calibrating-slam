@@ -1,6 +1,5 @@
 from typing import *
 
-from src.framework.graph.Graph import Graph
 from src.framework.simulation.Simulation2D import Simulation2D
 from src.gui.modules.GraphContainer import GraphContainer
 
