@@ -10,6 +10,7 @@ from src.gui.viewer.Colour import Colour
 class NodeSE2(FactorNode[SE2]):
 
     tag = 'VERTEX_SE2'
+    dimensionality = 2
     is_physical = True
     has_rotation = True
     colour = Colour.WHITE
@@ -46,7 +47,7 @@ class NodeSE2(FactorNode[SE2]):
         pose = self.get_pose()
         translation_string = Parser.list_to_string(Parser.array_to_list(pose.translation()))
         rotation_string = Parser.list_to_string(Parser.array_to_list(pose.rotation().vector()))
-        return ' '.join([self.tag, str(self.id()), translation_string, rotation_string])
+        return ' '.join([self.tag, str(self.get_id()), translation_string, rotation_string])
 
     def read(self, words: List[str]):
         elements = [float(word) for word in words]

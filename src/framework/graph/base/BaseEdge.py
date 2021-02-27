@@ -10,13 +10,13 @@ class BaseEdge(BaseElement):
         super().__init__(**kwargs)
         self._nodes: List[BaseNode] = nodes
 
-    def id_string(self):
-        return ', '.join([str(node.id()) for node in self.get_nodes()])
+    def id_string(self) -> str:
+        return '-'.join([str(node.get_id()) for node in self.get_nodes()])
 
     # getters
     def get_nodes(self) -> List[BaseNode]:
         return self._nodes
 
     def get_node(self, index: int):
-        assert index < len(self._nodes)
+        assert 0 <= index < len(self._nodes)
         return self._nodes[index]

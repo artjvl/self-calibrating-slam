@@ -10,6 +10,7 @@ from src.gui.viewer.Colour import Colour
 class NodeXY(FactorNode[Vector]):
 
     tag = 'VERTEX_XY'
+    dimensionality = 2
     is_physical = True
     has_rotation = False
     colour = Colour.GREEN
@@ -41,7 +42,7 @@ class NodeXY(FactorNode[Vector]):
     def write(self):
         translation = self.get_translation()
         string = Parser.list_to_string(Parser.array_to_list(translation))
-        return ' '.join([self.tag, str(self.id()), string])
+        return ' '.join([self.tag, str(self.get_id()), string])
 
     def read(self, words: List[str]):
         elements = [float(word) for word in words]

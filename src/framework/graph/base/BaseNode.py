@@ -8,10 +8,10 @@ class BaseNode(BaseElement):
         self._id: int = id
 
     def id_string(self) -> str:
-        return str(self.id())
+        return str(self.get_id())
 
     # getters/setters
-    def id(self) -> int:
+    def get_id(self) -> int:
         return self._id
 
     def set_id(self, id: int):

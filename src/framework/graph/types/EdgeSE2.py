@@ -11,7 +11,8 @@ from src.gui.viewer.Colour import Colour
 class EdgeSE2(FactorEdge[SE2]):
 
     tag = 'EDGE_SE2'
-    size = 2
+    cardinality = 2
+    dimensionality = 2
     is_physical = True
     colour = Colour.CYAN
 
@@ -57,7 +58,7 @@ class EdgeSE2(FactorEdge[SE2]):
         data_string = ' '.join([translation_string, rotation_string])
         if self._is_uncertain:
             data_string += ' {}'.format(Parser.list_to_string(Parser.symmetric_to_list(self.get_information())))
-        return ' '.join([self.tag, str(self.get_node(0).id()), str(self.get_node(1).id()), data_string])
+        return ' '.join([self.tag, str(self.get_node(0).get_id()), str(self.get_node(1).get_id()), data_string])
 
     def read(self, words: List[str]):
         elements = [float(word) for word in words]

@@ -67,9 +67,9 @@ class Simulation2D(ABC):
         node: Optional[NodeSE2] = self._true.find_loop_closure(separation, reach)
         if node is not None:
             edge: EdgeSE2 = self._true.add_edge(node)
-            print('loop closure: {} - {}'.format(edge.get_node(0).id(), edge.get_node(1).id()))
+            print('loop closure: {} - {}'.format(edge.get_node(0).get_id(), edge.get_node(1).get_id()))
 
-            node_perturbed = self._perturbed.get_node(node.id())
+            node_perturbed = self._perturbed.get_node(node.get_id())
             self._perturbed.add_edge(
                 node_perturbed,
                 transformation=edge.get_transformation(),

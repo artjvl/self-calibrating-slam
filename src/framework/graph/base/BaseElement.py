@@ -8,7 +8,7 @@ class BaseElement(ABC):
         pass
 
     # object methods
-    def __str__(self):
+    def __str__(self) -> str:
         return '{}({})'.format(self.__class__.__name__, self.id_string())
 
     def __repr__(self) -> str:

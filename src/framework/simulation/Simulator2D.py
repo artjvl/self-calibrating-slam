@@ -61,7 +61,7 @@ class Simulator2D(object):
     ) -> EdgeSE2:
         if b is None:
             current: NodeSE2 = self._current
-            if current.id() < a.id():
+            if current.get_id() < a.get_id():
                 b = a
                 a = current
             else:
@@ -96,7 +96,8 @@ class Simulator2D(object):
         # constraint
         edge: EdgeSE2 = self.add_edge(
             current_node,
-            transformation=estimate
+            transformation=estimate,
+            variance=variance
         )
         return edge
 
@@ -146,7 +147,7 @@ class Simulator2D(object):
         neighbours: List[NodeSE2] = self._find_within(current, reach)
         closures: List[NodeSE2] = []
         for neighbour in neighbours:
-            if current.id() - neighbour.id() >= separation:
+            if current.get_id() - neighbour.get_id() >= separation:
                 closures.append(neighbour)
         if closures:
             return closures[0]

@@ -32,6 +32,12 @@ class FactorElement(Generic[T], ABC):
     @property
     @classmethod
     @abstractmethod
+    def dimensionality(cls) -> int:
+        pass
+
+    @property
+    @classmethod
+    @abstractmethod
     def is_physical(cls) -> bool:
         pass
 

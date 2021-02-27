@@ -71,7 +71,7 @@ class Graph(FactorGraph):
                     node.read(rest)
                     self.add_node(node)
                 elif issubclass(element_type, FactorEdge):
-                    size = element_type.size
+                    size = element_type.cardinality
                     ids = words[1: 1 + size]
                     nodes = [self.get_node(int(id)) for id in ids]
                     edge = element_type.from_nodes(nodes)

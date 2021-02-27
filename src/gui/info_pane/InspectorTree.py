@@ -28,6 +28,8 @@ class InspectorTree(QTreeWidget):
             root: Union[QTreeWidget, QTreeWidgetItem],
             graph: Graph
     ):
+        cls.construct_tree_property(root, 'dimensionality', '{}'.format(graph.get_dimensionality()))
+        cls.construct_tree_property(root, 'is_uncertain', '{}'.format(graph.is_uncertain()))
         cls.construct_tree_property(root, 'error', '{}'.format(graph.compute_error()))
 
     @classmethod
@@ -36,10 +38,13 @@ class InspectorTree(QTreeWidget):
             root: Union[QTreeWidget, QTreeWidgetItem],
             node: FactorNode
     ):
-        # tag:
+        # static properties:
         cls.construct_tree_property(root, 'tag', "'{}'".format(type(node).tag))
+        cls.construct_tree_property(root, 'dimensionality', '{}'.format(type(node).dimensionality))
+        cls.construct_tree_property(root, 'is_physical', '{}'.format(type(node).is_physical))
+        cls.construct_tree_property(root, 'has_rotation', '{}'.format(type(node).has_rotation))
         # id:
-        cls.construct_tree_property(root, 'id', '{}'.format(node.id()))
+        cls.construct_tree_property(root, 'id', '{}'.format(node.get_id()))
         # value:
         cls.construct_value_tree(root, 'value', node.get_value())
         root.expandAll()
@@ -52,6 +57,9 @@ class InspectorTree(QTreeWidget):
     ):
         # tag:
         cls.construct_tree_property(root, 'tag', "'{}'".format(type(edge).tag))
+        cls.construct_tree_property(root, 'cardinality', '{}'.format(type(edge).cardinality))
+        cls.construct_tree_property(root, 'dimensionality', '{}'.format(type(edge).dimensionality))
+        cls.construct_tree_property(root, 'is_physical', '{}'.format(type(edge).is_physical))
         # nodes:
         tree_nodes = QTreeWidgetItem(root)
         tree_nodes.setText(0, 'nodes:')

@@ -29,10 +29,10 @@ class BaseGraph(Generic[N, E], BaseElement):
         return '; '.join(list(filter(lambda s: s != '', [node_string, edge_string])))
 
     # node methods
-    def add_node(self, node: N):
-        if node.id() in self._nodes:
-            warnings.warn('Node with id {} already present in Graph {}'.format(node.id(), self))
-        self._nodes[node.id()] = node
+    def add_node(self, node: N) -> None:
+        if node.get_id() in self._nodes:
+            warnings.warn('Node with id {} already present in Graph {}'.format(node.get_id(), self))
+        self._nodes[node.get_id()] = node
 
         # sorting
         node_type: Type[N] = type(node)
@@ -44,7 +44,7 @@ class BaseGraph(Generic[N, E], BaseElement):
         return list(self._nodes.values())
 
     def get_node(self, id: int) -> N:
-        assert id in self._nodes
+        assert id in self._nodes, '{} in {}'.format(id, self._nodes)
         return self._nodes[id]
 
     def get_node_types(self) -> List[Type[N]]:
@@ -55,7 +55,7 @@ class BaseGraph(Generic[N, E], BaseElement):
         return self._nodes_sorted[node_type]
 
     # edge methods
-    def add_edge(self, edge: E):
+    def add_edge(self, edge: E) -> None:
         assert all(node in self._nodes.values() for node in edge.get_nodes())
         if edge in self._edges:
             warnings.warn('{} already present in Graph {}'.format(edge, self))

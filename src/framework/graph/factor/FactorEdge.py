@@ -22,11 +22,10 @@ class FactorEdge(BaseEdge, FactorElement[T], ABC):
             information: Optional[Square] = None
     ):
         super().__init__(nodes=nodes, value=value)
+        self._information: Optional[Square] = information
+        self._is_uncertain: bool = True
         if information is None:
             self._is_uncertain = False
-        else:
-            self._is_uncertain = True
-        self._information = information
 
     # getters/setters
     def is_uncertain(self) -> bool:
@@ -44,7 +43,7 @@ class FactorEdge(BaseEdge, FactorElement[T], ABC):
     @property
     @classmethod
     @abstractmethod
-    def size(cls):
+    def cardinality(cls) -> int:
         pass
 
     # error methods
