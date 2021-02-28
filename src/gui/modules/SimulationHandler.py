@@ -18,6 +18,9 @@ class SimulationHandler(object):
         self._simulation = simulation
         print('Selected: {}'.format(simulation))
 
+    def get_simulation(self) -> Simulation2D:
+        return self._simulation
+
     def simulate(self):
         graph_true, graph_perturbed = self._simulation.simulate()
         self._container.add_graph(graph_true)

@@ -1,6 +1,7 @@
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QPushButton
+from PyQt5.QtWidgets import QWidget, QVBoxLayout, QPushButton, QTableView
 
 from src.gui.action_pane.SimulationBox import SimulationBox
+from src.gui.action_pane.SimulationTable import SimulationTable
 from src.gui.modules.GraphContainer import GraphContainer
 from src.gui.modules.SimulationHandler import SimulationHandler
 
@@ -28,3 +29,8 @@ class SimulationPane(QWidget):
         button_simulate.setText('Simulate graph')
         button_simulate.clicked.connect(self._simulation.simulate)
         layout.addWidget(button_simulate)
+
+        table = SimulationTable(self._simulation, self)
+        view = QTableView()
+        view.setModel(table)
+        layout.addWidget(view)

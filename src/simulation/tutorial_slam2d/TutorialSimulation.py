@@ -1,4 +1,3 @@
-import configparser
 from pathlib import Path
 from typing import *
 
@@ -15,14 +14,11 @@ class TutorialSimulation(Simulation2D):
     # constructor
     def __init__(self):
         super().__init__()
-        config = configparser.ConfigParser()
-        base_path = Path(__file__).parent
-        file_path = (base_path / "config.ini").resolve()
-        config.read(file_path)
-        self._parameters = config['PARAMETERS']
+        self._parameters = self.read_parameters(Path(__file__).parent)
 
     # public methods
     def _simulate(self) -> Tuple[Graph, Graph]:
+        assert self._parameters is not None
         step_length = float(self._parameters['step_length'])
         translation_noise_x = float(self._parameters['translation_noise_x'])
         translation_noise_y = float(self._parameters['translation_noise_y'])
@@ -39,7 +35,7 @@ class TutorialSimulation(Simulation2D):
             np.deg2rad(rotation_noise_deg)
         ])
 
-        num_nodes = 100
+        num_nodes = 200
 
         angle: float = np.deg2rad(0)
         while self.get_node_count() < num_nodes:
