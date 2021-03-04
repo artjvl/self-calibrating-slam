@@ -20,6 +20,7 @@ class TutorialSimulation(Simulation2D):
     def _simulate(self) -> Tuple[Graph, Graph]:
         parameters = self.get_parameters()
         assert parameters is not None
+        num_nodes = parameters['num_nodes']
         step_length = parameters['step_length']
         translation_noise_x = parameters['translation_noise_x']
         translation_noise_y = parameters['translation_noise_y']
@@ -35,8 +36,6 @@ class TutorialSimulation(Simulation2D):
             translation_noise_y,
             np.deg2rad(rotation_noise_deg)
         ])
-
-        num_nodes = 200
 
         angle: float = np.deg2rad(0)
         while self.get_node_count() < num_nodes:
