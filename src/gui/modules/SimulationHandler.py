@@ -2,6 +2,7 @@ from typing import *
 
 from PyQt5.QtCore import QObject, pyqtSignal
 
+from src.framework.simulation.ParameterDictTree import ParameterDictTree
 from src.framework.simulation.Simulation2D import Simulation2D
 from src.gui.modules.GraphContainer import GraphContainer
 
@@ -27,6 +28,9 @@ class SimulationHandler(QObject):
 
     def get_simulation(self) -> Simulation2D:
         return self._simulation
+
+    def get_parameter_tree(self) -> ParameterDictTree:
+        return self._simulation.get_parameter_tree()
 
     def simulate(self):
         graph_true, graph_perturbed = self._simulation.simulate()

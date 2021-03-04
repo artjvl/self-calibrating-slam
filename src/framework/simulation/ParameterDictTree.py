@@ -3,6 +3,9 @@ from typing import *
 from src.utils import DictTree
 from src.utils.DictTree import DictTreeData
 
+ParameterType = Union[Type[str], Type[int], Type[float], Type[bool]]
+Parameter = Union[str, int, float, bool]
+
 
 class ParameterDictTreeData(DictTreeData):
 
@@ -18,16 +21,20 @@ class ParameterDictTreeData(DictTreeData):
         assert prefix in self.prefixes, '{} in {}'.format(prefix, self.prefixes)
 
         self._name: str = key[2:]
-        self._type: Union[Type[str], Type[int], Type[float], Type[bool]] = self.prefixes[prefix]
-        self._value: Union[str, int, float, bool] = self._type(value_string)
+        self._type: ParameterType = self.prefixes[prefix]
+        self._value: Parameter = self._type(value_string)
 
     def get_name(self) -> str:
         return self._name
 
-    def get_value(self) -> Union[str, int, float, bool]:
+    def get_value(self) -> Parameter:
         return self._value
 
-    def get_type(self) -> Union[Type[str], Type[int], Type[float], Type[bool]]:
+    def set_value(self, value: Parameter):
+        assert isinstance(value, self._type)
+        self._value = value
+
+    def get_type(self) -> ParameterType:
         return self._type
 
 
@@ -45,8 +52,16 @@ class ParameterDictTree(DictTree[str, ParameterDictTreeData]):
         data = ParameterDictTreeData(key, value_string)
         self.add_value(data.get_name(), data)
 
-    def get_parameters(self) -> Dict[str, Union[str, int, float, bool]]:
-        parameters: Dict[str, Union[str, int, float, bool]] = {}
+    def get_parameters(self) -> Dict[str, Parameter]:
+        parameters: Dict[str, Parameter] = {}
         for key, value in self.key_values():
             parameters[key] = value.get_value()
         return parameters
+
+    def set_parameter(
+            self,
+            name: str,
+            value: Parameter
+    ):
+        data: ParameterDictTreeData = self[name].get_value()
+        data.set_value(value)
