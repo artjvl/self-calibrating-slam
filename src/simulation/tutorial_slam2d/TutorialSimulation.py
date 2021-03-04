@@ -14,20 +14,21 @@ class TutorialSimulation(Simulation2D):
     # constructor
     def __init__(self):
         super().__init__()
-        self._parameters = self.read_parameters(Path(__file__).parent)
+        self.read_parameters(Path(__file__).parent)
 
     # public methods
     def _simulate(self) -> Tuple[Graph, Graph]:
-        assert self._parameters is not None
-        step_length = float(self._parameters['step_length'])
-        translation_noise_x = float(self._parameters['translation_noise_x'])
-        translation_noise_y = float(self._parameters['translation_noise_y'])
-        rotation_noise_deg = float(self._parameters['rotation_noise_deg'])
-        proximity_probability = float(self._parameters['proximity_probability'])
-        proximity_separation = int(self._parameters['proximity_separation'])
-        reach = float(self._parameters['reach'])
-        closure_probability = float(self._parameters['closure_probability'])
-        closure_separation = int(self._parameters['closure_separation'])
+        parameters = self.get_parameters()
+        assert parameters is not None
+        step_length = parameters['step_length']
+        translation_noise_x = parameters['translation_noise_x']
+        translation_noise_y = parameters['translation_noise_y']
+        rotation_noise_deg = parameters['rotation_noise_deg']
+        proximity_probability = parameters['proximity_probability']
+        proximity_separation = parameters['proximity_separation']
+        reach = parameters['reach']
+        closure_probability = parameters['closure_probability']
+        closure_separation = parameters['closure_separation']
 
         variance = Vector([
             translation_noise_x,
@@ -39,7 +40,7 @@ class TutorialSimulation(Simulation2D):
 
         angle: float = np.deg2rad(0)
         while self.get_node_count() < num_nodes:
-            for _ in range(int(self._parameters['step_count'])):
+            for _ in range(int(parameters['step_count'])):
                 motion = SE2.from_elements(step_length, 0, angle)
                 angle = np.deg2rad(0)
                 self.add_odometry(motion, variance=variance)

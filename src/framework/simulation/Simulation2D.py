@@ -1,4 +1,6 @@
+import configparser
 from abc import ABC, abstractmethod
+from pathlib import PosixPath
 from typing import *
 
 import numpy as np
@@ -6,6 +8,7 @@ import numpy as np
 from src.framework.graph.Graph import Graph
 from src.framework.graph.types import EdgeSE2, NodeSE2
 from src.framework.groups import SE2
+from src.framework.simulation.ParameterDictTree import ParameterDictTree
 from src.framework.simulation.Simulator2D import Simulator2D
 from src.framework.structures import Vector
 
@@ -22,6 +25,27 @@ class Simulation2D(ABC):
         self._true: Optional[Simulator2D] = None
         self._perturbed: Optional[Simulator2D] = None
         self.reset()
+
+        # parameters
+        self._parameter_tree = ParameterDictTree()
+
+    def read_parameters(self, base_path: PosixPath):
+        # base_path = Path(__file__).parent
+        file_path = (base_path / "config.ini").resolve()
+        assert file_path.exists()
+        config = configparser.ConfigParser()
+        config.read(file_path)
+
+        # initialise new ParameterDictTree
+        self._parameter_tree = ParameterDictTree()
+        for key, value_string in config['PARAMETERS'].items():
+            self._parameter_tree.add_parameter(key, value_string)
+
+    def get_parameters(self) -> Optional[Dict[str, Union[str, int, float, bool]]]:
+        return self._parameter_tree.get_parameters()
+
+    def get_parameter_tree(self) -> Optional[ParameterDictTree]:
+        return self._parameter_tree
 
     def simulate(self):
         graphs = self._simulate()
