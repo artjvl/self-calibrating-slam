@@ -23,7 +23,7 @@ class SimulationHandler(QObject):
 
     def set_simulation(self, simulation: Simulation2D):
         self._simulation = simulation
-        print('Selected: {}'.format(simulation))
+        print("Simulation '{}' selected".format(type(simulation).__name__))
         self.signal_update.emit(1)
 
     def get_simulation(self) -> Simulation2D:

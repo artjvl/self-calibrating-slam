@@ -7,7 +7,7 @@ from src.gui.modules.GraphContainer import GraphContainer
 from src.gui.modules.OptimisationHandler import OptimisationHandler
 
 
-class SelectBox(QComboBox):
+class GraphBox(QComboBox):
 
     # constructor
     def __init__(
@@ -40,4 +40,5 @@ class SelectBox(QComboBox):
     def _update_box(self):
         self.clear()
         for graph in self._container.get_graphs():
-            self.addItem(graph.get_name(short=True))
+            if graph.is_uncertain():
+                self.addItem(graph.get_name(short=True))

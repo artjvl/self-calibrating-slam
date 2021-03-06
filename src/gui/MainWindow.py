@@ -28,7 +28,7 @@ class MainWindow(QMainWindow):
         # modules
         self._container = GraphContainer()
         self._simulation = SimulationHandler(self._container)
-        self._optimisation = OptimisationHandler(self._container)
+        # self._optimisation = OptimisationHandler(self._container)
 
         # layout = QHBoxLayout(self)
         splitter = QSplitter(Qt.Horizontal)
@@ -83,16 +83,17 @@ class MainWindow(QMainWindow):
             widget: QWidget,
             viewer: Viewer
     ) -> QSplitter:
-        layout = QSplitter(Qt.Vertical)
-        layout.addWidget(viewer)
+        splitter = QSplitter(Qt.Vertical)
+        splitter.addWidget(viewer)
 
         # terminal
         terminal: TerminalText = TerminalText(widget)
         terminal.setSizePolicy(QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Maximum))
-        layout.addWidget(terminal)
+        splitter.addWidget(terminal)
+        splitter.setContentsMargins(0, 10, 0, 10)
 
-        layout.setSizes([400, 100])
-        return layout
+        splitter.setSizes([400, 100])
+        return splitter
 
     def _init_menubar(
             self,
