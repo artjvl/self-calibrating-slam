@@ -1,6 +1,9 @@
+import subprocess
 from enum import Enum
+from pathlib import Path
 from typing import *
 
+from src.definitions import get_project_root
 from src.framework.graph.Graph import Graph
 
 
@@ -71,3 +74,13 @@ class Optimiser(object):
 
     def get_solvers(self) -> List[Solver]:
         return list(self.solvers[self._library].keys())
+
+    def _get_solver_string(self) -> str:
+        return self.solvers[self._library][self._solver]
+
+    def optimise(self, filename):
+        root: Path = get_project_root()
+        path_g2o_bin: Path = (root / 'g2o/bin/g2o').resolve()
+        path_g2o_bin_string: str = str(path_g2o_bin)
+        print(self._get_solver_string())
+        process = subprocess.run([path_g2o_bin_string, '--help'])

@@ -45,7 +45,12 @@ class OptimisationPane(QtWidgets.QWidget):
         layout.addWidget(solver_box_label)
         layout.addWidget(solver_box)
 
-        button_optimise = QtWidgets.QPushButton(self)
-        button_optimise.setText('Optimise graph')
-        button_optimise.clicked.connect(self._optimisation_handler.optimise)
-        layout.addWidget(button_optimise)
+        self._button_optimise = QtWidgets.QPushButton(self)
+        self._button_optimise.setText('Optimise graph')
+        self._button_optimise.clicked.connect(self._optimisation_handler.optimise)
+        graph_box.signal_update.connect(self._handle_graph_selection_update)
+        self._button_optimise.setEnabled(False)
+        layout.addWidget(self._button_optimise)
+
+    def _handle_graph_selection_update(self, signal: int):
+        self._button_optimise.setEnabled(True if signal >= 0 else -1)

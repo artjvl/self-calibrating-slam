@@ -30,6 +30,7 @@ class OptimisationHandler(QtCore.QObject):
 
     def optimise(self):
         print('Optimising {}...'.format(self._optimiser.get_graph()))
+        self._optimiser.optimise('solved.g2o')
 
     def set_library(self, library: Library):
         self._optimiser.set_library(library)

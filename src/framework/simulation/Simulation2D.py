@@ -1,6 +1,6 @@
 import configparser
 from abc import ABC, abstractmethod
-from pathlib import PosixPath
+from pathlib import Path
 from typing import *
 
 import numpy as np
@@ -29,9 +29,9 @@ class Simulation2D(ABC):
         # parameters
         self._parameter_tree = ParameterDictTree()
 
-    def read_parameters(self, base_path: PosixPath):
+    def read_parameters(self, base_path: Path):
         # base_path = Path(__file__).parent
-        file_path = (base_path / "config.ini").resolve()
+        file_path = (base_path / 'config.ini').resolve()
         assert file_path.exists()
         config = configparser.ConfigParser()
         config.read(file_path)
