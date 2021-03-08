@@ -57,6 +57,7 @@ class Optimiser(object):
 
     # public methods
     def set_graph(self, graph: Optional[Graph]):
+        assert graph.is_uncertain()
         self._graph = graph
 
     def get_graph(self) -> Optional[Graph]:
@@ -78,9 +79,29 @@ class Optimiser(object):
     def _get_solver_string(self) -> str:
         return self.solvers[self._library][self._solver]
 
-    def optimise(self, filename):
+    def optimise(self) -> Graph:
         root: Path = get_project_root()
+        path_graphs: Path = (root / 'graphs').resolve()
         path_g2o_bin: Path = (root / 'g2o/bin/g2o').resolve()
-        path_g2o_bin_string: str = str(path_g2o_bin)
-        print(self._get_solver_string())
-        process = subprocess.run([path_g2o_bin_string, '--help'])
+
+        # path to input file
+        path_input: Path = (path_graphs / 'temp/before.g2o').resolve()
+        self.get_graph().save(str(path_input))
+
+        # path to output file
+        path_output: Path = (path_graphs / 'temp/after.g2o').resolve()
+
+        # solver
+        solver_string: str = self._get_solver_string()
+
+        # starts g2o optimiser
+        process = subprocess.run([
+            str(path_g2o_bin),
+            '-solver', solver_string,
+            '-o', str(path_output),
+            str(path_input)
+        ])
+
+        optimised = Graph()
+        optimised.load(str(path_output))
+        return optimised

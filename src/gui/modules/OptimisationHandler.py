@@ -1,7 +1,9 @@
+from pathlib import Path
 from typing import *
 
 from PyQt5 import QtCore
 
+from src.definitions import get_project_root
 from src.framework.graph.Graph import Graph
 from src.framework.optimiser.Optimiser import Optimiser, Library, Solver
 from src.gui.modules.GraphContainer import GraphContainer
@@ -30,7 +32,8 @@ class OptimisationHandler(QtCore.QObject):
 
     def optimise(self):
         print('Optimising {}...'.format(self._optimiser.get_graph()))
-        self._optimiser.optimise('solved.g2o')
+        graph: Graph = self._optimiser.optimise()
+        self._container.add_graph(graph)
 
     def set_library(self, library: Library):
         self._optimiser.set_library(library)
