@@ -1,3 +1,4 @@
+import pathlib
 from typing import *
 
 import numpy as np
@@ -156,7 +157,7 @@ class Simulator2D(object):
 
     # public methods
     def save(self, filename: str):
-        self._graph.save(filename)
+        self._graph.save(pathlib.Path(filename))
 
     def get_graph(self) -> Graph:
         return self._graph

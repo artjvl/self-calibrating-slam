@@ -15,7 +15,8 @@ class Graph(FactorGraph):
         super().__init__()
         self._types = self._init_types()
         self._id = id
-        self._name = None
+        self._file: Optional[pathlib.Path] = None
+        self._date: datetime = datetime.now()
 
     # initialisation
     @staticmethod
@@ -35,23 +36,35 @@ class Graph(FactorGraph):
     def set_id(self, id: int):
         self._id = id
 
-    def get_name(self, short: bool = False):
-        if self._name is None:
-            return '{}_Graph'.format(datetime.now().strftime('%Y%m%d-%H%M%S'))
+    def get_file_name(self, short: bool = False) -> str:
+        assert self._file is not None
+        if short:
+            return str(self._file.name)
+        return str(self._file)
+
+    def get_date_name(self, short: bool = False) -> str:
+        timestamp: str
+        if short:
+            timestamp = self._date.strftime('%M%S')
+            return 'G-{}-{}'.format(self.get_id(), timestamp)
         else:
-            if short:
-                return pathlib.Path(self._name).name
-            return self._name
+            timestamp = self._date.strftime('%Y-%m-%d %H:%M:%S')
+            return 'Graph (id: {}, time: {})'.format(self.get_id(), timestamp)
+
+    def get_name(self, short: bool = False) -> str:
+        if self._file is None:
+            return self.get_date_name(short)
+        else:
+            return self.get_file_name(short)
 
     # load/save methods
-    def load(self, filename: str):
-        self._name = filename
-        print('Reading file: {}'.format(filename))
-        file = open(filename, 'r')
-        lines = file.readlines()
+    def load(self, file: pathlib.Path):
+        self._file = file
+        print('Reading file: {}'.format(str(file)))
+        reader = file.open('r')
+        lines = reader.readlines()
         for i, line in enumerate(lines):
-            if line == '\n':
-                raise Exception('Empty line {}'.format(i + 1))
+            assert line != '\n', 'Empty line {}'.format(i + 1)
             line = line.strip()
             words = line.split()
 
@@ -84,13 +97,12 @@ class Graph(FactorGraph):
                     edge.read(rest)
                     self.add_edge(edge)
 
-    def save(self, filename: str):
-        self._name = filename
-        print('Saving to file: {}'.format(filename))
-        file = pathlib.Path(filename)
+    def save(self, file: pathlib.Path):
+        self._file = file
+        print('Saving to file: {}'.format(str(file)))
         if file.exists():
             file.unlink()
-        writer = open(filename, 'x')
+        writer = file.open('x')
 
         for node in self.get_nodes():
             writer.write('{}\n'.format(node.write()))

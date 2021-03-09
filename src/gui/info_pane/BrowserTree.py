@@ -31,7 +31,6 @@ class BrowserTree(QTreeWidget):
         self.setContextMenuPolicy(Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self._handle_context_menu)
         self.itemChanged.connect(self._handle_checked)
-        self.itemSelectionChanged.connect(self._handle_selection)
         # container
         self._container: GraphContainer = container
         self._container.signal_update.connect(self._handle_signal)
@@ -95,8 +94,11 @@ class BrowserTree(QTreeWidget):
         item = self.currentItem()
         if hasattr(item, 'instance_item'):
             obj = item.instance_item
-            if isinstance(obj, GraphDictTreeData) and isinstance(obj.get_object(), Graph):
-                self._inspector.construct_graph_tree(self._inspector, obj.get_object())
+            if isinstance(obj, GraphDictTreeData):
+                if isinstance(obj.get_object(), Graph):
+                    self._inspector.construct_graph_tree(self._inspector, obj.get_object())
+                elif isinstance(obj.get_object(), type(FactorElement)):
+                    print('highlight')
             elif isinstance(obj, FactorNode):
                 self._inspector.construct_node_tree(self._inspector, obj)
             elif isinstance(obj, FactorEdge):
@@ -108,22 +110,23 @@ class BrowserTree(QTreeWidget):
             item = self.itemAt(point)
             if hasattr(item, 'instance_item'):
                 obj = item.instance_item
-                if isinstance(obj, GraphDictTreeData) and isinstance(obj.get_object(), Graph):
-                    menu = QMenu()
-                    action_replace = QAction('&Replace', self)
-                    menu.addAction(action_replace)
-                    action_delete = QAction('&Delete', self)
-                    menu.addAction(action_delete)
-                    action_save = QAction('&Save as', self)
-                    menu.addAction(action_save)
-                    action = menu.exec_(self.mapToGlobal(point))
-                    if action == action_replace:
-                        self._container.replace_graph(obj.get_object())
-                    elif action == action_delete:
-                        self._container.remove_graph(obj.get_object())
-                    elif action == action_save:
-                        print('save')
-                if isinstance(obj, FactorNode) and obj.is_physical:
+                if isinstance(obj, GraphDictTreeData):
+                    if isinstance(obj.get_object(), Graph):
+                        menu = QMenu()
+                        action_replace = QAction('&Replace', self)
+                        menu.addAction(action_replace)
+                        action_delete = QAction('&Delete', self)
+                        menu.addAction(action_delete)
+                        action_save = QAction('&Save as', self)
+                        menu.addAction(action_save)
+                        action = menu.exec_(self.mapToGlobal(point))
+                        if action == action_replace:
+                            self._container.replace_graph(obj.get_object())
+                        elif action == action_delete:
+                            self._container.remove_graph(obj.get_object())
+                        elif action == action_save:
+                            print('save')
+                elif isinstance(obj, FactorNode) and obj.is_physical:
                     menu = QMenu()
                     action_focus = QAction('&Focus', self)
                     menu.addAction(action_focus)

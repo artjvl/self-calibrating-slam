@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import pathlib
 from typing import *
 
 from PyQt5.QtCore import pyqtSignal, QObject
@@ -113,7 +114,7 @@ class GraphContainer(QObject):
         filename = QFileDialog.getOpenFileName(caption='Select file', directory='', filter='g2o (*.g2o)')
         if filename[0]:
             graph = Graph()
-            graph.load(filename[0])
+            graph.load(pathlib.Path(filename[0]))
             return graph
         return None
 

@@ -86,7 +86,7 @@ class Optimiser(object):
 
         # path to input file
         path_input: Path = (path_graphs / 'temp/before.g2o').resolve()
-        self.get_graph().save(str(path_input))
+        self.get_graph().save(path_input)
 
         # path to output file
         path_output: Path = (path_graphs / 'temp/after.g2o').resolve()
@@ -103,5 +103,5 @@ class Optimiser(object):
         ])
 
         optimised = Graph()
-        optimised.load(str(path_output))
+        optimised.load(path_output)
         return optimised
