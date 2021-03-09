@@ -51,4 +51,5 @@ class TutorialSimulation(Simulation2D):
                     break
             angle = np.deg2rad(np.random.choice([90, -90]))
 
+        self.save('Tut2D')
         return self.get_graphs()

@@ -1,10 +1,13 @@
 import configparser
+import pathlib
 from abc import ABC, abstractmethod
+from datetime import datetime
 from pathlib import Path
 from typing import *
 
 import numpy as np
 
+from src.definitions import get_project_root
 from src.framework.graph.Graph import Graph
 from src.framework.graph.types import EdgeSE2, NodeSE2
 from src.framework.groups import SE2
@@ -101,9 +104,27 @@ class Simulation2D(ABC):
             )
 
     # public methods
-    def save(self, name: str):
-        self._true.save('{}_true.g2o'.format(name))
-        self._perturbed.save('{}_perturbed.g2o'.format(name))
+    def save(
+            self,
+            identifier: str,
+            replace: bool = False,
+            path: Optional[pathlib.Path] = None
+    ):
+        path_save: pathlib.Path = path
+        filename: str = identifier
+        if path is None:
+            root: pathlib.Path = get_project_root()
+            path_save = (root / 'graphs/simulation').resolve()
+            path_save.mkdir(parents=True, exist_ok=True)
+            if not replace:
+                filename: str = '{}_{}'.format(
+                    identifier,
+                    datetime.now().strftime('%Y%m%d-%H%M%S')
+                )
+        else:
+            path_save.mkdir(parents=True, exist_ok=True)
+        self._true.save(pathlib.Path(path_save / '{}_true.g2o'.format(filename)).resolve())
+        self._perturbed.save(pathlib.Path(path_save / '{}_perturbed.g2o'.format(filename)).resolve())
 
     def get_node_count(self) -> int:
         return len(self._true.get_graph().get_nodes())

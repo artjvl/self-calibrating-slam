@@ -3,6 +3,7 @@ from typing import *
 
 import numpy as np
 
+from src.definitions import get_project_root
 from src.framework.graph.Graph import Graph, NodeSE2, EdgeSE2
 from src.framework.groups import SE2
 from src.framework.structures import Vector, Square
@@ -156,8 +157,8 @@ class Simulator2D(object):
         return None
 
     # public methods
-    def save(self, filename: str):
-        self._graph.save(pathlib.Path(filename))
+    def save(self, file: pathlib.Path):
+        self._graph.save(file)
 
     def get_graph(self) -> Graph:
         return self._graph

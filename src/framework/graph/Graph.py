@@ -58,9 +58,10 @@ class Graph(FactorGraph):
             return self.get_file_name(short)
 
     # load/save methods
-    def load(self, file: pathlib.Path):
-        self._file = file
+    def load(self, file: pathlib.Path, save_file: bool = False):
         print('Reading file: {}'.format(str(file)))
+        if save_file:
+            self._file = file
         reader = file.open('r')
         lines = reader.readlines()
         for i, line in enumerate(lines):
@@ -97,12 +98,14 @@ class Graph(FactorGraph):
                     edge.read(rest)
                     self.add_edge(edge)
 
-    def save(self, file: pathlib.Path):
-        self._file = file
+    def save(self, file: pathlib.Path, save_file: bool = False):
+        assert file.parent.exists()
         print('Saving to file: {}'.format(str(file)))
+        if save_file:
+            self._file = file
         if file.exists():
             file.unlink()
-        writer = file.open('x')
+        writer = file.open('w')
 
         for node in self.get_nodes():
             writer.write('{}\n'.format(node.write()))

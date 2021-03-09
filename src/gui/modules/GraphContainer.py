@@ -114,7 +114,7 @@ class GraphContainer(QObject):
         filename = QFileDialog.getOpenFileName(caption='Select file', directory='', filter='g2o (*.g2o)')
         if filename[0]:
             graph = Graph()
-            graph.load(pathlib.Path(filename[0]))
+            graph.load(pathlib.Path(filename[0]), save_file=True)
             return graph
         return None
 

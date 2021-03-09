@@ -81,17 +81,18 @@ class Optimiser(object):
 
     def optimise(self) -> Graph:
         root: Path = get_project_root()
-        path_graphs: Path = (root / 'graphs').resolve()
-        path_g2o_bin: Path = (root / 'g2o/bin/g2o').resolve()
+        path_graphs_temp: Path = (root / 'graphs/temp').resolve()
+        path_graphs_temp.mkdir(parents=True, exist_ok=True)
 
         # path to input file
-        path_input: Path = (path_graphs / 'temp/before.g2o').resolve()
+        path_input: Path = (path_graphs_temp / 'before.g2o').resolve()
         self.get_graph().save(path_input)
 
         # path to output file
-        path_output: Path = (path_graphs / 'temp/after.g2o').resolve()
+        path_output: Path = (path_graphs_temp / 'after.g2o').resolve()
 
         # solver
+        path_g2o_bin: Path = (root / 'g2o/bin/g2o').resolve()
         solver_string: str = self._get_solver_string()
 
         # starts g2o optimiser

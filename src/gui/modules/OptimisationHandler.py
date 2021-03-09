@@ -1,9 +1,7 @@
-from pathlib import Path
 from typing import *
 
 from PyQt5 import QtCore
 
-from src.definitions import get_project_root
 from src.framework.graph.Graph import Graph
 from src.framework.optimiser.Optimiser import Optimiser, Library, Solver
 from src.gui.modules.GraphContainer import GraphContainer
