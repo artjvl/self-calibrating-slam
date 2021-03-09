@@ -47,6 +47,9 @@ class BaseGraph(Generic[N, E], BaseElement):
         assert id in self._nodes, '{} in {}'.format(id, self._nodes)
         return self._nodes[id]
 
+    def contains_node(self, id: int) -> bool:
+        return id in self._nodes
+
     def get_node_types(self) -> List[Type[N]]:
         return list(self._nodes_sorted.keys())
 

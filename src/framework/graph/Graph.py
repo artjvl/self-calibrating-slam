@@ -55,10 +55,14 @@ class Graph(FactorGraph):
             line = line.strip()
             words = line.split()
 
-            # handle FIX
-
             token = words[0]
-            if token != 'FIX':
+
+            if token == 'FIX':
+                id = int(words[1])
+                assert self.contains_node(id)
+                node = self.get_node(id)
+                node.set_fixed()
+            else:
                 assert token in self._types, 'unknown token: {}'.format(token)
                 element_type = self._types[token]
 
@@ -74,6 +78,7 @@ class Graph(FactorGraph):
                     size = element_type.cardinality
                     ids = words[1: 1 + size]
                     nodes = [self.get_node(int(id)) for id in ids]
+                    assert all(self.contains_node(node.get_id()) for node in self.get_nodes())
                     edge = element_type.from_nodes(nodes)
                     rest = words[1 + size:]
                     edge.read(rest)
@@ -88,9 +93,11 @@ class Graph(FactorGraph):
         writer = open(filename, 'x')
 
         for node in self.get_nodes():
-            writer.write(node.write() + '\n')
+            writer.write('{}\n'.format(node.write()))
+            if node.is_fixed():
+                writer.write('FIX {}\n'.format(node.get_id()))
         for edge in self.get_edges():
-            writer.write(edge.write() + '\n')
+            writer.write('{}\n'.format(edge.write()))
 
     # object methods
     def __str__(self):

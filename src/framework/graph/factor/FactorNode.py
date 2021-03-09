@@ -40,3 +40,6 @@ class FactorNode(BaseNode, FactorElement[T], ABC):
     # public method
     def set_fixed(self):
         self._is_fixed = True
+
+    def is_fixed(self):
+        return self._is_fixed
