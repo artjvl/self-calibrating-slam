@@ -39,6 +39,8 @@ g2o:
 
 ## GUI
 
+![](doc/gif/peek_20210309.gif)
+
 The GUI intuitively allows for graph creation, optimisation and analysis.
 - ```python3 gui.py``` in ```src/gui/```
 
