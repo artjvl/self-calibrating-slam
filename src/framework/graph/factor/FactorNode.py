@@ -13,7 +13,7 @@ T = TypeVar('T', bound=Union[Vector, Group])
 class FactorNode(BaseNode, FactorElement[T], ABC):
 
     # constructor
-    def __init__(self, id: int, value: T):
+    def __init__(self, id: int, value: Optional[T] = None):
         super().__init__(id=id, value=value)
         self._is_fixed = False
 

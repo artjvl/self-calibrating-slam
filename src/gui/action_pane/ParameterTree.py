@@ -115,5 +115,5 @@ class ParameterTree(QtWidgets.QTreeWidget):
         item.setFont(0, QtGui.QFont('Courier New', 10))
         item.setText(1, '{}'.format(value))
         item.setFont(1, QtGui.QFont('Courier New', 10))
-        item.setFlags(item.flags() | QtCore.Qt.ItemIsEditable)
+        item.setFlags(int(item.flags()) | QtCore.Qt.ItemIsEditable)
         return item

@@ -6,10 +6,10 @@ from src.gui.action_pane.ActionPane import ActionPane
 from src.gui.info_pane.InfoPane import InfoPane
 from src.gui.menus import FileMenu, ViewMenu, AboutMenu
 from src.gui.modules.GraphContainer import GraphContainer
-from src.gui.modules.OptimisationHandler import OptimisationHandler
 from src.gui.modules.SimulationHandler import SimulationHandler
 from src.gui.terminal.TerminalText import TerminalText
 from src.gui.viewer.Viewer import Viewer
+from src.gui.viewer.items import Items
 
 
 class MainWindow(QMainWindow):
@@ -28,9 +28,7 @@ class MainWindow(QMainWindow):
         # modules
         self._container = GraphContainer()
         self._simulation = SimulationHandler(self._container)
-        # self._optimisation = OptimisationHandler(self._container)
 
-        # layout = QHBoxLayout(self)
         splitter = QSplitter(Qt.Horizontal)
 
         # terminal
@@ -60,6 +58,9 @@ class MainWindow(QMainWindow):
         )
         splitter.setSizes([50, 200, 200])
         self.setCentralWidget(splitter)
+
+        # additional settings
+        self._container.get_graphics_value(Items.AXES.value).set_checked(False)
 
         # show
         self.show()

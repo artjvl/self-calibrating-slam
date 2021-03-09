@@ -65,5 +65,6 @@ class FileMenu(Menu):
         if signal >= 0:
             self._construct_menu()
 
-    def _handle_quit(self):
+    @staticmethod
+    def _handle_quit():
         qApp.quit()

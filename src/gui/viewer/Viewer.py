@@ -61,7 +61,7 @@ class Viewer(gl.GLViewWidget):
             camera_pos = self.cameraPosition()
             camera_vector = self.opts['center'] - camera_pos
             distance = camera_vector.length()  # distance from camera to center
-            distance_x = distance * 2. * np.tan(0.5 * self.opts['fov'] * np.pi / 180.)  # approx. width of view at distance of center point
+            distance_x = distance * 2. * np.tan(0.5 * self.opts['fov'] * np.pi / 180.)
             scale_x = distance_x / self.width()
             z = QVector3D(0, 0, 1)
             azimuth = np.radians(self.opts['azimuth'])

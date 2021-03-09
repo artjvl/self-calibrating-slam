@@ -64,17 +64,37 @@ class SO3(SO):
         if m[2, 2] < 0:                 # is |(x, y)| bigger than |(z, w)|?
             if m[0, 0] > m[1, 1]:       # is |x| bigger than |y|?
                 t = 1 + m[0, 0] - m[1, 1] - m[2, 2]
-                quaternion = Quaternion(w=m[2, 1] - m[1, 2], x=t, y=m[1, 0] + m[0, 1], z=m[0, 2] + m[2, 0])
+                quaternion = Quaternion.from_elements(
+                    w=m[2, 1] - m[1, 2],
+                    x=t,
+                    y=m[1, 0] + m[0, 1],
+                    z=m[0, 2] + m[2, 0]
+                )
             else:                       # is |y| bigger than |x|?
                 t = 1 - m[0, 0] + m[1, 1] - m[2, 2]
-                quaternion = Quaternion(w=m[0, 2] - m[2, 0], x=m[1, 0] + m[0, 1], y=t, z=m[2, 1] + m[1, 2])
+                quaternion = Quaternion.from_elements(
+                    w=m[0, 2] - m[2, 0],
+                    x=m[1, 0] + m[0, 1],
+                    y=t,
+                    z=m[2, 1] + m[1, 2]
+                )
         else:                           # is |(z, w)| bigger than |(x, y)|?
             if m[0, 0] < - m[1, 1]:     # is |z| bigger than |w|?
                 t = 1 - m[0, 0] - m[1, 1] + m[2, 2]
-                quaternion = Quaternion(w=m[1, 0] - m[0, 1], x=m[0, 2] + m[2, 0], y=m[2, 1] + m[1, 2], z=t)
+                quaternion = Quaternion.from_elements(
+                    w=m[1, 0] - m[0, 1],
+                    x=m[0, 2] + m[2, 0],
+                    y=m[2, 1] + m[1, 2],
+                    z=t
+                )
             else:                       # is |w| bigger than |z|?
                 t = 1 + m[0, 0] + m[1, 1] + m[2, 2]
-                quaternion = Quaternion(w=t, x=m[2, 1] - m[1, 2], y=m[0, 2] - m[2, 0], z=m[1, 0] - m[0, 1])
+                quaternion = Quaternion.from_elements(
+                    w=t,
+                    x=m[2, 1] - m[1, 2],
+                    y=m[0, 2] - m[2, 0],
+                    z=m[1, 0] - m[0, 1]
+                )
         return (0.5 / np.sqrt(t)) * quaternion
 
     def euler(self) -> Vector:

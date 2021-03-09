@@ -56,7 +56,7 @@ class Group(ABC):
         """ returns the vector representation """
         pass
 
-    def inverse(self):
+    def inverse(self) -> Group:
         """ returns the inverted group element """
         pass
 

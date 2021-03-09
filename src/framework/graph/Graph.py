@@ -11,7 +11,7 @@ from src.framework.graph.types import *
 class Graph(FactorGraph):
 
     # constructor
-    def __init__(self, id: Optional[int] = 0, name: Optional[str] = None):
+    def __init__(self, id: Optional[int] = 0):
         super().__init__()
         self._types = self._init_types()
         self._id = id
@@ -45,7 +45,7 @@ class Graph(FactorGraph):
     def get_date_name(self, short: bool = False) -> str:
         timestamp: str
         if short:
-            timestamp = self._date.strftime('%M%S')
+            timestamp = self._date.strftime('%H%M%S')
             return 'G-{}-{}'.format(self.get_id(), timestamp)
         else:
             timestamp = self._date.strftime('%Y-%m-%d %H:%M:%S')

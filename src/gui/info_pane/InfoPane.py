@@ -1,5 +1,5 @@
 from PyQt5.QtCore import Qt
-from PyQt5 import QtWidgets #import QWidget, QSplitter, QPushButton, QSizePolicy
+from PyQt5 import QtWidgets
 
 from src.gui.info_pane.BrowserTree import BrowserTree
 from src.gui.info_pane.InspectorTree import InspectorTree

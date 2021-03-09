@@ -18,7 +18,7 @@ class FactorEdge(BaseEdge, FactorElement[T], ABC):
     def __init__(
             self,
             nodes: List[FactorNode],
-            value: T,
+            value: Optional[T] = None,
             information: Optional[Square] = None
     ):
         super().__init__(nodes=nodes, value=value)

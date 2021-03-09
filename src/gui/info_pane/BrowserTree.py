@@ -25,7 +25,7 @@ class BrowserTree(QTreeWidget):
         super().__init__(*args, **kwargs)
         self.headerItem().setText(0, 'Object')
         self.headerItem().setText(1, 'Type')
-        self.setColumnWidth(0, 128)
+        self.setColumnWidth(0, 140)
         self.setAlternatingRowColors(True)
         self.itemSelectionChanged.connect(self._handle_selection)
         self.setContextMenuPolicy(Qt.CustomContextMenu)

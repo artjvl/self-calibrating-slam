@@ -256,8 +256,7 @@ class GraphContainer(QObject):
         return len(self.get_graphs()) == 0
 
     # sub-tree helper-methods
-    @staticmethod
-    def _construct_graphics_tree() -> GraphDictTree:
+    def _construct_graphics_tree(self) -> GraphDictTree:
         """ DictTree: Container -> Type[GraphicsItem] """
 
         graphics_tree: GraphDictTree = DictTree()
