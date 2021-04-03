@@ -10,14 +10,14 @@ from src.framework.structures.Vector2 import Vector2
 
 class Vector3(Vector):
 
+    dim = 3
+
     # constructor
-    def __new__(cls, elements: Union[Tuple[float, ...], List[float], np.ndarray]):
-        column = np.reshape(elements, (-1, 1))
-        assert len(column) == 3
-        super().__new__(cls, elements)
+    def __array_finalize__(self, obj):
+        assert self.get_dimension() == self.dim
 
     # operators
-    def __xor__(self, other) -> Vector3:
+    def __xor__(self, other: Vector3) -> Vector3:
         return type(self)(np.cross(self, other))
 
     # getters

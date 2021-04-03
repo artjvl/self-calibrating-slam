@@ -1,19 +1,15 @@
 from __future__ import annotations
 
-from typing import *
-
-import numpy as np
-
 from src.framework.structures.Vector import Vector
 
 
 class Vector2(Vector):
 
+    dim = 2
+
     # constructor
-    def __new__(cls, elements: Union[Tuple[float, ...], List[float], np.ndarray]):
-        column = np.reshape(elements, (-1, 1))
-        assert len(column) == 2
-        super().__new__(cls, elements)
+    def __array_finalize__(self, obj):
+        assert self.get_dimension() == self.dim
 
     # getters
     def x(self) -> float:

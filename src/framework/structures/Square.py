@@ -5,8 +5,11 @@ from typing import *
 import numpy as np
 from scipy import linalg
 
+from src.framework.structures.MultiDimensional import MultiDimensional, Sub
+from src.framework.structures.Vector import Vector
 
-class Square(np.ndarray):
+
+class Square(np.ndarray, MultiDimensional):
 
     # constructor
     def __new__(cls, array: Union[List[List[float]], np.ndarray]):
@@ -18,6 +21,9 @@ class Square(np.ndarray):
     def __array_finalize__(self, obj):
         if obj is None:
             return
+
+    def get_dimension(self) -> int:
+        return self.shape[0]
 
     # object methods
     def __getitem__(self, key):
@@ -35,7 +41,25 @@ class Square(np.ndarray):
     def inverse(self):
         return type(self)(linalg.inv(self))
 
+    def diagonal(self) -> Vector:
+        d = super().diagonal()
+        v = Vector(d)
+        return v
+        # return Vector(super().diagonal())
+
     # alternative constructors
     @classmethod
     def zeros(cls, dimension: int) -> Square:
         return cls(np.zeros((dimension, dimension)))
+
+    @classmethod
+    def ones(cls, dimension: int) -> Sub:
+        return cls(np.ones((dimension, dimension)))
+
+    @classmethod
+    def identity(cls, dimension: int) -> Square:
+        return cls(np.eye(dimension))
+
+    @classmethod
+    def from_diagonal(cls, elements: List[float]) -> Square:
+        return cls(np.diag(elements))

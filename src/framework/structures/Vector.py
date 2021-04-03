@@ -1,28 +1,44 @@
 from __future__ import annotations
 
-from typing import *
+import typing
+import warnings
 
 import numpy as np
 from scipy import linalg
 
-from src.framework.structures.Square import Square
+from src.framework.structures.MultiDimensional import MultiDimensional
+
+SubVector = typing.TypeVar('SubVector', bound='Vector')
 
 
-class Vector(np.ndarray):
+class Vector(np.ndarray, MultiDimensional):
+
+    dim: typing.Optional[int] = None
 
     # constructor
-    def __new__(cls, elements: Union[float, Tuple[float, ...], List[float], np.ndarray]):
-        column = np.reshape(elements, (-1, 1))
-        return column.view(cls)
+    def __new__(
+            cls,
+            *args: typing.Any
+    ):
+        column: np.ndarray
+        if np.shape(args[0]):
+            column = np.reshape(args[0], (-1, 1))
+        else:
+            column = np.reshape(args, (-1, 1))
+        return column.astype(float).view(cls)
 
     def __array_finalize__(self, obj):
+        # assert self.shape[1] == 1
         if obj is None:
             return
 
     def __str__(self):
         return np.array2string(self, precision=3, suppress_small=True)
 
-    # public methods
+    def get_dimension(self) -> int:
+        return self.shape[0]
+
+    # getter/setter methods
     def get(self, index: int) -> float:
         assert index < len(self)
         return self[index, 0]
@@ -31,21 +47,33 @@ class Vector(np.ndarray):
         assert index < len(self)
         self[index] = value
 
-    def insert(self, element: Optional[float] = 0., index: Optional[int] = -1) -> Vector:
-        lst = self.to_list()
+    # modification
+    def insert(
+            self,
+            element: typing.Optional[float] = 0.,
+            index: typing.Optional[int] = -1
+    ) -> Vector:
+        lst: typing.List[float] = self.to_list()
         if index < 0 or index >= len(lst):
             lst.append(element)
         else:
             lst.insert(index, element)
-        return self.from_list(lst)
+        return Vector.from_list(lst)
 
-    def extend(self, element: Optional[float] = 0.) -> Vector:
-        return self.insert(element, -1)
+    def extend(
+            self,
+            element: typing.Optional[float] = 0.
+    ) -> Vector:
+        return Vector.insert(self, element, -1)
+
+    # manipulation
+    def sqrt(self) -> SubVector:
+        return type(self)(np.sqrt(self))
 
     def magnitude(self) -> float:
-        return linalg.norm(self)
+        return float(linalg.norm(self))
 
-    def normal(self) -> Vector:
+    def normal(self) -> SubVector:
         magnitude = self.magnitude()
         if np.isclose(magnitude, 0.):
             unit = type(self).zeros(self.get_dimension())
@@ -53,35 +81,45 @@ class Vector(np.ndarray):
             return type(self)(unit)
         return self / magnitude
 
-    def get_dimension(self) -> int:
-        return self.shape[0]
-
     # alternative representations
     def to_1d(self) -> np.ndarray:
-        return self.flatten()
+        return np.array(self.flatten())
 
-    def to_list(self) -> List[float]:
+    def to_list(self) -> typing.List[float]:
         return list(self.to_1d())
 
-    def to_tuple(self) -> Tuple[float, ...]:
+    def to_tuple(self) -> typing.Tuple[float, ...]:
         return tuple(self.to_list())
-
-    def to_diagonal(self) -> Square:
-        return Square(np.diag(self.to_1d()))
 
     # alternative constructors
     @classmethod
-    def from_elements(cls, *args) -> Vector:
+    def from_elements(cls, *args: float) -> SubVector:
         return cls(args)
 
     @classmethod
-    def from_list(cls, lst: List[float]) -> Vector:
+    def from_list(cls, lst: typing.List[float]) -> SubVector:
         return cls(lst)
 
     @classmethod
-    def from_array(cls, array: np.ndarray) -> Vector:
+    def from_array(cls, array: np.ndarray) -> SubVector:
         return cls(array)
 
     @classmethod
-    def zeros(cls, dimension: int) -> Vector:
-        return cls(np.zeros((dimension, 1)))
+    def zeros(cls, dimension: typing.Optional[int] = None) -> SubVector:
+        if cls.dim is not None:
+            if dimension is not None:
+                warnings.warn(f'<dimension={dimension}> is not used.')
+            return cls(np.zeros((cls.dim, 1)))
+        else:
+            assert dimension is not None
+            return Vector(np.zeros((dimension, 1)))
+
+    @classmethod
+    def ones(cls, dimension: typing.Optional[int] = None) -> SubVector:
+        if cls.dim is not None:
+            if dimension is not None:
+                warnings.warn(f'<dimension={dimension}> is not used.')
+            return cls(np.zeros((cls.dim, 1)))
+        else:
+            assert dimension is not None
+            return Vector(np.ones((dimension, 1)))
