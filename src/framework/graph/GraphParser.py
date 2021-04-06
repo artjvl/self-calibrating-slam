@@ -2,10 +2,8 @@ import pathlib
 import typing as tp
 from typing import TextIO
 
-from src.framework.graph.FactorGraph import FactorGraph, Node, Edge, FactorNode, FactorEdge
 from src.framework.graph.Database import Database
-
-Graph = tp.TypeVar('Graph', bound=FactorGraph)
+from src.framework.graph.FactorGraph import FactorGraph, FactorNode, FactorEdge, SubGraph, SubNode, SubEdge
 
 
 class GraphParser(object):
@@ -15,23 +13,23 @@ class GraphParser(object):
 
     def save(
             self,
-            graph: Graph,
+            graph: SubGraph,
             file: pathlib.Path
     ) -> None:
         writer: TextIO = file.open('w')
 
-        node: Node
+        node: SubNode
         for node in graph.get_nodes():
-            tag: str = self._database.from_element(type(node))
+            tag: str = self._database.from_element(node)
             id_: str = f'{node.get_id()}'
             data: str = ' '.join(node.write())
             writer.write(f'{tag} {id_} {data}\n')
             if node.is_fixed():
                 writer.write(f'FIX {id_}\n')
 
-        edge: Edge
+        edge: SubEdge
         for edge in graph.get_edges():
-            tag: str = self._database.from_element(type(edge))
+            tag: str = self._database.from_element(edge)
             ids: str = ' '.join([f'{id_}' for id_ in edge.get_node_ids()])
             data: str = ' '.join(edge.write())
             writer.write(f'{tag} {ids} {data}\n')
@@ -39,7 +37,7 @@ class GraphParser(object):
     def load(
             self,
             file: pathlib.Path
-    ) -> Graph:
+    ) -> SubGraph:
         graph = FactorGraph()
 
         reader: TextIO = file.open('r')
@@ -52,7 +50,11 @@ class GraphParser(object):
             words: tp.List[str] = line.split()
 
             tag: str = words[0]
-            if self._database.contains_tag(tag):
+            if tag == 'FIX':
+                id_: int = int(words[1])
+                node = graph.get_node(id_)
+                node.fix()
+            else:
                 element = self._database.from_tag(tag)
                 if isinstance(element, FactorNode):
                     id_: int = int(words[1])
@@ -63,13 +65,8 @@ class GraphParser(object):
                     cardinality: int = element.get_cardinality()
                     node_ids: tp.List[int] = [int(id_) for id_ in words[1: 1 + cardinality]]
                     for id_ in node_ids:
-                        node: Node = graph.get_node(id_)
+                        node: SubNode = graph.get_node(id_)
                         element.add_node(node)
                     element.read(words[1 + cardinality:])
                     graph.add_edge(element)
-            else:
-                if tag == 'FIX':
-                    id_: str = words[1]
-                    node = graph.get_node(int(id_))
-                    node.fix()
         return graph

@@ -1,14 +1,14 @@
 import typing as tp
 from abc import abstractmethod
 
-from src.framework.graph.FactorGraph import Element
+from src.framework.graph.FactorGraph import SubElement
 
 
 class Database(tp.Protocol):
 
     # read
     @abstractmethod
-    def from_tag(self, tag: str) -> Element:
+    def from_tag(self, tag: str) -> SubElement:
         pass
 
     @abstractmethod
@@ -17,9 +17,9 @@ class Database(tp.Protocol):
 
     # write
     @abstractmethod
-    def from_element(self, element: Element) -> str:
+    def from_element(self, element: SubElement) -> str:
         pass
 
     @abstractmethod
-    def contains_element(self, element: tp.Type[Element]) -> bool:
+    def contains_element(self, element: tp.Type[SubElement]) -> bool:
         pass

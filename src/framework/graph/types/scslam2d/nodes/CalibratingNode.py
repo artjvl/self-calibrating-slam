@@ -1,31 +1,40 @@
 import typing as tp
 
 from src.framework.graph.FactorGraph import FactorNode
-from src.framework.graph.attributes.DataFactory import Supported
-from src.framework.graph.protocols.ContainsData import ContainsData
+from src.framework.graph.data import SubData
+from src.framework.graph.data.DataFactory import Supported, DataFactory
 
-SubNode = tp.TypeVar('SubNode', bound='CalibratingNode')
+SubCalibratingNode = tp.TypeVar('SubCalibratingNode', bound='CalibratingNode')
 
 
-class CalibratingNode(FactorNode, ContainsData):
+class CalibratingNode(FactorNode):
+
+    _type: tp.Type[SubData]
 
     def __init__(
             self,
-            id_: int = 0
+            id_: int = 0,
+            value: tp.Optional[Supported] = None
     ):
         super().__init__(id_)
+        self._value: SubData = DataFactory.from_type(self._type)(value)
 
     # interface
     def get_value(self) -> Supported:
-        return self.get_data()
+        assert self._value.has_value()
+        return self._value.get_value()
+
+    def get_type(self) -> tp.Type[Supported]:
+        return self._value.get_type()
 
     def read(self, words: tp.List[str]) -> None:
-        words = self._data.read_rest(words)
+        words = self._value.read_rest(words)
         assert not words, f"Words '{words} are left unread."
 
     def write(self) -> tp.List[str]:
-        words: tp.List[str] = self._data.write()
+        words: tp.List[str] = self._value.write()
         return words
 
-    def get_word_count(self) -> int:
-        return 0
+    @classmethod
+    def get_length(cls) -> int:
+        return cls._type.get_length()

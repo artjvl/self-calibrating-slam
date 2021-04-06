@@ -2,19 +2,18 @@ import typing as tp
 from abc import abstractmethod
 
 from src.framework.graph.BaseGraph import BaseGraph, BaseNode, BaseEdge
-from src.framework.graph.attributes.DataFactory import Supported
+from src.framework.graph.data.DataFactory import Supported
 from src.framework.graph.protocols.ReadWrite import ReadWrite
-from src.framework.structures import Vector, Square
+from src.framework.math.matrix.square import SubSquare
+from src.framework.math.matrix.vector import SubVector
 
-Node = tp.TypeVar('Node', bound='FactorNode')
-Edge = tp.TypeVar('Edge', bound='FactorEdge')
-Element = tp.Union[Node, Edge]
-
-SubVector = tp.TypeVar('SubVector', bound=Vector)
-SubSquare = tp.TypeVar('SubSquare', bound=Square)
+SubGraph = tp.TypeVar('SubGraph', bound='FactorGraph')
+SubNode = tp.TypeVar('SubNode', bound='FactorNode')
+SubEdge = tp.TypeVar('SubEdge', bound='FactorEdge')
+SubElement = tp.Union[SubNode, SubEdge]
 
 
-class FactorGraph(BaseGraph[Node, Edge]):
+class FactorGraph(BaseGraph):
 
     # error
     def compute_error(self) -> float:
@@ -45,18 +44,11 @@ class FactorNode(BaseNode, ReadWrite):
         pass
 
 
-class FactorEdge(BaseEdge[Node], ReadWrite):
+class FactorEdge(BaseEdge, ReadWrite):
 
-    def __init__(
-            self,
-            nodes: tp.Optional[tp.List[Node]] = None
-    ):
-        super().__init__(nodes)
-        self._cardinality: int = 0
-
-    # cardinality
+    @abstractmethod
     def get_cardinality(self) -> int:
-        return self._cardinality
+        pass
 
     # measurement
     @abstractmethod
@@ -69,10 +61,6 @@ class FactorEdge(BaseEdge[Node], ReadWrite):
         pass
 
     # information
-    @abstractmethod
-    def is_uncertain(self) -> bool:
-        pass
-
     @abstractmethod
     def get_information(self) -> SubSquare:
         pass

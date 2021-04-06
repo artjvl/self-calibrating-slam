@@ -3,12 +3,12 @@ import typing as tp
 from src.framework.graph.protocols.Printable import Printable
 from src.utils.TypeDict import TypeDict
 
-Node = tp.TypeVar('Node', bound='BaseNode')
-Edge = tp.TypeVar('Edge', bound='BaseEdge')
+Node = tp.TypeVar('Node', bound='BaseNode', covariant=True)
+Edge = tp.TypeVar('Edge', bound='BaseEdge', covariant=True)
 Element = tp.Union[Node, Edge]
 
 
-class BaseGraph(tp.Generic[Node, Edge], Printable):
+class BaseGraph(Printable):
 
     def __init__(self):
         self._nodes: tp.Dict[int, Node] = {}
@@ -76,16 +76,16 @@ class BaseNode(Printable):
         return f'{self.get_id()}'
 
 
-class BaseEdge(tp.Generic[Node], Printable):
+class BaseEdge(Printable):
 
     def __init__(
             self,
-            nodes: tp.Optional[tp.List[Node]] = None
+            *nodes: Node
     ):
         super().__init__()
-        if nodes is None:
-            nodes = []
-        self._nodes: tp.List[Node] = nodes
+        self._nodes: tp.List[Node] = []
+        for node in nodes:
+            self.add_node(node)
 
     # nodes
     def add_node(self, node: Node) -> None:

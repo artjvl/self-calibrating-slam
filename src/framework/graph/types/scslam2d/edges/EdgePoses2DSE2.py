@@ -1,19 +1,22 @@
-from src.framework.graph.attributes.DataFactory import Supported
 from src.framework.graph.types.scslam2d.edges.CalibratingEdgeSE2 import CalibratingEdgeSE2
-from src.framework.graph.types.scslam2d.nodes.NodeSE2 import NodeSE2
+from src.framework.graph.types.scslam2d.nodes.typological.NodeSE2 import NodeSE2
+from src.framework.math.lie.transformation import SE2
 
 
 class EdgePoses2DSE2(CalibratingEdgeSE2):
-    endpoints = 2
+    _num_endpoints = 2
 
     def __init__(
             self,
-            a: NodeSE2,
-            b: NodeSE2
+            *nodes: NodeSE2
     ):
-        super().__init__([a, b])
+        if nodes:
+            assert isinstance(nodes[0], NodeSE2)
+            assert isinstance(nodes[1], NodeSE2)
+        super().__init__(*nodes)
 
-    def get_value(self) -> Supported:
-        a: NodeSE2 = self.get_node(0)
-        b: NodeSE2 = self.get_node(1)
-        return a.get_value().inverse() * b.get_value()
+    def get_value(self) -> SE2:
+        a: NodeSE2
+        b: NodeSE2
+        a, b = tuple(self.get_endpoints())
+        return a.get_value() - b.get_value()
