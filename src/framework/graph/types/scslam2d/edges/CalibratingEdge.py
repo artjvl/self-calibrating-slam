@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 
 from src.framework.graph.BaseGraph import Node
 from src.framework.graph.FactorGraph import FactorEdge
-from src.framework.graph.data import SubData
+from src.framework.graph.data import SubData, SubDataSquare
 from src.framework.graph.data.DataFactory import Supported, DataFactory
 from src.framework.graph.types.scslam2d.nodes.CalibratingNode import CalibratingNode, SubCalibratingNode
 from src.framework.graph.types.scslam2d.nodes.information.InformationNode import InformationNode, SubInformationNode
@@ -15,7 +15,7 @@ SubCalibratingEdge = tp.TypeVar('SubCalibratingEdge', bound='CalibratingEdge')
 
 class CalibratingEdge(FactorEdge, ABC):
 
-    _type: tp.Type[SubData]
+    _type: tp.Type[Supported]
     _num_endpoints: int
 
     def __init__(
@@ -27,9 +27,9 @@ class CalibratingEdge(FactorEdge, ABC):
 
         self._num_additional: int = 0
 
-        self._measurement: SubData = DataFactory.from_type(self._type)()
-        self._matrix: SubSquare = DataFactory.from_value(
-            SquareFactory.from_dim(self._measurement.get_length()).identity()
+        self._measurement: SubData = DataFactory.from_type(self.get_type())()
+        self._matrix: SubDataSquare = DataFactory.from_value(
+            SquareFactory.from_dim(self.get_dimension()).identity()
         )
 
         self._endpoints: tp.List[SubCalibratingNode] = []
@@ -47,6 +47,7 @@ class CalibratingEdge(FactorEdge, ABC):
     def get_value(self) -> Supported:
         pass
 
+    # measurement
     def set_measurement(self, measurement: Supported) -> None:
         self._measurement.set_value(measurement)
 
@@ -58,6 +59,11 @@ class CalibratingEdge(FactorEdge, ABC):
     def get_type(cls) -> tp.Type[Supported]:
         return cls._type
 
+    @classmethod
+    def get_dimension(cls) -> int:
+        return DataFactory.from_type(cls.get_type()).get_length()
+
+    # (information) matrix
     def set_matrix(self, matrix: SubSquare) -> None:
         self._matrix.set_value(matrix)
 
@@ -96,15 +102,15 @@ class CalibratingEdge(FactorEdge, ABC):
         return self._parameters
 
     # information
-    def add_information(self, node: InformationNode):
-        assert self._measurement.get_length() == node.get_dimension()
+    def add_information(self, node: SubInformationNode):
+        assert self.get_dimension() == node.get_dimension()
         self._information = node
         super().add_node(node)
 
     def has_information(self) -> bool:
         return self._information is not None
 
-    def get_information(self) -> InformationNode:
+    def get_information(self) -> SubInformationNode:
         assert self.has_information(), 'No information-node is present.'
         return self._information
 

@@ -39,4 +39,4 @@ class CalibratingNode(FactorNode):
 
     @classmethod
     def get_length(cls) -> int:
-        return cls._type.get_length()
+        return cls.get_type().get_length()

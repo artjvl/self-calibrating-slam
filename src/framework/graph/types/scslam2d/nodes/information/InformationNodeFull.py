@@ -11,9 +11,10 @@ class InformationNodeFull(InformationNode):
         symmetric: tp.List[float] = self.get_value().to_list()
         return Parser.list_to_symmetric(symmetric)
 
-    def get_length(self):
-        dim: int = self.get_dimension()
-        return dim * (dim + 1) / 2
+    @classmethod
+    def get_length(cls) -> int:
+        dim: int = cls.get_dimension()
+        return int(dim * (dim + 1) / 2)
 
 
 class InformationNodeFull2(InformationNodeFull):

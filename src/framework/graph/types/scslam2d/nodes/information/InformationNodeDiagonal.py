@@ -10,8 +10,9 @@ class InformationNodeDiagonal(InformationNode):
         diagonal: tp.List[float] = self.get_value().to_list()
         return SquareFactory.from_dim(self.get_dimension()).from_diagonal(diagonal)
 
-    def get_length(self):
-        return self.get_dimension()
+    @classmethod
+    def get_length(cls) -> int:
+        return cls.get_dimension()
 
 
 class InformationNodeDiagonal2(InformationNodeDiagonal):

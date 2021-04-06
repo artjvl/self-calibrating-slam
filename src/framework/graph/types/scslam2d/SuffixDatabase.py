@@ -1,7 +1,6 @@
 import typing as tp
 
 from src.framework.graph.Database import Database
-from src.framework.graph.data.DataFactory import Supported
 from src.framework.graph.types.scslam2d.edges.CalibratingEdge import CalibratingEdge, SubCalibratingEdge
 from src.framework.graph.types.scslam2d.nodes.CalibratingNode import CalibratingNode, SubCalibratingNode
 from src.framework.graph.types.scslam2d.nodes.information.InformationNode import SubInformationNode
