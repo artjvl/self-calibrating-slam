@@ -8,7 +8,7 @@ from src.framework.math.matrix.vector import VectorFactory, SubVector
 SubInformationNode = tp.TypeVar('SubInformationNode', bound='InformationNode')
 
 
-class InformationNode(CalibratingNode):
+class InformationNode(CalibratingNode[SubVector]):
     _dim: int
 
     @abstractmethod

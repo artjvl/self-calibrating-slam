@@ -4,7 +4,7 @@ from src.framework.graph.types.scslam2d.edges.CalibratingEdge import Calibrating
 from src.framework.math.matrix.vector import Vector2
 
 
-class CalibratingEdgeV2(CalibratingEdge, ABC):
+class CalibratingEdgeV2(CalibratingEdge[Vector2], ABC):
 
     _type = Vector2
 

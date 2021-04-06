@@ -2,30 +2,30 @@ import typing as tp
 
 from src.framework.graph.FactorGraph import FactorNode
 from src.framework.graph.data import SubData
-from src.framework.graph.data.DataFactory import Supported, DataFactory
+from src.framework.graph.data.DataFactory import DataFactory
 
 SubCalibratingNode = tp.TypeVar('SubCalibratingNode', bound='CalibratingNode')
+T = tp.TypeVar('T')
 
 
-class CalibratingNode(FactorNode):
-
-    _type: tp.Type[SubData]
+class CalibratingNode(tp.Generic[T], FactorNode[T]):
+    _type: tp.Type[T]
 
     def __init__(
             self,
             id_: int = 0,
-            value: tp.Optional[Supported] = None
+            value: tp.Optional[T] = None
     ):
         super().__init__(id_)
         self._value: SubData = DataFactory.from_type(self.get_type())(value)
 
     # interface
-    def get_value(self) -> Supported:
+    def get_value(self) -> T:
         assert self._value.has_value()
         return self._value.get_value()
 
     @classmethod
-    def get_type(cls) -> tp.Type[Supported]:
+    def get_type(cls) -> tp.Type[T]:
         return cls._type
 
     # read/write

@@ -4,7 +4,7 @@ from src.framework.math.matrix.square import Square3
 from src.framework.math.matrix.vector import Vector3
 
 
-class ParameterNodeV3(ParameterNode):
+class ParameterNodeV3(ParameterNode[Vector3]):
 
     _type = Vector3
     SCALE = 'SCALE'

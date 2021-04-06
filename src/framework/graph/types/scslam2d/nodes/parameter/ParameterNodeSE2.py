@@ -2,7 +2,7 @@ from src.framework.graph.types.scslam2d.nodes.parameter.ParameterNode import Par
 from src.framework.math.lie.transformation import SE2
 
 
-class ParameterNodeSE2(ParameterNode):
+class ParameterNodeSE2(ParameterNode[SE2]):
 
     _type = SE2
     OFFSET = 'OFFSET'

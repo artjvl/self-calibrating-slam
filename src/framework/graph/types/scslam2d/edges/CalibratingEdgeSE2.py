@@ -5,7 +5,7 @@ from src.framework.math.lie.transformation import SE2
 from src.framework.math.matrix.vector import Vector3
 
 
-class CalibratingEdgeSE2(CalibratingEdge, ABC):
+class CalibratingEdgeSE2(CalibratingEdge[SE2], ABC):
 
     _type = SE2
 

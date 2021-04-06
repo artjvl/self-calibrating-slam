@@ -2,7 +2,6 @@ import typing as tp
 from abc import abstractmethod
 
 from src.framework.graph.BaseGraph import BaseGraph, BaseNode, BaseEdge
-from src.framework.graph.data.DataFactory import Supported
 from src.framework.graph.protocols.ReadWrite import ReadWrite
 from src.framework.math.matrix.square import SubSquare
 from src.framework.math.matrix.vector import SubVector
@@ -23,7 +22,10 @@ class FactorGraph(BaseGraph):
         return error
 
 
-class FactorNode(BaseNode, ReadWrite):
+T = tp.TypeVar('T')
+
+
+class FactorNode(tp.Generic[T], BaseNode, ReadWrite):
 
     def __init__(
             self,
@@ -40,11 +42,11 @@ class FactorNode(BaseNode, ReadWrite):
 
     # value
     @abstractmethod
-    def get_value(self) -> Supported:
+    def get_value(self) -> T:
         pass
 
 
-class FactorEdge(BaseEdge, ReadWrite):
+class FactorEdge(tp.Generic[T], BaseEdge, ReadWrite):
 
     @abstractmethod
     def get_cardinality(self) -> int:
@@ -52,12 +54,12 @@ class FactorEdge(BaseEdge, ReadWrite):
 
     # measurement
     @abstractmethod
-    def get_measurement(self) -> Supported:
+    def get_measurement(self) -> T:
         pass
 
     # estimate
     @abstractmethod
-    def get_estimate(self) -> Supported:
+    def get_estimate(self) -> T:
         pass
 
     # information

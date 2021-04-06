@@ -4,18 +4,18 @@ from abc import ABC, abstractmethod
 from src.framework.graph.BaseGraph import Node
 from src.framework.graph.FactorGraph import FactorEdge
 from src.framework.graph.data import SubData, SubDataSquare
-from src.framework.graph.data.DataFactory import Supported, DataFactory
+from src.framework.graph.data.DataFactory import DataFactory
 from src.framework.graph.types.scslam2d.nodes.CalibratingNode import CalibratingNode, SubCalibratingNode
 from src.framework.graph.types.scslam2d.nodes.information.InformationNode import InformationNode, SubInformationNode
 from src.framework.graph.types.scslam2d.nodes.parameter.ParameterNode import ParameterNode, SubParameterNode
 from src.framework.math.matrix.square import SubSquare, SquareFactory
 
 SubCalibratingEdge = tp.TypeVar('SubCalibratingEdge', bound='CalibratingEdge')
+T = tp.TypeVar('T')
 
 
-class CalibratingEdge(FactorEdge, ABC):
-
-    _type: tp.Type[Supported]
+class CalibratingEdge(tp.Generic[T], FactorEdge[T], ABC):
+    _type: tp.Type[T]
     _num_endpoints: int
 
     def __init__(
@@ -44,19 +44,19 @@ class CalibratingEdge(FactorEdge, ABC):
         self._num_additional = num_additional
 
     @abstractmethod
-    def get_value(self) -> Supported:
+    def get_value(self) -> T:
         pass
 
     # measurement
-    def set_measurement(self, measurement: Supported) -> None:
+    def set_measurement(self, measurement: T) -> None:
         self._measurement.set_value(measurement)
 
-    def get_measurement(self) -> Supported:
+    def get_measurement(self) -> T:
         assert self._measurement.has_value()
         return self._measurement.get_value()
 
     @classmethod
-    def get_type(cls) -> tp.Type[Supported]:
+    def get_type(cls) -> tp.Type[T]:
         return cls._type
 
     @classmethod
