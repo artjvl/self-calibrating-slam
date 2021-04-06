@@ -54,8 +54,9 @@ class CalibratingEdge(FactorEdge, ABC):
         assert self._measurement.has_value()
         return self._measurement.get_value()
 
-    def get_type(self) -> tp.Type[Supported]:
-        return self._measurement.get_type()
+    @classmethod
+    def get_type(cls) -> tp.Type[Supported]:
+        return cls._type
 
     def set_matrix(self, matrix: SubSquare) -> None:
         self._matrix.set_value(matrix)
@@ -120,5 +121,6 @@ class CalibratingEdge(FactorEdge, ABC):
             words += self._information.write()
         return words
 
+    # ReadWrite: @classmethod
     def get_length(self) -> int:
         return self._measurement.get_length() + (self._information.get_length() if self.has_information() else 0)

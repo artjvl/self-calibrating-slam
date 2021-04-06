@@ -12,16 +12,6 @@ SubInformationNode = tp.TypeVar('SubInformationNode', bound='InformationNode')
 class InformationNode(CalibratingNode):
     _dim: int
 
-    def __init__(
-            self,
-            id_: int = 0,
-            value: tp.Optional[SubVector] = None
-    ):
-        super().__init__(id_)
-        self._value = DataFactory.from_type(
-            VectorFactory.from_dim(self.get_length())
-        )(value)
-
     def get_value(self) -> SubVector:
         return self._value
 
@@ -32,6 +22,10 @@ class InformationNode(CalibratingNode):
     @classmethod
     def get_dimension(cls) -> int:
         return cls._dim
+
+    @classmethod
+    def get_type(cls) -> tp.Type[SubVector]:
+        return VectorFactory.from_dim(cls.get_dimension())
 
     @classmethod
     @abstractmethod

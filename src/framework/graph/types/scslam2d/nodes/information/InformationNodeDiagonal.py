@@ -2,7 +2,6 @@ import typing as tp
 
 from src.framework.graph.types.scslam2d.nodes.information.InformationNode import InformationNode
 from src.framework.math.matrix.square import SquareFactory, SubSquare
-from src.framework.math.matrix.vector import Vector2, Vector3
 
 
 class InformationNodeDiagonal(InformationNode):
@@ -16,10 +15,8 @@ class InformationNodeDiagonal(InformationNode):
 
 
 class InformationNodeDiagonal2(InformationNodeDiagonal):
-    _type = Vector2
     _dim = 2
 
 
 class InformationNodeDiagonal3(InformationNodeDiagonal):
-    _type = Vector3
     _dim = 3

@@ -3,7 +3,6 @@ import typing as tp
 from src.framework.graph.data.Parser import Parser
 from src.framework.graph.types.scslam2d.nodes.information.InformationNode import InformationNode
 from src.framework.math.matrix.square import SubSquare
-from src.framework.math.matrix.vector import Vector3, Vector6
 
 
 class InformationNodeFull(InformationNode):
@@ -18,10 +17,8 @@ class InformationNodeFull(InformationNode):
 
 
 class InformationNodeFull2(InformationNodeFull):
-    _type = Vector3
     _dim = 2
 
 
 class InformationNodeFull3(InformationNodeFull):
-    _type = Vector6
     _dim = 3

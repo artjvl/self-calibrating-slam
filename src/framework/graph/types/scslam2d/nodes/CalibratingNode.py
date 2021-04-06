@@ -17,16 +17,18 @@ class CalibratingNode(FactorNode):
             value: tp.Optional[Supported] = None
     ):
         super().__init__(id_)
-        self._value: SubData = DataFactory.from_type(self._type)(value)
+        self._value: SubData = DataFactory.from_type(self.get_type())(value)
 
     # interface
     def get_value(self) -> Supported:
         assert self._value.has_value()
         return self._value.get_value()
 
-    def get_type(self) -> tp.Type[Supported]:
-        return self._value.get_type()
+    @classmethod
+    def get_type(cls) -> tp.Type[Supported]:
+        return cls._type
 
+    # read/write
     def read(self, words: tp.List[str]) -> None:
         words = self._value.read_rest(words)
         assert not words, f"Words '{words} are left unread."
