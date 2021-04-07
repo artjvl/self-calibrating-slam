@@ -33,7 +33,7 @@ class SE2(SE):
 
     # conversion
     def to_se3(self) -> SE3:
-        return SE3(self.translation().to_v3(), self.rotation().to_so3())
+        return SE3(self.translation().to_vector3(), self.rotation().to_so3())
 
     # helper-methods
     @staticmethod
