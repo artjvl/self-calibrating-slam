@@ -27,9 +27,15 @@ class ParameterNodeSE2(ParameterNode[SE2]):
     def is_bias(self) -> bool:
         return self._interpretation == self.BIAS
 
-    def compose_transformation(self, transformation: SE2) -> SE2:
+    def compose_transformation(
+            self,
+            transformation: SE2,
+            inverse: bool = False
+    ) -> SE2:
         assert self.has_interpretation()
         parameter: SE2 = self.get_value()
+        if inverse:
+            parameter = parameter.inverse()
         if self._interpretation == self.OFFSET:
             return parameter.inverse() * transformation * parameter
         elif self._interpretation == self.BIAS:

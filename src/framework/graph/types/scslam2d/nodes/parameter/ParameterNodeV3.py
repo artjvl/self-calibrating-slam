@@ -20,9 +20,15 @@ class ParameterNodeV3(ParameterNode[Vector3]):
     def is_scale(self) -> bool:
         return self._interpretation == self.SCALE
 
-    def compose_transformation(self, transformation: SE2) -> SE2:
+    def compose_transformation(
+            self,
+            transformation: SE2,
+            inverse: bool = False
+    ) -> SE2:
         assert self.has_interpretation()
         parameter: Vector3 = self.get_value()
+        if inverse:
+            parameter = Vector3(1 / parameter.array())
         if self._interpretation == self.SCALE:
             return SE2.from_matrix(
                 Square3.from_diagonal(parameter.to_list()).array() * transformation.array()

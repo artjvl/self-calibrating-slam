@@ -21,12 +21,20 @@ class ParameterNode(tp.Generic[T], CalibratingNode[T]):
 
     # composition
     @abstractmethod
-    def compose_transformation(self, transformation: SE2) -> SE2:
+    def compose_transformation(
+            self,
+            transformation: SE2,
+            inverse: bool = False
+    ) -> SE2:
         pass
 
-    def compose_translation(self, translation: Vector2) -> Vector2:
+    def compose_translation(
+            self,
+            translation: Vector2,
+            inverse: bool = False
+    ) -> Vector2:
         transformation: SE2 = SE2.from_translation_angle(translation, 0)
-        composed: SE2 = self.compose_transformation(transformation)
+        composed: SE2 = self.compose_transformation(transformation, inverse=inverse)
         return composed.translation()
 
     # interpretation
