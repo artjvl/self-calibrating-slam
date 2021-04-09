@@ -3,7 +3,7 @@ from __future__ import annotations
 import typing as tp
 
 from src.framework.math.lie.rotation.SO2 import SO2
-from src.framework.math.lie.transformation import SE3
+from src.framework.math.lie.transformation.SE3 import SE3
 from src.framework.math.lie.transformation.SE import SE
 from src.framework.math.matrix.square import SubSquare, Square3
 from src.framework.math.matrix.vector import SubVector, Vector2, Vector3

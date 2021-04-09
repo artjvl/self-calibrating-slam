@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from src.framework.math.lie.rotation import SO3
+from src.framework.math.lie.rotation.SO3 import SO3
 from src.framework.math.lie.rotation.SO import SO
 from src.framework.math.matrix.square import Square2
 from src.framework.math.matrix.vector import Vector1, Vector3

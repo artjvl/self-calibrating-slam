@@ -92,7 +92,8 @@ class Lie(Dimensional):
     # print
     def __str__(self):
         return np.array2string(
-            self.array()
+            self.array(),
+            precision=3
         )
 
     def __repr__(self):

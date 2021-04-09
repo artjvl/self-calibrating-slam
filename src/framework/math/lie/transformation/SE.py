@@ -45,7 +45,7 @@ class SE(Lie, ABC):
     def inverse(self) -> SubSE:
         inverse_rotation: SubSO = self.rotation().inverse()
         inverse_translation: SubVector = VectorFactory.from_dim(self.get_dimension())(
-            - inverse_rotation.array() * self.translation().array()
+            - inverse_rotation.array() @ self.translation().array()
         )
         return type(self)(inverse_translation, inverse_rotation)
 
