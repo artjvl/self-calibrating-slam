@@ -4,7 +4,7 @@ from PyQt5.QtCore import QObject, pyqtSignal
 
 from src.framework.simulation.ParameterDictTree import ParameterDictTree
 from src.framework.simulation.Simulation2D import Simulation2D
-from src.gui.modules.GraphContainer import GraphContainer
+from src.gui.modules.Container import ViewerContainer
 
 
 class SimulationHandler(QObject):
@@ -14,11 +14,11 @@ class SimulationHandler(QObject):
     # constructor
     def __init__(
             self,
-            container: GraphContainer,
+            container: ViewerContainer,
             *args, **kwargs
     ):
         super().__init__(*args, **kwargs)
-        self._container: GraphContainer = container
+        self._container: ViewerContainer = container
         self._simulation: Optional[Simulation2D] = None
 
     def set_simulation(self, simulation: Simulation2D):

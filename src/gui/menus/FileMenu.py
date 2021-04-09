@@ -2,14 +2,14 @@ from functools import partial
 
 from PyQt5.QtWidgets import qApp
 
-from src.gui.modules.GraphContainer import GraphContainer
 from src.gui.menus.Menu import Menu
+from src.gui.modules.Container import ViewerContainer
 
 
 class FileMenu(Menu):
 
     # constructor
-    def __init__(self, container: GraphContainer, *args, **kwargs):
+    def __init__(self, container: ViewerContainer, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.setTitle('&File')
         self._container = container
@@ -39,7 +39,7 @@ class FileMenu(Menu):
             for graph in self._container.get_graphs():
                 self.add_action(
                     menu=menu_replace,
-                    name=graph.get_name(short=True),
+                    name=graph.to_name(),
                     handler=partial(
                         self._container.replace_graph,
                         graph
@@ -47,7 +47,7 @@ class FileMenu(Menu):
                 )
                 self.add_action(
                     menu=menu_remove,
-                    name=graph.get_name(short=True),
+                    name=graph.to_name(),
                     handler=partial(
                         self._container.remove_graph,
                         graph

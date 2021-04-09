@@ -4,7 +4,7 @@ from PyQt5 import QtCore
 
 from src.framework.graph.Graph import Graph
 from src.framework.optimiser.Optimiser import Optimiser, Library, Solver
-from src.gui.modules.GraphContainer import GraphContainer
+from src.gui.modules.Container import ViewerContainer
 
 
 class OptimisationHandler(QtCore.QObject):
@@ -14,7 +14,7 @@ class OptimisationHandler(QtCore.QObject):
     # constructor
     def __init__(
             self,
-            container: GraphContainer,
+            container: ViewerContainer,
             *args, **kwargs
     ):
         super().__init__(*args, **kwargs)

@@ -4,8 +4,8 @@ import numpy as np
 from OpenGL.GL import *
 from pyqtgraph.opengl.GLGraphicsItem import GLGraphicsItem
 
-from src.framework.structures import Vector
-from src.gui.viewer.Colour import Colour
+from src.framework.math.matrix.vector import Vector3
+from src.gui.viewer.Rgb import Rgb
 from src.gui.viewer.Drawer import Drawer
 
 
@@ -44,27 +44,27 @@ class Grid(GLGraphicsItem):
         steps_x: np.ndarray = np.arange(0, size_x + 0.001, delta_x)
         steps_y: np.ndarray = np.arange(0, size_y + 0.001, delta_y)
         for x in steps_x[1:]:
-            a = Vector([x, size_y, 0])
-            b = Vector([x, -size_y, 0])
-            Drawer.line(a, b, colour=Colour.WHITE, alpha=alpha)
-            a = Vector([-x, size_y, 0])
-            b = Vector([-x, -size_y, 0])
-            Drawer.line(a, b, colour=Colour.WHITE, alpha=alpha)
+            a = Vector3([x, size_y, 0])
+            b = Vector3([x, -size_y, 0])
+            Drawer.line(a, b, colour=Rgb.WHITE, alpha=alpha)
+            a = Vector3([-x, size_y, 0])
+            b = Vector3([-x, -size_y, 0])
+            Drawer.line(a, b, colour=Rgb.WHITE, alpha=alpha)
         for y in steps_y[1:]:
-            a = Vector([size_x, y, 0])
-            b = Vector([-size_x, y, 0])
-            Drawer.line(a, b, colour=Colour.WHITE, alpha=alpha)
-            a = Vector([size_x, -y, 0])
-            b = Vector([-size_x, -y, 0])
-            Drawer.line(a, b, colour=Colour.WHITE, alpha=alpha)
-        a = Vector([size_x, 0, 0])
-        b = Vector([-size_x, 0, 0])
-        Drawer.line(a, b, colour=Colour.RED, alpha=alpha * 2)
-        a = Vector([0, size_y, 0])
-        b = Vector([0, -size_y, 0])
-        Drawer.line(a, b, colour=Colour.GREEN, alpha=alpha * 2)
-        a = Vector([0, 0, size_x])
-        b = Vector([0, 0, -size_x])
-        Drawer.line(a, b, colour=Colour.BLUE, alpha=alpha * 2)
+            a = Vector3([size_x, y, 0])
+            b = Vector3([-size_x, y, 0])
+            Drawer.line(a, b, colour=Rgb.WHITE, alpha=alpha)
+            a = Vector3([size_x, -y, 0])
+            b = Vector3([-size_x, -y, 0])
+            Drawer.line(a, b, colour=Rgb.WHITE, alpha=alpha)
+        a = Vector3([size_x, 0, 0])
+        b = Vector3([-size_x, 0, 0])
+        Drawer.line(a, b, colour=Rgb.RED, alpha=alpha * 2)
+        a = Vector3([0, size_y, 0])
+        b = Vector3([0, -size_y, 0])
+        Drawer.line(a, b, colour=Rgb.GREEN, alpha=alpha * 2)
+        a = Vector3([0, 0, size_x])
+        b = Vector3([0, 0, -size_x])
+        Drawer.line(a, b, colour=Rgb.BLUE, alpha=alpha * 2)
 
         glEnd()

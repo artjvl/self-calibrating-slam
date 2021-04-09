@@ -2,10 +2,12 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QMainWindow, QWidget, QDesktopWidget, QSizePolicy, QMenuBar, \
     QStatusBar, QSplitter
 
-from src.gui.action_pane.ActionPane import ActionPane
+from src.framework.graph.GraphParser import GraphParser
+from src.framework.graph.types.scslam2d.database import database
+# from src.gui.action_pane.ActionPane import ActionPane
 from src.gui.info_pane.InfoPane import InfoPane
 from src.gui.menus import FileMenu, ViewMenu, AboutMenu
-from src.gui.modules.GraphContainer import GraphContainer
+from src.gui.modules.Container import ViewerContainer
 from src.gui.modules.SimulationHandler import SimulationHandler
 from src.gui.terminal.TerminalText import TerminalText
 from src.gui.viewer.Viewer import Viewer
@@ -26,7 +28,8 @@ class MainWindow(QMainWindow):
         self.setWindowTitle('Graph-Viewer')
 
         # modules
-        self._container = GraphContainer()
+        parser = GraphParser(database)
+        self._container = ViewerContainer(parser)
         self._simulation = SimulationHandler(self._container)
 
         splitter = QSplitter(Qt.Horizontal)
@@ -37,11 +40,11 @@ class MainWindow(QMainWindow):
         self._statusbar: QStatusBar = self.statusBar()
 
         # left-layout:
-        splitter.addWidget(
-            ActionPane(
-                self._container
-            )
-        )
+        # splitter.addWidget(
+        #     ActionPane(
+        #         self._container
+        #     )
+        # )
         # centre-layout:
         splitter.addWidget(
             self._init_centre_layout(
@@ -60,7 +63,7 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(splitter)
 
         # additional settings
-        self._container.get_graphics_value(Items.AXES.value).set_checked(False)
+        # self._container.get_graphics_value(Items.AXES.value).set_checked(False)
 
         # show
         self.show()
@@ -72,7 +75,7 @@ class MainWindow(QMainWindow):
     @staticmethod
     def _init_viewer(
             widget: QWidget,
-            container: GraphContainer
+            container: ViewerContainer
     ) -> Viewer:
         # reference: https://pyqtgraph.readthedocs.io/en/latest/
         viewer: Viewer = Viewer(container, widget)
@@ -98,7 +101,7 @@ class MainWindow(QMainWindow):
 
     def _init_menubar(
             self,
-            container: GraphContainer,
+            container: ViewerContainer,
             viewer: Viewer
     ) -> QMenuBar:
         menubar = self.menuBar()
