@@ -3,7 +3,8 @@ import typing as tp
 from typing import TextIO
 
 from src.framework.graph.Database import Database
-from src.framework.graph.FactorGraph import FactorGraph, FactorNode, FactorEdge, SubGraph, SubNode, SubEdge
+from src.framework.graph.FactorGraph import FactorNode, FactorEdge, SubGraph, SubNode, SubEdge
+from src.framework.graph.Graph import Graph
 
 
 class GraphParser(object):
@@ -38,7 +39,7 @@ class GraphParser(object):
             self,
             file: pathlib.Path
     ) -> SubGraph:
-        graph = FactorGraph()
+        graph = Graph()
 
         reader: TextIO = file.open('r')
         lines = reader.readlines()

@@ -13,14 +13,13 @@ class BaseGraph(Printable):
     def __init__(self):
         self._nodes: tp.Dict[int, Node] = {}
         self._edges: tp.List[Edge] = []
-        self._nodes_sorted = TypeDict()
-        self._edges_sorted = TypeDict()
+        self._sorted = TypeDict[Element]()
 
     # nodes
     def add_node(self, node: Node) -> None:
         assert not self.contains_id(node.get_id()), f'Node with {node.get_id()} already present in {self.to_unique()}.'
         self._nodes[node.get_id()] = node
-        self._nodes_sorted.add(node)
+        self._sorted.add(node)
 
     def get_nodes(self) -> tp.List[Node]:
         return list(self._nodes.values())
@@ -38,17 +37,17 @@ class BaseGraph(Printable):
             assert self.contains_id(node.get_id()), f'{node.to_name()} with id {node.get_id()} is not present in {self.to_unique()}.'
         assert edge not in self.get_edges(), f'{edge.to_unique()} already present in {self.to_unique()}.'
         self._edges.append(edge)
-        self._edges_sorted.add(edge)
+        self._sorted.add(edge)
 
     def get_edges(self) -> tp.List[Edge]:
         return self._edges
 
-    # elements
-    def get_elements_of_type(self, type_: tp.Type[Element]) -> tp.List[Element]:
-        if type_ in self._nodes_sorted:
-            return self._nodes_sorted[type_]
-        if type_ in self._edges_sorted:
-            return self._edges_sorted[type_]
+    # types
+    def get_types(self) -> tp.List[tp.Type[Element]]:
+        return self._sorted.get_types()
+
+    def get_of_type(self, type_: tp.Type[Element]) -> tp.List[Element]:
+        return self._sorted[type_]
 
     # Printable
     def to_id(self) -> str:

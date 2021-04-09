@@ -84,8 +84,8 @@ class SuffixDatabase(Database):
                 type_: tp.Type[SubParameterNode] = type(parameter)
                 assert type_ in self._parameters
                 suffixes.append(self._parameters[type_])
-            if element.has_information():
-                information: SubInformationNode = element.get_information()
+            if element.has_info_node():
+                information: SubInformationNode = element.get_info_node()
                 type_: tp.Type[SubInformationNode] = type(information)
                 assert type_ in self._informations
                 suffixes.append(self._informations[type_])

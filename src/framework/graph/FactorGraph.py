@@ -83,4 +83,4 @@ class FactorEdge(tp.Generic[T], BaseEdge, ReadWrite):
             information: SubSquare
     ) -> float:
         assert vector.get_dimension() == information.get_dimension(), f'{vector} and {information} are not of appropriate dimensions.'
-        return vector.transpose() * information * vector
+        return float(vector.array().transpose() @ information.inverse().array() @ vector.array())

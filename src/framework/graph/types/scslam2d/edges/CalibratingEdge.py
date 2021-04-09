@@ -28,7 +28,7 @@ class CalibratingEdge(tp.Generic[T], FactorEdge[T], ABC):
         self._num_additional: int = 0
 
         self._measurement: SubData = DataFactory.from_type(self.get_type())()
-        self._matrix: SubDataSquare = DataFactory.from_value(
+        self._info_matrix: SubDataSquare = DataFactory.from_value(
             SquareFactory.from_dim(self.get_dimension()).identity()
         )
 
@@ -64,12 +64,12 @@ class CalibratingEdge(tp.Generic[T], FactorEdge[T], ABC):
         return DataFactory.from_type(cls.get_type()).get_length()
 
     # (information) matrix
-    def set_matrix(self, matrix: SubSquare) -> None:
-        self._matrix.set_value(matrix)
+    def set_information(self, matrix: SubSquare) -> None:
+        self._info_matrix.set_value(matrix)
 
-    def get_matrix(self) -> SubSquare:
-        assert self._matrix.has_value()
-        return self._matrix.get_value()
+    def get_information(self) -> SubSquare:
+        assert self._info_matrix.has_value()
+        return self._info_matrix.get_value()
 
     # override
     def add_node(self, node: Node) -> None:
@@ -78,7 +78,7 @@ class CalibratingEdge(tp.Generic[T], FactorEdge[T], ABC):
         if isinstance(node, ParameterNode):
             self.add_parameter(node)
         elif isinstance(node, InformationNode):
-            self.add_information(node)
+            self.add_info_node(node)
         else:
             self.add_endpoint(node)
 
@@ -102,31 +102,31 @@ class CalibratingEdge(tp.Generic[T], FactorEdge[T], ABC):
         return self._parameters
 
     # information
-    def add_information(self, node: SubInformationNode):
+    def add_info_node(self, node: SubInformationNode):
         assert self.get_dimension() == node.get_dimension()
         self._information = node
         super().add_node(node)
 
-    def has_information(self) -> bool:
+    def has_info_node(self) -> bool:
         return self._information is not None
 
-    def get_information(self) -> SubInformationNode:
-        assert self.has_information(), 'No information-node is present.'
+    def get_info_node(self) -> SubInformationNode:
+        assert self.has_info_node(), 'No information-node is present.'
         return self._information
 
     # read/write
     def read(self, words: tp.List[str]) -> None:
         words = self._measurement.read_rest(words)
-        if not self.has_information():
-            words = self._information.read_rest(words)
+        if not self.has_info_node():
+            words = self._info_matrix.read_rest(words)
         assert not words, f"Words '{words}' are left unread."
 
     def write(self) -> tp.List[str]:
         words: tp.List[str] = self._measurement.write()
-        if not self.has_information():
+        if not self.has_info_node():
             words += self._information.write()
         return words
 
     # ReadWrite: @classmethod
     def get_length(self) -> int:
-        return self._measurement.get_length() + (self._information.get_length() if self.has_information() else 0)
+        return self._measurement.get_length() + (self._information.get_length() if self.has_info_node() else 0)

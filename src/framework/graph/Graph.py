@@ -1,4 +1,8 @@
+import typing as tp
+
 from src.framework.graph.FactorGraph import FactorGraph
+
+SubGraph = tp.TypeVar('SubGraph', bound='Graph')
 
 
 class Graph(FactorGraph):
