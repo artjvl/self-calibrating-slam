@@ -4,7 +4,7 @@ from PyQt5 import QtCore
 
 from src.framework.graph import Graph
 from src.gui.action_pane.UpdateBox import UpdateBox
-from src.gui.modules.GraphContainer import GraphContainer
+from src.gui.modules.Container import ViewerContainer
 from src.gui.modules.OptimisationHandler import OptimisationHandler
 
 
@@ -15,7 +15,7 @@ class GraphBox(UpdateBox):
     # constructor
     def __init__(
             self,
-            container: GraphContainer,
+            container: ViewerContainer,
             optimisation_handler: OptimisationHandler,
             *args, **kwargs
     ):
@@ -30,8 +30,8 @@ class GraphBox(UpdateBox):
     # handlers
     def _handle_graph_update(self, signal: int):
         if signal >= 0:
-            self._graphs = [graph for graph in self._container.get_graphs() if graph.is_uncertain()]
-            self._update_box([graph.get_name(short=True) for graph in self._graphs])
+            self._graphs = self._container.get_graphs()
+            self._update_box([graph.to_name() for graph in self._graphs])
 
     def _handle_index_change(self, index):
         graphs: List[Graph] = self._container.get_graphs()

@@ -148,9 +148,8 @@ class GraphContainer(Container, Toggle):
 class ViewerContainer(Container, QtCore.QObject):
     signal_update = QtCore.pyqtSignal(int)
 
-    def __init__(self, parser: GraphParser):
+    def __init__(self):
         super().__init__()
-        self._parser = parser
         self._id_counter: int = 0
 
         for item in Items:
@@ -193,7 +192,8 @@ class ViewerContainer(Container, QtCore.QObject):
             self._children[str(id_)] = GraphContainer(self.get_types(), new)
             self.signal_update.emit(id_)
 
-    def load_from_file(self) -> tp.Optional[SubGraph]:
+    @staticmethod
+    def load_from_file() -> tp.Optional[SubGraph]:
         print("Loading file...")
         filename: tp.Optional[tp.Tuple[str, str]] = QtWidgets.QFileDialog.getOpenFileName(
             caption='Select file',
@@ -202,7 +202,7 @@ class ViewerContainer(Container, QtCore.QObject):
         )
         if filename[0]:
             path = pathlib.Path(filename[0])
-            graph: SubGraph = self._parser.load(path)
+            graph: SubGraph = GraphParser.load(path)
             return graph
         return None
 

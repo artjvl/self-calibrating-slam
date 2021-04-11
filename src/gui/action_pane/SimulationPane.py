@@ -2,7 +2,7 @@ from PyQt5 import QtWidgets
 
 from src.gui.action_pane.ParameterTree import ParameterTree
 from src.gui.action_pane.SimulationBox import SimulationBox
-from src.gui.modules.GraphContainer import GraphContainer
+from src.gui.modules.Container import ViewerContainer
 from src.gui.modules.SimulationHandler import SimulationHandler
 
 
@@ -11,12 +11,13 @@ class SimulationPane(QtWidgets.QWidget):
     # constructor
     def __init__(
             self,
-            container: GraphContainer,
+            container: ViewerContainer,
             *args, **kwargs
     ):
         super().__init__(*args, **kwargs)
         self._container = container
-        self._simulation_handler = SimulationHandler(container)
+        tree = ParameterTree(self)
+        self._simulation_handler = SimulationHandler(container, tree)
 
         layout = QtWidgets.QVBoxLayout()
         self.setLayout(layout)
@@ -33,7 +34,6 @@ class SimulationPane(QtWidgets.QWidget):
         button_simulate.clicked.connect(self._simulation_handler.simulate)
         layout.addWidget(button_simulate)
 
-        tree = ParameterTree(self._simulation_handler, self)
         tree_label = QtWidgets.QLabel(tree)
         tree_label.setText('Simulation parameters')
         layout.addWidget(tree_label)

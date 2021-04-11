@@ -57,7 +57,6 @@ class Optimiser(object):
 
     # public methods
     def set_graph(self, graph: Optional[Graph]):
-        assert graph.is_uncertain()
         self._graph = graph
 
     def get_graph(self) -> Optional[Graph]:

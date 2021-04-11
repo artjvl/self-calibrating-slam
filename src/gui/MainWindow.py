@@ -2,16 +2,12 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QMainWindow, QWidget, QDesktopWidget, QSizePolicy, QMenuBar, \
     QStatusBar, QSplitter
 
-from src.framework.graph.GraphParser import GraphParser
-from src.framework.graph.types.scslam2d.database import database
-# from src.gui.action_pane.ActionPane import ActionPane
+from src.gui.action_pane.ActionPane import ActionPane
 from src.gui.info_pane.InfoPane import InfoPane
 from src.gui.menus import FileMenu, ViewMenu, AboutMenu
 from src.gui.modules.Container import ViewerContainer
-from src.gui.modules.SimulationHandler import SimulationHandler
 from src.gui.terminal.TerminalText import TerminalText
 from src.gui.viewer.Viewer import Viewer
-from src.gui.viewer.items import Items
 
 
 class MainWindow(QMainWindow):
@@ -28,9 +24,7 @@ class MainWindow(QMainWindow):
         self.setWindowTitle('Graph-Viewer')
 
         # modules
-        parser = GraphParser(database)
-        self._container = ViewerContainer(parser)
-        self._simulation = SimulationHandler(self._container)
+        self._container = ViewerContainer()
 
         splitter = QSplitter(Qt.Horizontal)
 
@@ -40,11 +34,11 @@ class MainWindow(QMainWindow):
         self._statusbar: QStatusBar = self.statusBar()
 
         # left-layout:
-        # splitter.addWidget(
-        #     ActionPane(
-        #         self._container
-        #     )
-        # )
+        splitter.addWidget(
+            ActionPane(
+                self._container
+            )
+        )
         # centre-layout:
         splitter.addWidget(
             self._init_centre_layout(

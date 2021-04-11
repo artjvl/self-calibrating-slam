@@ -22,25 +22,28 @@ class BrowserTree(QtWidgets.QTreeWidget):
             *args, **kwargs
     ):
         super().__init__(*args, **kwargs)
+        self._container: ViewerContainer = container
+        self._inspector: InspectorTree = inspector
+        self._viewer: Viewer = viewer
+
+        # formatting
         self.headerItem().setText(0, 'Object')
         self.headerItem().setText(1, 'Type')
         self.setColumnWidth(0, 140)
         self.setAlternatingRowColors(True)
+
+        # selection
         self.itemSelectionChanged.connect(self._handle_selection)
+
+        # checking
+        self.itemChanged.connect(self._handle_checked)
+
+        # context menus
         self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self._handle_context_menu)
-        self.itemChanged.connect(self._handle_checked)
-        # container
-        self._container: ViewerContainer = container
-        self._container.signal_update.connect(self._handle_signal)
-        self._inspector: InspectorTree = inspector
-        self._viewer: Viewer = viewer
 
-    def _handle_signal(self, signal: int):
-        if signal >= 0:
-            self._construct_browser()
-        else:
-            self._update_browser()
+        # update
+        self._container.signal_update.connect(self._handle_signal)
 
     def _construct_browser(self):
         self.clear()
@@ -75,7 +78,9 @@ class BrowserTree(QtWidgets.QTreeWidget):
 
             if container.has_child(element_type):
                 element_container: ElementContainer = container.get_child(element_type)
-                element_type_item.setCheckState(0, QtCore.Qt.Checked if element_container.is_checked() else QtCore.Qt.Unchecked)
+                element_type_item.setCheckState(
+                    0, QtCore.Qt.Checked if element_container.is_checked() else QtCore.Qt.Unchecked
+                )
                 element_type_item.obj = element_container
 
             # for each Element of Element-type
@@ -95,25 +100,36 @@ class BrowserTree(QtWidgets.QTreeWidget):
     def _update_browser(self):
         for i in range(self.topLevelItemCount()):
             graph_item: QtWidgets.QTreeWidgetItem = self.topLevelItem(i)
-            graph_container: GraphContainer = graph_item.obj
-            graph_item.setCheckState(0, QtCore.Qt.Checked if graph_container.is_checked() else QtCore.Qt.Unchecked)
-            for j in range(graph_item.childCount()):
-                element_item: QtWidgets.QTreeWidgetItem = graph_item.child(j)
-                element_container: ElementContainer = element_item.obj
-                element_item.setCheckState(0, QtCore.Qt.Checked if element_container.is_checked() else QtCore.Qt.Unchecked)
+            if hasattr(graph_item, 'obj'):
+                graph_container: GraphContainer = graph_item.obj
+                graph_item.setCheckState(
+                    0, QtCore.Qt.Checked if graph_container.is_checked() else QtCore.Qt.Unchecked
+                )
+                for j in range(graph_item.childCount()):
+                    element_item: QtWidgets.QTreeWidgetItem = graph_item.child(j)
+                    if hasattr(element_item, 'obj'):
+                        element_container: ElementContainer = element_item.obj
+                        element_item.setCheckState(
+                            0, QtCore.Qt.Checked if element_container.is_checked() else QtCore.Qt.Unchecked
+                        )
 
     # handlers
+    def _handle_signal(self, signal: int):
+        if signal >= 0:
+            self._construct_browser()
+        else:
+            self._update_browser()
+
     def _handle_selection(self):
-        self._inspector.clear()
         item = self.currentItem()
         if hasattr(item, 'obj'):
             obj: tp.Union[SubContainer, SubVisualisable] = item.obj
             if isinstance(obj, GraphContainer):
-                self._inspector.construct_graph_tree(self._inspector, obj.get_graph())
+                self._inspector.construct_graph_tree(obj.get_graph())
             elif isinstance(obj, FactorNode):
-                self._inspector.construct_node_tree(self._inspector, obj)
+                self._inspector.construct_node_tree(obj)
             elif isinstance(obj, FactorEdge):
-                self._inspector.construct_edge_tree(self._inspector, obj)
+                self._inspector.construct_edge_tree(obj)
 
     def _handle_context_menu(self, point):
         index = self.indexAt(point)
