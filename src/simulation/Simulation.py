@@ -5,6 +5,6 @@ from src.simulation.hardcoded.HardcodedSimulation import HardcodedSimulation
 from src.simulation.tutorial_slam2d.TutorialSimulation import TutorialSimulation
 
 
-class Simulations(Enum):
+class Simulation(Enum):
     TUTORIAL_SLAM2D: Simulation2D = TutorialSimulation()
     HARDCODED: Simulation2D = HardcodedSimulation()
