@@ -64,5 +64,3 @@ class TutorialSimulation(BiSimulation2D):
                 self.add_closure(reach, 'lidar', separation=closure_separation, threshold=closure_probability)
             angle = np.deg2rad(np.random.choice([90, -90]))
 
-    def read_parameters(self, parent):
-        pass

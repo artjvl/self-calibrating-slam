@@ -34,14 +34,13 @@ class HardcodedSimulation(BiSimulation2D):
         # self.add_odometry(SE2.from_elements(1., 0.2, 0.4), 'lidar')
         # self.add_odometry(SE2.from_elements(0.2, 1., 0.8), 'lidar')
 
-        angle: float = np.deg2rad(0)
+        num: int = 5
         for _ in range(60):
-            for __ in range(5):
+            for __ in range(num):
+                angle: float = np.deg2rad(np.random.choice([90, -90])) if __ == num - 1 else 0.
                 motion = SE2.from_translation_angle_elements(1.0, 0, angle)
-                angle = np.deg2rad(0)
                 self.add_odometry(motion, 'lidar')
                 self.add_proximity(5, 'lidar', threshold=0.2)
                 self.add_closure(3., 'lidar', threshold=0.1)
-            angle = np.deg2rad(np.random.choice([90, -90]))
 
         return self.get_graphs()
