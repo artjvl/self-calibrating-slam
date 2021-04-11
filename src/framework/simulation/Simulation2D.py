@@ -1,147 +1,123 @@
-import configparser
-import pathlib
-from abc import ABC, abstractmethod
-from datetime import datetime
-from pathlib import Path
-from typing import *
+import typing as tp
 
-import numpy as np
-
-from src.definitions import get_project_root
-from src.framework.graph.Graph import Graph
-from src.framework.graph.types import EdgeSE2, NodeSE2
-from src.framework.groups import SE2
-from src.framework.simulation.ParameterDictTree import ParameterDictTree
-from src.framework.simulation.Simulator2D import Simulator2D
-from src.framework.structures import Vector
+from src.framework.graph.FactorGraph import SubNode
+from src.framework.graph.data.DataFactory import Supported
+from src.framework.graph.types.scslam2d.CalibratingGraph import CalibratingGraph, SubCalibratingGraph
+from src.framework.graph.types.scslam2d.edges import EdgeFactory
+from src.framework.graph.types.scslam2d.edges.CalibratingEdge import SubCalibratingEdge
+from src.framework.graph.types.scslam2d.nodes.CalibratingNode import SubCalibratingNode
+from src.framework.graph.types.scslam2d.nodes.information.InformationNode import SubInformationNode
+from src.framework.graph.types.scslam2d.nodes.parameter.ParameterNode import SubParameterNode
+from src.framework.graph.types.scslam2d.nodes.typological import NodeSE2
+from src.framework.math.lie.transformation import SE2
+from src.framework.simulation.sensors.Sensor import SubSensor
 
 
-class Simulation2D(ABC):
+class Simulation2D(object):
 
-    # constructor
-    def __init__(
+    def __init__(self):  # :^)
+        self._graph: SubCalibratingGraph = CalibratingGraph()
+        self._sensors: tp.Dict[str, SubSensor] = {}
+
+        # starting position
+        self._id_counter: int = 0
+        self._pose_ids: tp.List[int] = []
+        self._current: NodeSE2 = self.add_pose(SE2.from_translation_angle_elements(0, 0, 0))
+
+    # sensors
+    def add_sensor(
             self,
-            seed: Optional[int] = 0
+            id_: str,
+            sensor: SubSensor
     ):
-        self._seed = seed
-        self._rng = np.random.RandomState(seed)
-        self._true: Optional[Simulator2D] = None
-        self._perturbed: Optional[Simulator2D] = None
-        self.reset()
+        parameter: SubParameterNode
+        for parameter in sensor.get_parameters():
+            parameter.set_id(self.get_id(increment=True))
+            self._graph.add_node(parameter)
 
-        # parameters
-        self._parameter_tree = ParameterDictTree()
+        if sensor.has_information():
+            information: SubInformationNode = sensor.get_information()
+            information.set_id(self.get_id(increment=True))
+            self._graph.add_node(information)
 
-    def read_parameters(self, base_path: Path):
-        # base_path = Path(__file__).parent
-        file_path = (base_path / 'config.ini').resolve()
-        assert file_path.exists()
-        config = configparser.ConfigParser()
-        config.read(file_path)
+        self._sensors[id_] = sensor
 
-        # initialise new ParameterDictTree
-        self._parameter_tree = ParameterDictTree()
-        for key, value_string in config['PARAMETERS'].items():
-            self._parameter_tree.add_parameter(key, value_string)
+    def has_sensor(
+            self,
+            sensor_id: str
+    ) -> bool:
+        return sensor_id in self._sensors
 
-    def get_parameters(self) -> Optional[Dict[str, Union[str, int, float, bool]]]:
-        return self._parameter_tree.get_parameters()
+    def get_sensor(
+            self,
+            sensor_id: str
+    ) -> SubSensor:
+        assert self.has_sensor(sensor_id)
+        return self._sensors[sensor_id]
 
-    def get_parameter_tree(self) -> Optional[ParameterDictTree]:
-        return self._parameter_tree
-
-    def simulate(self):
-        graphs = self._simulate()
-        self.reset()
-        return graphs
-
-    def reset(self, seed: Optional[int] = None):
-        if seed is None:
-            seed = self._seed
-        self._seed = seed
-        self._true = Simulator2D(seed)
-        self._perturbed = Simulator2D(seed)
-
-    # simulation methods
+    # odometry
     def add_odometry(
             self,
-            motion: SE2,
-            variance: Optional[Vector] = None
-    ):
-        self._true.add_odometry(motion)
-        self._perturbed.add_odometry(motion, variance)
+            transformation: SE2,
+            sensor_id: str
+    ) -> None:
+        # current node
+        current: NodeSE2 = self.get_current()
 
-    def add_proximity(
+        # next node
+        position: SE2 = current.get_value() + transformation
+        new = self.add_pose(position)
+
+        # edge
+        self.add_edge([current.get_id(), new.get_id()], transformation, sensor_id)
+
+    # edges
+    def add_edge(
             self,
-            separation: int,
-            variance: Optional[Vector] = None
-    ):
-        edge: Optional[EdgeSE2] = self._true.add_proximity(separation)
-        if edge is not None:
-            transformation = edge.get_transformation()
-            self._perturbed.add_proximity(separation, transformation, variance)
+            ids: tp.List[int],
+            value: Supported,
+            sensor_id: str
+    ) -> SubCalibratingEdge:
+        nodes: tp.List[SubCalibratingNode] = [self._graph.get_node(id_) for id_ in ids]
+        edge: SubCalibratingEdge = EdgeFactory.from_measurement_nodes(value, *nodes)
 
-    def fix_current(self):
-        self._true.fix_current()
-        self._perturbed.fix_current()
+        assert self.has_sensor(sensor_id)
+        sensor: SubSensor = self.get_sensor(sensor_id)
+        edge = sensor.compose_edge(edge, value)
+        self._graph.add_edge(edge)
+        return edge
 
-    def add_loop_closure(
+    # poses
+    def add_pose(
             self,
-            separation: int,
-            reach: float,
-            variance: Optional[Vector] = None
-    ):
-        node: Optional[NodeSE2] = self._true.find_loop_closure(separation, reach)
-        if node is not None:
-            edge: EdgeSE2 = self._true.add_edge(node)
-            print('loop closure: {} - {}'.format(edge.get_node(0).get_id(), edge.get_node(1).get_id()))
+            pose: SE2
+    ) -> NodeSE2:
+        id_: int = self.get_id(increment=True)
+        node = NodeSE2(id_, pose)
+        self._pose_ids.append(id_)
+        self._graph.add_node(node)
+        self._current = node
+        return node
 
-            node_perturbed = self._perturbed.get_node(node.get_id())
-            self._perturbed.add_edge(
-                node_perturbed,
-                transformation=edge.get_transformation(),
-                variance=variance
-            )
+    def get_node(self, id_: int) -> SubNode:
+        return self._graph.get_node(id_)
 
-    # public methods
-    def save(
-            self,
-            identifier: str,
-            replace: bool = False,
-            path: Optional[pathlib.Path] = None
-    ):
-        path_save: pathlib.Path = path
-        filename: str = identifier
-        if path is None:
-            root: pathlib.Path = get_project_root()
-            path_save = (root / 'graphs/simulation').resolve()
-            path_save.mkdir(parents=True, exist_ok=True)
-            if not replace:
-                filename: str = '{}_{}'.format(
-                    identifier,
-                    datetime.now().strftime('%Y%m%d-%H%M%S')
-                )
-        else:
-            path_save.mkdir(parents=True, exist_ok=True)
-        self._true.save(pathlib.Path(path_save / '{}_true.g2o'.format(filename)).resolve())
-        self._perturbed.save(pathlib.Path(path_save / '{}_perturbed.g2o'.format(filename)).resolve())
+    def get_current(self) -> NodeSE2:
+        return self._current
 
-    def get_node_count(self) -> int:
-        return len(self._true.get_graph().get_nodes())
+    def get_current_pose(self) -> SE2:
+        return self._current.get_value()
 
-    def get_graphs(self) -> Tuple[Graph, Graph]:
-        return self.get_true(), self.get_perturbed()
+    def get_current_id(self) -> int:
+        return self._current.get_id()
 
-    def get_true(self) -> Graph:
-        return self._true.get_graph()
+    def get_pose_ids(self) -> tp.List[int]:
+        return self._pose_ids
 
-    def get_perturbed(self) -> Graph:
-        return self._perturbed.get_graph()
+    def get_id(self, increment: bool = False) -> int:
+        if increment:
+            self._id_counter += 1
+        return self._id_counter
 
-    def get_probability(self) -> float:
-        return self._rng.uniform(0, 1)
-
-    # abstract methods
-    @abstractmethod
-    def _simulate(self):
-        pass
+    def get_graph(self) -> SubCalibratingGraph:
+        return self._graph
