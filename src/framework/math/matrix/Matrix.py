@@ -40,7 +40,8 @@ class Matrix(object):
     def __str__(self):
         return np.array2string(
             self.array(),
-            precision=3
+            precision=3,
+            suppress_small=True
         )
 
     def __repr__(self):

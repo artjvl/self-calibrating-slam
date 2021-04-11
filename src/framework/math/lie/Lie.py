@@ -91,14 +91,7 @@ class Lie(Dimensional):
 
     # print
     def __str__(self):
-        return np.array2string(
-            self.array(),
-            precision=3
-        )
+        return str(self.matrix())
 
     def __repr__(self):
-        name: str = self.__class__.__name__
-        return name + np.array2string(
-            self.array(),
-            prefix=name
-        )
+        return repr(self.matrix())
