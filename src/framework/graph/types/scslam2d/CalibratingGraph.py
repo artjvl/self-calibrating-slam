@@ -1,5 +1,9 @@
-from src.framework.graph.FactorGraph import FactorGraph
+import typing as tp
+
+from src.framework.graph.Graph import Graph
+
+SubCalibratingGraph = tp.TypeVar('SubCalibratingGraph', bound='CalibratingGraph')
 
 
-class CalibratingGraph(FactorGraph):
+class CalibratingGraph(Graph):
     pass

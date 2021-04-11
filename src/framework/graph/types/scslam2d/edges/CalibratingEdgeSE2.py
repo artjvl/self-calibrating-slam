@@ -12,7 +12,7 @@ class CalibratingEdgeSE2(CalibratingEdge[SE2], ABC):
     def get_estimate(self) -> SE2:
         estimate: SE2 = self.get_value()
         for parameter in self.get_parameters():
-            estimate = parameter.compose_transformation(estimate)
+            estimate = parameter.compose_transformation(estimate, inverse=True)
         return estimate
 
     def compute_error_vector(self) -> Vector3:

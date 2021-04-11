@@ -23,18 +23,17 @@ class CalibratingEdge(tp.Generic[T], FactorEdge[T], ABC):
             *nodes: SubCalibratingNode
     ):
         assert len(nodes) in (0, self._num_endpoints)
-        super().__init__(*nodes)
 
         self._num_additional: int = 0
+        self._endpoints: tp.List[SubCalibratingNode] = []
+        self._parameters: tp.List[SubParameterNode] = []
+        self._information: tp.Optional[SubInformationNode] = None
+        super().__init__(*nodes)
 
         self._measurement: SubData = DataFactory.from_type(self.get_type())()
         self._info_matrix: SubDataSquare = DataFactory.from_value(
             SquareFactory.from_dim(self.get_dimension()).identity()
         )
-
-        self._endpoints: tp.List[SubCalibratingNode] = []
-        self._parameters: tp.List[SubParameterNode] = []
-        self._information: tp.Optional[SubInformationNode] = None
 
     # attributes
     def get_cardinality(self) -> int:
@@ -45,6 +44,7 @@ class CalibratingEdge(tp.Generic[T], FactorEdge[T], ABC):
 
     @abstractmethod
     def get_value(self) -> T:
+        """ Returns a (topological) measure (i.e., 'value') inferred by the connected (topological) nodes. """
         pass
 
     # measurement

@@ -39,8 +39,11 @@ class ParameterNode(tp.Generic[T], CalibratingNode[T]):
 
     # interpretation
     @abstractmethod
-    def set_interpretation(self, tag: str) -> None:
+    def set_as(self, tag: str) -> None:
         pass
+
+    def set_interpretation(self, tag: str) -> None:
+        self._interpretation = tag
 
     def get_interpretation(self) -> str:
         assert self.has_interpretation()
@@ -51,7 +54,7 @@ class ParameterNode(tp.Generic[T], CalibratingNode[T]):
 
     # read/write
     def read(self, words: tp.List[str]) -> None:
-        self.set_interpretation(words[0])
+        self.set_as(words[0])
         super().read(words[1:])
 
     def write(self) -> tp.List[str]:

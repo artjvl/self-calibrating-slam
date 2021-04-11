@@ -6,7 +6,6 @@ from src.framework.graph.protocols.ReadWrite import ReadWrite
 from src.framework.math.matrix.square import SubSquare
 from src.framework.math.matrix.vector import SubVector
 
-SubGraph = tp.TypeVar('SubGraph', bound='FactorGraph')
 SubNode = tp.TypeVar('SubNode', bound='FactorNode')
 SubEdge = tp.TypeVar('SubEdge', bound='FactorEdge')
 SubElement = tp.Union[SubNode, SubEdge]
@@ -55,11 +54,13 @@ class FactorEdge(tp.Generic[T], BaseEdge, ReadWrite):
     # measurement
     @abstractmethod
     def get_measurement(self) -> T:
+        """ Returns the (externally assigned) measurement encoded in the edge. """
         pass
 
     # estimate
     @abstractmethod
     def get_estimate(self) -> T:
+        """ Returns an estimate of the measurement. """
         pass
 
     # information

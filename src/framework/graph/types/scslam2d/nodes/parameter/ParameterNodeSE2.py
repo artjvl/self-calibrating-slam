@@ -8,7 +8,7 @@ class ParameterNodeSE2(ParameterNode[SE2]):
     OFFSET = 'OFFSET'
     BIAS = 'BIAS'
 
-    def set_interpretation(self, tag: str) -> None:
+    def set_as(self, tag: str) -> None:
         if tag == self.OFFSET:
             self.set_as_offset()
         elif tag == self.BIAS:
@@ -16,13 +16,13 @@ class ParameterNodeSE2(ParameterNode[SE2]):
 
     # specific interpretations
     def set_as_offset(self) -> None:
-        self._interpretation = self.OFFSET
+        self.set_interpretation(self.OFFSET)
 
     def is_offset(self) -> bool:
         return self._interpretation == self.OFFSET
 
     def set_as_bias(self) -> None:
-        self._interpretation = 'BIAS'
+        self.set_interpretation(self.BIAS)
 
     def is_bias(self) -> bool:
         return self._interpretation == self.BIAS
@@ -37,6 +37,6 @@ class ParameterNodeSE2(ParameterNode[SE2]):
         if inverse:
             parameter = parameter.inverse()
         if self._interpretation == self.OFFSET:
-            return parameter.inverse() * transformation * parameter
+            return parameter * transformation * parameter.inverse()
         elif self._interpretation == self.BIAS:
-            return transformation * parameter.inverse()
+            return transformation * parameter

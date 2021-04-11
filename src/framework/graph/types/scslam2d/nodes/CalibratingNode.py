@@ -24,6 +24,9 @@ class CalibratingNode(tp.Generic[T], FactorNode[T]):
         assert self._value.has_value()
         return self._value.get_value()
 
+    def set_value(self, value: T):
+        self._value.set_value(value)
+
     @classmethod
     def get_type(cls) -> tp.Type[T]:
         return cls._type

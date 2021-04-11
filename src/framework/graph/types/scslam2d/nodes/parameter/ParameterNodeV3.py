@@ -9,7 +9,7 @@ class ParameterNodeV3(ParameterNode[Vector3]):
     _type = Vector3
     SCALE = 'SCALE'
 
-    def set_interpretation(self, tag: str) -> None:
+    def set_as(self, tag: str) -> None:
         if tag == self.SCALE:
             self.set_as_scale()
 
