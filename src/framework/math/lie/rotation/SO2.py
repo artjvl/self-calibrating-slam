@@ -17,7 +17,7 @@ class SO2(SO):
 
     # conversion
     def to_so3(self) -> SO3:
-        vector = Vector3(self.angle(), 0, 0)
+        vector = Vector3(0, 0, self.angle())
         return SO3.from_vector(vector)
 
     # properties

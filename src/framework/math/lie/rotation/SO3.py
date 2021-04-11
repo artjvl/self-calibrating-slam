@@ -83,7 +83,7 @@ class SO3(SO):
     def _vector_to_algebra(vector: Vector3) -> Square3:
         a: float = vector[0]
         b: float = vector[1]
-        c: float = vector[1]
+        c: float = vector[2]
         return Square3([[0, -c, b],
                         [c, 0, -a],
                         [-b, a, 0]])

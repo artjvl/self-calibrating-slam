@@ -8,7 +8,7 @@ class SensorSE2(Sensor[SE2]):
     _type = SE2
 
     def measure(self, value: SE2) -> SE2:
-        value = self.compose(value)
+        # value = self.compose(value)
         noise: Vector3 = self.generate_noise()
         return value.plus(noise)
 
