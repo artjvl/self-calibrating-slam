@@ -29,5 +29,9 @@
 
 #include "edge_se2_sensor_calib.h"
 #include "edge_se2_odom_differential_calib.h"
+#include "vertex_odom_differential_params.h"
+
+#include "node_se2.h"
+#include "edge_poses2d_se2.h"
 
 #endif

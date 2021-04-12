@@ -25,15 +25,10 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "g2o/config.h"
-
-#include "vertex_odom_differential_params.h"
-
-#include "edge_se2_sensor_calib.h"
-#include "edge_se2_odom_differential_calib.h"
-
 #include "g2o/core/factory.h"
-
 #include "g2o/stuff/macros.h"
+
+#include "types_sclam2d.h"
 
 namespace g2o {
 
@@ -43,6 +38,9 @@ namespace g2o {
   G2O_REGISTER_TYPE(VERTEX_ODOM_DIFFERENTIAL, VertexOdomDifferentialParams);
   G2O_REGISTER_TYPE(EDGE_SE2_CALIB, EdgeSE2SensorCalib);
   G2O_REGISTER_TYPE(EDGE_SE2_ODOM_DIFFERENTIAL_CALIB, EdgeSE2OdomDifferentialCalib);
+
+  G2O_REGISTER_TYPE(NODE_SE2, NodeSE2)
+  G2O_REGISTER_TYPE(EDGE_POSES2D_SE2, EdgePoses2DSE2)
 
 #ifdef G2O_HAVE_OPENGL
   G2O_REGISTER_ACTION(EdgeSE2SensorCalibDrawAction);

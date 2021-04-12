@@ -5,7 +5,7 @@ add_library(types_sclam2d ${G2O_LIB_TYPE}
   odometry_measurement.cpp odometry_measurement.h
   types_sclam2d.cpp types_sclam2d.h
   g2o_types_sclam2d_api.h
-)
+        node_se2.cpp node_se2.h edge_poses2d_se2.cpp edge_poses2d_se2.h)
 
 set_target_properties(types_sclam2d PROPERTIES OUTPUT_NAME ${LIB_PREFIX}types_sclam2d)
 if (APPLE)
