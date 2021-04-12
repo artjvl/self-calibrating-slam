@@ -13,7 +13,7 @@ if(CHOLMOD_FOUND)
   target_link_libraries(g2o_cli_application_linked solver_cholmod)
 endif()
 # linking types
-target_link_libraries(g2o_cli_application_linked types_slam2d types_slam3d types_sba types_sclam2d types_scslam2d)
+target_link_libraries(g2o_cli_application_linked types_slam2d types_slam3d types_sba types_sclam2d)
 
 install(TARGETS g2o_cli_application_linked
   RUNTIME DESTINATION ${RUNTIME_DESTINATION}
@@ -40,7 +40,7 @@ if(QT4_FOUND AND QGLVIEWER_FOUND)
     target_link_libraries(g2o_viewer_linked solver_cholmod)
   endif()
   # linking types
-  target_link_libraries(g2o_viewer_linked types_slam2d types_slam3d types_sba types_sclam2d types_scslam2d)
+  target_link_libraries(g2o_viewer_linked types_slam2d types_slam3d types_sba types_sclam2d)
 
   install(TARGETS g2o_viewer_linked
     RUNTIME DESTINATION ${RUNTIME_DESTINATION}
