@@ -10,11 +10,12 @@ class Parser(object):
     # data to words
     @classmethod
     def symmetric_to_list(cls, matrix: SubSquare) -> tp.List[float]:
+        array = matrix.array()
         elements: tp.List[float] = []
-        indices = np.arange(matrix.shape[0])
+        indices = np.arange(array.shape[0])
         for i in indices:
             for j in indices[i:]:
-                elements.append(matrix[i][j])
+                elements.append(array[i][j])
         return elements
 
     @staticmethod

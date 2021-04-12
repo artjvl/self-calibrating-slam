@@ -23,18 +23,18 @@ class Sensor(tp.Generic[T]):
     def __init__(
             self,
             seed: int = 0,
-            matrix: tp.Optional[SubSquare] = None
+            info_matrix: tp.Optional[SubSquare] = None
     ):
         self._rng = np.random.RandomState(seed)
 
         # information
-        if matrix is None:
-            matrix = SquareFactory.from_dim(self.get_dimension()).identity()
-        self._matrix: SubSquare = matrix
+        if info_matrix is None:
+            info_matrix = SquareFactory.from_dim(self.get_dimension()).identity()
+        self._info_matrix: SubSquare = info_matrix
 
         # parameter
         self._parameters: tp.List[SubParameterNode] = []
-        self._information: tp.Optional[SubInformationNode] = None
+        self._info_node: tp.Optional[SubInformationNode] = None
 
     # measurement-type
     @classmethod
@@ -56,25 +56,28 @@ class Sensor(tp.Generic[T]):
         return self._parameters
 
     # information
-    def add_information(
+    def add_info_node(
             self,
             node: SubInformationNode
     ) -> None:
         assert self.get_dimension() == node.get_dimension()
-        self._information = node
+        self._info_node = node
         # self._matrix = SquareFactory.from_dim(self.get_dimension()).identity()
 
-    def get_information(self) -> SubInformationNode:
-        assert self.has_information()
-        return self._information
+    def get_info_node(self) -> SubInformationNode:
+        assert self.has_info_node()
+        return self._info_node
 
-    def has_information(self) -> bool:
-        return self._information is not None
+    def has_info_node(self) -> bool:
+        return self._info_node is not None
 
-    def get_matrix(self) -> SubSquare:
-        if self.has_information():
-            return self._information.get_matrix()
-        return self._matrix
+    def set_info_matrix(self, info_matrix: SubSquare) -> None:
+        self._info_matrix = info_matrix
+
+    def get_information(self) -> SubSquare:
+        if self.has_info_node():
+            return self._info_node.get_matrix()
+        return self._info_matrix
 
     # noise
     def generate_noise(self) -> SubVector:
@@ -83,7 +86,7 @@ class Sensor(tp.Generic[T]):
         return vector_type(
             self._rng.multivariate_normal(
                 mean=[0] * dim,
-                cov=self.get_matrix().inverse().array()
+                cov=self.get_information().inverse().array()
             )
         )
 
@@ -111,8 +114,8 @@ class Sensor(tp.Generic[T]):
             edge.add_parameter(parameter)
 
         # add information
-        edge.set_information(self._matrix)
-        if self.has_information():
-            edge.add_info_node(self._information)
+        edge.set_information(self._info_matrix)
+        if self.has_info_node():
+            edge.add_info_node(self._info_node)
 
         return edge

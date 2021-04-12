@@ -27,7 +27,7 @@ class CalibratingEdge(tp.Generic[T], FactorEdge[T], ABC):
         self._num_additional: int = 0
         self._endpoints: tp.List[SubCalibratingNode] = []
         self._parameters: tp.List[SubParameterNode] = []
-        self._information: tp.Optional[SubInformationNode] = None
+        self._info_node: tp.Optional[SubInformationNode] = None
         super().__init__(*nodes)
 
         self._measurement: SubData = DataFactory.from_type(self.get_type())()
@@ -104,15 +104,15 @@ class CalibratingEdge(tp.Generic[T], FactorEdge[T], ABC):
     # information
     def add_info_node(self, node: SubInformationNode):
         assert self.get_dimension() == node.get_dimension()
-        self._information = node
+        self._info_node = node
         super().add_node(node)
 
     def has_info_node(self) -> bool:
-        return self._information is not None
+        return self._info_node is not None
 
     def get_info_node(self) -> SubInformationNode:
         assert self.has_info_node(), 'No information-node is present.'
-        return self._information
+        return self._info_node
 
     # read/write
     def read(self, words: tp.List[str]) -> None:
@@ -124,9 +124,9 @@ class CalibratingEdge(tp.Generic[T], FactorEdge[T], ABC):
     def write(self) -> tp.List[str]:
         words: tp.List[str] = self._measurement.write()
         if not self.has_info_node():
-            words += self._information.write()
+            words += self._info_matrix.write()
         return words
 
     # ReadWrite: @classmethod
     def get_length(self) -> int:
-        return self._measurement.get_length() + (self._information.get_length() if self.has_info_node() else 0)
+        return self._measurement.get_length() + (self._info_node.get_length() if self.has_info_node() else 0)

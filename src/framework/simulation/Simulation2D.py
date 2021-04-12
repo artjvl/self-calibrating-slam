@@ -35,8 +35,8 @@ class Simulation2D(object):
             parameter.set_id(self.get_id(increment=True))
             self._graph.add_node(parameter)
 
-        if sensor.has_information():
-            information: SubInformationNode = sensor.get_information()
+        if sensor.has_info_node():
+            information: SubInformationNode = sensor.get_info_node()
             information.set_id(self.get_id(increment=True))
             self._graph.add_node(information)
 

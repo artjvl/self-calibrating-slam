@@ -89,7 +89,7 @@ class SuffixDatabase(Database):
                 type_: tp.Type[SubInformationNode] = type(information)
                 assert type_ in self._informations
                 suffixes.append(self._informations[type_])
-            return f"{tag}_{'_'.join(suffixes)}"
+            return '_'.join([tag] + suffixes)
 
     def contains_element(self, type_: tp.Type[Element]) -> bool:
         return type_ in self._elements
