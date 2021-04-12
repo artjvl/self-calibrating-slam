@@ -5,6 +5,7 @@ from typing import *
 
 from src.definitions import get_project_root
 from src.framework.graph.Graph import Graph
+from src.framework.graph.GraphParser import GraphParser
 
 
 class Library(Enum):
@@ -80,21 +81,14 @@ class Optimiser(object):
 
     def optimise(self) -> Graph:
         root: Path = get_project_root()
-        path_graphs_temp: Path = (root / 'graphs/temp').resolve()
-        path_graphs_temp.mkdir(parents=True, exist_ok=True)
+        relative_to: str = 'graphs/temp'
+        GraphParser.save_path_folder(self.get_graph(), relative_to, 'before')
 
-        # path to input file
-        path_input: Path = (path_graphs_temp / 'before.g2o').resolve()
-        self.get_graph().save(path_input)
-
-        # path to output file
-        path_output: Path = (path_graphs_temp / 'after.g2o').resolve()
-
-        # solver
         path_g2o_bin: Path = (root / 'g2o/bin/g2o').resolve()
-        solver_string: str = self._get_solver_string()
+        path_input: Path = (root / (relative_to + '/before.g2o')).resolve()
+        path_output: Path = (root / (relative_to + '/after.g2o')).resolve()
 
-        # starts g2o optimiser
+        solver_string: str = self._get_solver_string()
         process = subprocess.run([
             str(path_g2o_bin),
             '-solver', solver_string,
@@ -102,6 +96,5 @@ class Optimiser(object):
             str(path_input)
         ])
 
-        optimised = Graph()
-        optimised.load(path_output)
-        return optimised
+        graph: Graph = GraphParser.load(path_output)
+        return graph
