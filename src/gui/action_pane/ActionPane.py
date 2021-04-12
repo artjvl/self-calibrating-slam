@@ -1,17 +1,17 @@
+from PyQt5 import QtWidgets
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QSplitter
 
 from src.gui.action_pane.OptimisationPane import OptimisationPane
 from src.gui.action_pane.SimulationPane import SimulationPane
-from src.gui.modules.GraphContainer import GraphContainer
+from src.gui.modules.Container import ViewerContainer
 
 
-class ActionPane(QSplitter):
+class ActionPane(QtWidgets.QSplitter):
 
     # constructor
     def __init__(
             self,
-            container: GraphContainer,
+            container: ViewerContainer,
             *args, **kwargs
     ):
         super().__init__(*args, **kwargs)

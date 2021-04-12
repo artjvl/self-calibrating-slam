@@ -5,10 +5,6 @@ from PyQt5.QtWidgets import QMenu
 
 class Menu(QMenu):
 
-    # constructor
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
     @staticmethod
     def add_menu(
             menu: QMenu,

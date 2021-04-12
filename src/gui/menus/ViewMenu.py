@@ -1,21 +1,21 @@
-from functools import partial
+import functools
 
 from PyQt5.QtWidgets import QMenu, QAction
 
-from src.gui.modules.GraphContainer import GraphContainer
-from src.gui.modules.GraphContainer import GraphDictTreeData
 from src.gui.menus.Menu import Menu
+from src.gui.modules.Container import ViewerContainer, Type, GraphContainer, ElementContainer, SubToggle
 from src.gui.viewer.Viewer import Viewer
 
 
 class ViewMenu(Menu):
 
     # constructor
-    def __init__(self, container: GraphContainer, viewer: Viewer, *args, **kwargs):
+    def __init__(self, container: ViewerContainer, viewer: Viewer, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.setTitle('&View')
-        self._container = container
+        self._container: ViewerContainer = container
         self._viewer = viewer
+
         self._construct_menu()
         self._container.signal_update.connect(self._handle_signal)
         self._show_all: bool = True
@@ -25,10 +25,13 @@ class ViewMenu(Menu):
         self.clear()
         self._construct_view_section()
         self.addSeparator()
-        self._construct_item_section()
-        self.addSeparator()
-        for graph in self._container.get_graphs():
-            self._construct_graph_menu(graph.get_id())
+        self.add_action(
+            menu=self,
+            name='Grid',
+            handler=self._viewer.toggle_grid,
+            checked=True
+        )
+        self._construct_container_section()
         self.addSeparator()
         self.add_action(
             menu=self,
@@ -36,6 +39,64 @@ class ViewMenu(Menu):
             handler=self._handle_show_all,
             checked=True
         )
+
+    def _construct_container_section(self):
+        container: ViewerContainer = self._container
+
+        # top-menu
+        type_: Type
+        for type_ in container.get_types():
+            toggle: SubToggle = container.get_toggle(type_)
+            action = self.add_action(
+                menu=self,
+                name=type_.__name__,
+                handler=functools.partial(container.toggle, toggle),
+                checked=toggle.is_checked()
+            )
+            action.obj = toggle
+
+        self.addSeparator()
+
+        graph_container: GraphContainer
+        for graph_container in container.get_children():
+
+            # graph sub-menu
+            graph_menu: QMenu = self.add_menu(
+                menu=self,
+                name=graph_container.get_graph().to_name()
+            )
+            for type_ in graph_container.get_types():
+                toggle: SubToggle = graph_container.get_toggle(type_)
+                action = self.add_action(
+                    menu=graph_menu,
+                    name=type_.__name__,
+                    handler=functools.partial(container.toggle, toggle),
+                    checked=toggle.is_checked()
+                )
+                action.obj = toggle
+
+            graph_menu.addSeparator()
+
+            element_container: ElementContainer
+            for element_container in graph_container.get_children():
+
+                # element sub-menu
+                element_menu: QMenu = self.add_menu(
+                    menu=graph_menu,
+                    name=element_container.get_element_type().__name__
+                )
+
+                element_menu.addSeparator()
+
+                for type_ in element_container.get_types():
+                    toggle: SubToggle = element_container.get_toggle(type_)
+                    action = self.add_action(
+                        menu=element_menu,
+                        name=type_.__name__,
+                        handler=functools.partial(container.toggle, toggle),
+                        checked=toggle.is_checked()
+                    )
+                    action.obj = toggle
 
     def _construct_view_section(self):
         self.add_action(
@@ -54,57 +115,6 @@ class ViewMenu(Menu):
             handler=self._viewer.set_home_view
         )
 
-    def _construct_item_section(self):
-        graphics_value: GraphDictTreeData
-        self.add_action(
-            menu=self,
-            name='Grid',
-            handler=self._viewer.toggle_grid,
-            checked=True
-        )
-        for graphics_value in self._container.get_graphics_values():
-            action = self.add_action(
-                menu=self,
-                name=graphics_value.get_object().name,
-                handler=partial(self._container.toggle, graphics_value),
-                checked=graphics_value.is_checked()
-            )
-            action.instance_item = graphics_value
-
-    def _construct_graph_menu(self, id):
-        graph_value = self._container.get_graph_value(id)
-        graph_menu = self.add_menu(
-            menu=self,
-            name=graph_value.get_object().get_name(short=True)
-        )
-        for element_value in self._container.get_element_values(graph_id=id):
-            action = self.add_action(
-                menu=graph_menu,
-                name=element_value.get_object().__name__,
-                handler=partial(self._container.toggle, element_value),
-                checked=element_value.is_checked()
-            )
-            action.instance_item = element_value
-        graph_menu.addSeparator()
-        for graphics_value in self._container.get_graphics_values(graph_id=id):
-            graphics_type = graphics_value.get_object()
-            graphics_menu = self.add_menu(
-                menu=graph_menu,
-                name=graphics_type.name
-            )
-            for element_value in self._container.get_element_values(
-                    graph_id=id,
-                    graphics_type=graphics_type
-            ):
-                element_type = element_value.get_object()
-                action = self.add_action(
-                    menu=graphics_menu,
-                    name=element_type.__name__,
-                    handler=partial(self._container.toggle, element_value),
-                    checked=element_value.is_checked()
-                )
-                action.instance_item = element_value
-
     @classmethod
     def _update_menu(cls, menu: QMenu):
         action: QAction
@@ -112,9 +122,9 @@ class ViewMenu(Menu):
             if action.menu():
                 cls._update_menu(action.menu())
             elif not action.isSeparator():
-                if hasattr(action, 'instance_item'):
-                    value: GraphDictTreeData = action.instance_item
-                    action.setChecked(value.is_checked())
+                if hasattr(action, 'obj'):
+                    toggle: SubToggle = action.obj
+                    action.setChecked(toggle.is_checked())
 
     # handlers
     def _handle_signal(self, signal: int):

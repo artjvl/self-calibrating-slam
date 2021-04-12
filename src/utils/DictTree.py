@@ -3,8 +3,27 @@ from __future__ import annotations
 from typing import Optional, List, TypeVar, Generic, Dict, Type, Tuple
 import warnings
 
+
+class DictTreeData(object):
+
+    def pretty(self, indent: int = 0):
+        # properties: List[str] = [prop for prop in dir(self) if not prop.startswith('__')]
+        properties = self.__dict__
+        string: str = '{'
+        for key, value in properties.items():
+            string += '\n{}{}: {}'.format('\t' * (indent + 1), key, value)
+        string += '\n{}}}'.format('\t' * indent)
+        return string
+
+    def __str__(self):
+        return self.pretty(indent=0)
+
+    def __repr__(self) -> str:
+        return str(self.__dict__)
+
+
 K = TypeVar('K')  # key type
-D = TypeVar('D')  # data type
+D = TypeVar('D', bound=DictTreeData)  # data type
 
 
 class DictTree(Generic[K, D]):
@@ -65,14 +84,15 @@ class DictTree(Generic[K, D]):
     # printing
     @classmethod
     def pretty(cls, tree: DictTree[K, D], indent: int):
-        string: str = '<{}>'.format(tree.get_value())
+        value: Optional[DictTreeData] = tree.get_value()
+        string: str = '<{}>'.format(value.pretty(indent) if value is not None else None)
         if tree._children:
             string += ', {{{}\n{}}}'.format(
                 ','.join(['\n{}{}: {}'.format(
-                        '\t' * (indent + 1),
-                        repr(key),
-                        cls.pretty(child, indent + 1)
-                    ) for key, child in tree._children.items()]
+                    '\t' * (indent + 1),
+                    repr(key),
+                    cls.pretty(child, indent + 1)
+                ) for key, child in tree._children.items()]
                 ),
                 '\t' * indent
             )
@@ -108,7 +128,7 @@ class DictTree(Generic[K, D]):
         return next(self._children)
 
     def __str__(self):
-        return type(self).pretty(self, indent=0)
+        return self.pretty(self, indent=0)
 
     def __repr__(self) -> str:
         string: str = '<{}>'.format(self.get_value())

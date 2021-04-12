@@ -1,9 +1,12 @@
-from typing import *
+from __future__ import annotations
+
+import typing as tp
 
 from OpenGL.GL import *
 
-from src.framework.graph.factor.FactorNode import FactorNode
-from src.framework.groups import *
+from src.framework.graph.protocols.Visualisable import Visualisable
+from src.framework.graph.protocols.visualisable.DrawAxis import DrawAxis
+from src.framework.math.lie.transformation import SE3
 from src.gui.viewer.Drawer import Drawer
 from src.gui.viewer.items.GraphicsItem import GraphicsItem
 
@@ -15,13 +18,13 @@ class Axes(GraphicsItem):
     # constructor
     def __init__(
             self,
-            poses: List[SE3],
+            poses: tp.List[SE3],
             width: float = 3,
             size: float = 0.2,
             gl_options: str = 'translucent'
     ):
         super().__init__()
-        self._poses: List[SE3] = poses
+        self._poses: tp.List[SE3] = poses
         # settings
         self.setGLOptions(gl_options)
         self._width: float = width
@@ -42,14 +45,12 @@ class Axes(GraphicsItem):
 
         glEnd()
 
-    # eligibility method
-    @staticmethod
-    def check(element: Any) -> bool:
-        if issubclass(element, FactorNode) and element.is_physical and element.has_rotation:
-            return True
-        return False
-
     # constructor method
+    @staticmethod
+    def check(element_type: tp.Type[Visualisable]) -> bool:
+        return issubclass(element_type, DrawAxis)
+
     @classmethod
-    def from_elements(cls, elements: List[Any]) -> GraphicsItem:
-        return cls([node.get_pose3() for node in elements])
+    def from_elements(cls, elements: tp.List[DrawAxis]) -> Axes:
+        poses: tp.List[SE3] = [element.draw_pose() for element in elements]
+        return cls(poses)

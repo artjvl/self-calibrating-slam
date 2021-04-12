@@ -5,9 +5,7 @@ from PyQt5.QtWidgets import QMainWindow, QWidget, QDesktopWidget, QSizePolicy, Q
 from src.gui.action_pane.ActionPane import ActionPane
 from src.gui.info_pane.InfoPane import InfoPane
 from src.gui.menus import FileMenu, ViewMenu, AboutMenu
-from src.gui.modules.GraphContainer import GraphContainer
-from src.gui.modules.OptimisationHandler import OptimisationHandler
-from src.gui.modules.SimulationHandler import SimulationHandler
+from src.gui.modules.Container import ViewerContainer
 from src.gui.terminal.TerminalText import TerminalText
 from src.gui.viewer.Viewer import Viewer
 
@@ -26,11 +24,8 @@ class MainWindow(QMainWindow):
         self.setWindowTitle('Graph-Viewer')
 
         # modules
-        self._container = GraphContainer()
-        self._simulation = SimulationHandler(self._container)
-        self._optimisation = OptimisationHandler(self._container)
+        self._container = ViewerContainer()
 
-        # layout = QHBoxLayout(self)
         splitter = QSplitter(Qt.Horizontal)
 
         # terminal
@@ -61,6 +56,9 @@ class MainWindow(QMainWindow):
         splitter.setSizes([50, 200, 200])
         self.setCentralWidget(splitter)
 
+        # additional settings
+        # self._container.get_graphics_value(Items.AXES.value).set_checked(False)
+
         # show
         self.show()
 
@@ -71,7 +69,7 @@ class MainWindow(QMainWindow):
     @staticmethod
     def _init_viewer(
             widget: QWidget,
-            container: GraphContainer
+            container: ViewerContainer
     ) -> Viewer:
         # reference: https://pyqtgraph.readthedocs.io/en/latest/
         viewer: Viewer = Viewer(container, widget)
@@ -83,20 +81,21 @@ class MainWindow(QMainWindow):
             widget: QWidget,
             viewer: Viewer
     ) -> QSplitter:
-        layout = QSplitter(Qt.Vertical)
-        layout.addWidget(viewer)
+        splitter = QSplitter(Qt.Vertical)
+        splitter.addWidget(viewer)
 
         # terminal
         terminal: TerminalText = TerminalText(widget)
         terminal.setSizePolicy(QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Maximum))
-        layout.addWidget(terminal)
+        splitter.addWidget(terminal)
+        splitter.setContentsMargins(0, 10, 0, 10)
 
-        layout.setSizes([400, 100])
-        return layout
+        splitter.setSizes([400, 100])
+        return splitter
 
     def _init_menubar(
             self,
-            container: GraphContainer,
+            container: ViewerContainer,
             viewer: Viewer
     ) -> QMenuBar:
         menubar = self.menuBar()

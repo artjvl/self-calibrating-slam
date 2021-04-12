@@ -3,20 +3,20 @@ import pyqtgraph.opengl as gl
 from PyQt5.QtCore import QSize
 from PyQt5.QtGui import QVector3D
 
-from src.framework.structures import Vector
-from src.gui.modules.GraphContainer import GraphContainer
+from src.framework.math.matrix.vector import Vector3
+from src.gui.modules.Container import ViewerContainer
 from src.gui.viewer.Grid import Grid
 
 
 class Viewer(gl.GLViewWidget):
     # reference: https://pyqtgraph.readthedocs.io/en/latest/
 
-    def __init__(self, container: GraphContainer, *args, **kwargs):
+    def __init__(self, container: ViewerContainer, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.setMinimumSize(QSize(600, 400))
         self.setCameraPosition(distance=40)
         self.set_isometric_view()
-        self._container: GraphContainer = container
+        self._container: ViewerContainer = container
         self._container.signal_update.connect(self.update_items)
         self._is_grid = True
         self._grid = Grid(size=(100, 100), spacing=(1, 1))
@@ -33,7 +33,7 @@ class Viewer(gl.GLViewWidget):
         self.setCameraPosition(pos=QVector3D(0, 0, 0))
         # self.set_isometric_view()
 
-    def set_camera_pos(self, pos: Vector):
+    def set_camera_pos(self, pos: Vector3):
         self.setCameraPosition(pos=QVector3D(*(pos.to_list())))
 
     def update_items(self):
@@ -48,7 +48,7 @@ class Viewer(gl.GLViewWidget):
         self.items = items
         self.update()
 
-    def focus(self, translation: Vector):
+    def focus(self, translation: Vector3):
         self.set_camera_pos(translation)
 
     def toggle_grid(self):
@@ -61,7 +61,7 @@ class Viewer(gl.GLViewWidget):
             camera_pos = self.cameraPosition()
             camera_vector = self.opts['center'] - camera_pos
             distance = camera_vector.length()  # distance from camera to center
-            distance_x = distance * 2. * np.tan(0.5 * self.opts['fov'] * np.pi / 180.)  # approx. width of view at distance of center point
+            distance_x = distance * 2. * np.tan(0.5 * self.opts['fov'] * np.pi / 180.)
             scale_x = distance_x / self.width()
             z = QVector3D(0, 0, 1)
             azimuth = np.radians(self.opts['azimuth'])

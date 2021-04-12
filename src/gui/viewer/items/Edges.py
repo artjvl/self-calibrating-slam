@@ -1,12 +1,18 @@
-from typing import *
+from __future__ import annotations
+
+import typing as tp
 
 from OpenGL.GL import *
 
-from src.framework.graph.factor.FactorEdge import FactorEdge
-from src.framework.structures import *
-from src.gui.viewer.Colour import Colour
+from src.framework.graph.FactorGraph import SubElement
+from src.framework.graph.protocols.Visualisable import Visualisable
+from src.framework.graph.protocols.visualisable.DrawEdge import DrawEdge
+from src.framework.math.matrix.vector import Vector3
+from src.gui.viewer.Rgb import Rgb, RgbTuple
 from src.gui.viewer.Drawer import Drawer
 from src.gui.viewer.items.GraphicsItem import GraphicsItem
+
+Nodeset = tp.Tuple[Vector3, Vector3]
 
 
 class Edges(GraphicsItem):
@@ -16,13 +22,13 @@ class Edges(GraphicsItem):
     # constructor
     def __init__(
             self,
-            pairs: List[Tuple[Vector, Vector]],
-            colour: Optional[Tuple[float, ...]] = Colour.WHITE,
+            nodesets: tp.List[Nodeset],
+            colour: tp.Optional[RgbTuple] = Rgb.WHITE,
             width: float = 2,
             gl_options: str = 'translucent'
     ):
         super().__init__(colour)
-        self._pairs: List[Tuple[Vector, Vector]] = pairs
+        self._nodesets: tp.List[Nodeset] = nodesets
         # settings
         self._width: float = width
         self.setGLOptions(gl_options)
@@ -39,23 +45,20 @@ class Edges(GraphicsItem):
         glLineWidth(self._width)
         glBegin(GL_LINES)
 
-        for pair in self._pairs:
-            Drawer.line(*pair, colour=self._colour)
+        for nodeset in self._nodesets:
+            Drawer.line(*nodeset, colour=self._colour)
 
         glEnd()
 
-    # eligibility method
-    @staticmethod
-    def check(element: Type[Any]) -> bool:
-        if issubclass(element, FactorEdge) and element.is_physical:
-            return True
-        return False
-
     # constructor method
+    @staticmethod
+    def check(element_type: tp.Type[Visualisable]) -> bool:
+        return issubclass(element_type, DrawEdge)
+
     @classmethod
-    def from_elements(cls, elements: List[Any]) -> GraphicsItem:
-        element_type = type(elements[0])
+    def from_elements(cls, elements: tp.List[DrawEdge]) -> Edges:
+        poses: tp.List[Nodeset] = [element.draw_nodeset() for element in elements]
         return cls(
-            [edge.get_endpoints3() for edge in elements],
-            colour=Colour.similar(element_type.colour)
+            poses,
+            colour=Rgb.similar(DrawEdge.draw_rgb())
         )

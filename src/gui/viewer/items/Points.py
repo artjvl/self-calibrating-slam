@@ -1,11 +1,14 @@
-from typing import *
+from __future__ import annotations
+
+import typing as tp
 
 from OpenGL.GL import *
 
-from src.framework.graph.factor.FactorNode import FactorNode
-from src.framework.structures import *
-from src.gui.viewer.Colour import Colour
+from src.framework.graph.protocols.Visualisable import Visualisable
+from src.framework.graph.protocols.visualisable.DrawPoint import DrawPoint
+from src.framework.math.matrix.vector import Vector3
 from src.gui.viewer.Drawer import Drawer
+from src.gui.viewer.Rgb import Rgb, RgbTuple
 from src.gui.viewer.items.GraphicsItem import GraphicsItem
 
 
@@ -16,12 +19,12 @@ class Points(GraphicsItem):
     # constructor
     def __init__(
             self,
-            points: List[Vector],
-            colour: Optional[Tuple[float, ...]] = Colour.WHITE,
+            points: tp.List[Vector3],
+            colour: tp.Optional[RgbTuple] = Rgb.WHITE,
             width: float = 4
     ):
         super().__init__(colour)
-        self._points: List[Vector] = points
+        self._points: tp.List[Vector3] = points
         # settings
         self._width: float = width
 
@@ -48,18 +51,15 @@ class Points(GraphicsItem):
         glBlendFunc(GL_NONE, GL_NONE)
         glDisable(GL_BLEND)
 
-    # eligibility method
-    @staticmethod
-    def check(element_type: Type[Any]) -> bool:
-        if issubclass(element_type, FactorNode) and element_type.is_physical:
-            return True
-        return False
-
     # constructor method
+    @staticmethod
+    def check(element_type: tp.Type[Visualisable]) -> bool:
+        return issubclass(element_type, DrawPoint)
+
     @classmethod
-    def from_elements(cls, elements: List[Any]) -> GraphicsItem:
-        element_type = type(elements[0])
+    def from_elements(cls, elements: tp.List[DrawPoint]) -> Points:
+        poses: tp.List[Vector3] = [element.draw_point() for element in elements]
         return cls(
-            [node.get_translation3() for node in elements],
-            colour=Colour.similar(element_type.colour)
+            poses,
+            colour=Rgb.similar(DrawPoint.draw_rgb())
         )

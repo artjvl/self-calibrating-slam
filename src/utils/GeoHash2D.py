@@ -31,6 +31,8 @@ class GeoHash2D(Generic[T]):
             a: int,
             b: int
     ) -> List[Element[T]]:
+        """ Returns the element in bucket (a, b). """
+
         if a in self._hash:
             if b in self._hash[a]:
                 return self._hash[a][b]
@@ -41,7 +43,9 @@ class GeoHash2D(Generic[T]):
             a: int,
             b: int,
             element: Element[T]
-    ):
+    ) -> None:
+        """ Adds element 'element' to bucket (a, b). """
+
         if a not in self._hash:
             self._hash[a] = {}
         if b not in self._hash[a]:
@@ -53,7 +57,9 @@ class GeoHash2D(Generic[T]):
             x: float,
             y: float,
             item: T
-    ):
+    ) -> None:
+        """ Adds item 'item' with coordinates (x, y) to the table at (a, b). """
+
         element = Element[T](x, y, item)
         a, b = self._find_nearest_xy(x, y)
         self.set(a, b, element)
@@ -63,6 +69,8 @@ class GeoHash2D(Generic[T]):
             x: float,
             y: float
     ) -> List[T]:
+        """ Finds the bucket (a, b) closest to coordinates (x, y). """
+
         a, b = self._find_nearest_xy(x, y)
         return [element.value for element in self.get(a, b)]
 
@@ -72,6 +80,8 @@ class GeoHash2D(Generic[T]):
             y: float,
             distance: float
     ) -> List[T]:
+        """ Finds all elements within range 'distance' from coordinates (x, y). """
+
         a, b = self._find_nearest_xy(x, y)
         multiple: int = int(np.ceil(distance/self._size))
         steps = np.arange(-multiple, multiple + 1)
@@ -91,6 +101,8 @@ class GeoHash2D(Generic[T]):
             x: float,
             y: float
     ) -> Tuple[int, int]:
+        """ Finds the indices (a, b) of the bucket closest to coordinates (x, y). """
+
         return self._find_nearest(x), self._find_nearest(y)
 
     def _find_nearest(self, x: float) -> int:
