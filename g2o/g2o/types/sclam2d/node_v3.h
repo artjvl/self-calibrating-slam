@@ -5,10 +5,13 @@
 #ifndef G2O_NODE_V3_H
 #define G2O_NODE_V3_H
 
+#include "g2o/types/slam3d/vertex_pointxyz.h"
 
-class node_v3 {
+namespace g2o {
+    class NodeV3 : public VertexPointXYZ {
 
-};
+    };
+}
 
 
 #endif //G2O_NODE_V3_H

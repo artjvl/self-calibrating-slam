@@ -32,6 +32,10 @@
 #include "vertex_odom_differential_params.h"
 
 #include "node_se2.h"
-#include "edge_poses2d_se2.h"
+#include "param_se2.h"
+//#include "node_v3.h"
+//#include "param_v3.h"
+#include "constraint_poses2d_se2.h"
+#include "constraint_poses2d_se2_pse2.h"
 
 #endif
