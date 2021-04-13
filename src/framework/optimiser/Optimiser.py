@@ -87,12 +87,15 @@ class Optimiser(object):
         path_g2o_bin: Path = (root / 'g2o/bin/g2o').resolve()
         path_input: Path = (root / (relative_to + '/before.g2o')).resolve()
         path_output: Path = (root / (relative_to + '/after.g2o')).resolve()
+        path_summary: Path = (root / (relative_to + '/summary.g2o')).resolve()
 
         solver_string: str = self._get_solver_string()
         process = subprocess.run([
             str(path_g2o_bin),
             '-solver', solver_string,
             '-o', str(path_output),
+            '-v',
+            '-summary', str(path_summary),
             str(path_input)
         ])
 

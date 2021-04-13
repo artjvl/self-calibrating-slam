@@ -79,6 +79,9 @@ class Sensor(tp.Generic[T]):
             return self._info_node.get_matrix()
         return self._info_matrix
 
+    def set_information(self, information: SubSquare) -> None:
+        self._info_matrix = information
+
     # noise
     def generate_noise(self) -> SubVector:
         dim: int = self.get_dimension()

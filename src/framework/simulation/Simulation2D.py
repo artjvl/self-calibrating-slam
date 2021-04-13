@@ -23,6 +23,7 @@ class Simulation2D(object):
         self._id_counter: int = 0
         self._pose_ids: tp.List[int] = []
         self._current: NodeSE2 = self.add_pose(SE2.from_translation_angle_elements(0, 0, 0))
+        self._current.fix()
 
     # sensors
     def add_sensor(
