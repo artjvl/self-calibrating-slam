@@ -19,6 +19,9 @@ class GraphParser(object):
             graph: SubGraph,
             file: pathlib.Path
     ) -> None:
+        print(f"Saving '{graph.to_unique()}' to '{file}'...")
+        graph.set_path(file)
+
         writer: TextIO = file.open('w')
 
         node: SubNode
@@ -71,7 +74,10 @@ class GraphParser(object):
             cls,
             file: pathlib.Path
     ) -> SubGraph:
+        print(f"Loading '{file}'...")
+
         graph = Graph()
+        graph.set_path(file)
 
         reader: TextIO = file.open('r')
         lines = reader.readlines()

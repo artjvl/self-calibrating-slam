@@ -194,7 +194,6 @@ class ViewerContainer(Container, QtCore.QObject):
 
     @staticmethod
     def load_from_file() -> tp.Optional[SubGraph]:
-        print("Loading file...")
         filename: tp.Optional[tp.Tuple[str, str]] = QtWidgets.QFileDialog.getOpenFileName(
             caption='Select file',
             directory='',

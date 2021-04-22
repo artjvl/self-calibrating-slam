@@ -31,7 +31,7 @@ class GraphBox(UpdateBox):
     def _handle_graph_update(self, signal: int):
         if signal >= 0:
             self._graphs = self._container.get_graphs()
-            self._update_box([graph.to_name() for graph in self._graphs])
+            self._update_box([graph.get_pathname() for graph in self._graphs])
 
     def _handle_index_change(self, index):
         graphs: List[Graph] = self._container.get_graphs()

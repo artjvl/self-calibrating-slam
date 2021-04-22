@@ -57,10 +57,10 @@ class BrowserTree(QtWidgets.QTreeWidget):
         # top-level: Graph
         graph: Graph = container.get_graph()
         graph_item: QtWidgets.QTreeWidgetItem = self._construct_tree_item(
-            str(graph.get_id()),
+            graph.get_pathname(),
             graph.to_name()
         )
-        graph_item.setToolTip(0, str(graph.get_id()))
+        graph_item.setToolTip(0, str(graph.get_path()))
         graph_item.setCheckState(0, QtCore.Qt.Checked if container.is_checked() else QtCore.Qt.Unchecked)
         graph_item.obj = container
 
