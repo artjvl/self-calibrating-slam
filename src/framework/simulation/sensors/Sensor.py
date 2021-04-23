@@ -22,7 +22,7 @@ class Sensor(tp.Generic[T]):
 
     def __init__(
             self,
-            seed: int = 0,
+            seed: int = None,
             info_matrix: tp.Optional[SubSquare] = None
     ):
         self._rng = np.random.RandomState(seed)
@@ -95,22 +95,24 @@ class Sensor(tp.Generic[T]):
 
     @abstractmethod
     def measure(self, value: T) -> T:
+        """ Adds noise to the value. """
         pass
 
     @abstractmethod
     def compose(self, value: T) -> T:
+        """ Composes the value by sequentially adding all stored parameters. """
         pass
 
-    def compose_edge(
+    @abstractmethod
+    def decompose(self, value: T) -> T:
+        """ Decomposes the value by, in reverse order, subtracting all stored parameters. """
+        pass
+
+    def extend_edge(
             self,
-            edge: SubCalibratingEdge,
-            value: T
+            edge: SubCalibratingEdge
     ) -> SubCalibratingEdge:
         assert edge.get_type() == self.get_type()
-
-        # set measurement
-        measurement: T = self.compose(value)
-        edge.set_measurement(measurement)
 
         # add parameters
         for parameter in self._parameters:

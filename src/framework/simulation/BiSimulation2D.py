@@ -8,7 +8,7 @@ import numpy as np
 from src.framework.graph.Graph import SubGraph
 from src.framework.graph.GraphParser import GraphParser
 from src.framework.graph.data.DataFactory import Supported
-from src.framework.graph.types.scslam2d.nodes.typological import NodeSE2
+from src.framework.graph.types.scslam2d.nodes.topological import NodeSE2
 from src.framework.math.lie.transformation import SE2
 from src.framework.math.matrix.vector import Vector2
 from src.framework.simulation.ParameterSet import ParameterSet
@@ -28,39 +28,66 @@ class BiSimulation2D(object):
 
         self._true = Simulation2D()
         self._perturbed = Simulation2D()
+        translation: Vector2 = self._true.get_current_pose().translation()
+        self._geo.add(translation[0], translation[1], self.get_current_id())
 
         self._parameters: tp.Optional[ParameterSet] = None
 
     # graph-construction
     def add_sensor(
             self,
-            id_: str,
+            sensor_id: str,
             sensor_true: SubSensor,
             sensor_perturbed: SubSensor
     ) -> None:
-        self._true.add_sensor(id_, sensor_true)
-        self._perturbed.add_sensor(id_, sensor_perturbed)
+        self._true.add_sensor(sensor_id, sensor_true)
+        self._perturbed.add_sensor(sensor_id, sensor_perturbed)
+        max_id: int = max(self._true.get_id(), self._perturbed.get_id())
+        self._true.set_current_id(max_id)
+        self._perturbed.set_current_id(max_id)
 
     def add_odometry(
             self,
             transformation: SE2,
             sensor_id: str
     ) -> None:
-        self._true.add_odometry(transformation, sensor_id)
-        pose: SE2 = self._true.get_current_pose()
-        translation: Vector2 = pose.translation()
-        id_: int = self._true.get_current_id()
-        self._geo.add(translation[0], translation[1], id_)
+        true_sensor: SubSensor = self._true.get_sensor(sensor_id)
+        true_measurement: SE2 = true_sensor.decompose(transformation)
+        self._true.add_odometry(true_measurement, sensor_id)
 
-        measurement: SE2 = self._true.get_sensor(sensor_id).measure(transformation)
-        self._perturbed.add_odometry(measurement, sensor_id)
+        translation: Vector2 = self._true.get_current_pose().translation()
+        self._geo.add(translation[0], translation[1], self._true.get_current_id())
+
+        perturbed_measurement: SE2 = true_sensor.measure(true_measurement)
+        self._perturbed.add_odometry(perturbed_measurement, sensor_id)
+
+    def add_gps(
+            self,
+            translation: Vector2,
+            sensor_id: str
+    ) -> None:
+        current_id: int = self.get_current_id()
+        self.add_edge([current_id], translation, sensor_id)
+
+    def add_edge(
+            self,
+            ids: tp.List[int],
+            value: Supported,
+            sensor_id: str
+    ) -> None:
+        true_sensor: SubSensor = self._true.get_sensor(sensor_id)
+        true_measurement: Supported = true_sensor.decompose(value)
+        self._true.add_edge(ids, true_measurement, sensor_id)
+
+        perturbed_measurement: Supported = true_sensor.measure(true_measurement)
+        self._perturbed.add_edge(ids, perturbed_measurement, sensor_id)
 
     def add_closure(
             self,
             distance: float,
             sensor_id: str,
             separation: int = 10,
-            threshold: float = 0.
+            threshold: float = 1.
     ) -> None:
         if self._rng.uniform(0, 1) >= 1 - threshold:
             pose_ids: tp.List[int] = self._true.get_pose_ids()
@@ -77,11 +104,11 @@ class BiSimulation2D(object):
                 if matches:
                     closure_id: int = matches[0]
                     # closure_id: int = self._rng.choice(closures)
-                    closure: NodeSE2 = self.get_true().get_node(closure_id)
+                    current_id: int = self.get_current_id()
 
+                    closure: NodeSE2 = self.get_true().get_node(closure_id)
                     transformation: SE2 = current.get_value() - closure.get_value()
-                    ids: tp.List[int] = [closure.get_id(), current.get_id()]
-                    self.add_edge(ids, transformation, sensor_id)
+                    self.add_edge([closure_id, current_id], transformation, sensor_id)
 
     def add_proximity(
             self,
@@ -100,17 +127,20 @@ class BiSimulation2D(object):
                 ids: tp.List[int] = [proximity.get_id(), current.get_id()]
                 self.add_edge(ids, transformation, sensor_id)
 
-    def add_edge(
+    def add_poses_edge(
             self,
-            ids: tp.List[int],
-            value: Supported,
+            from_id: int,
+            to_id: int,
             sensor_id: str
     ) -> None:
-        self._true.add_edge(ids, value, sensor_id)
-        measurement: Supported = self._true.get_sensor(sensor_id).measure(value)
-        self._perturbed.add_edge(ids, measurement, sensor_id)
+        transformation: SE2 = self._true.get_node(to_id).get_value() - self._true.get_node(from_id).get_value()
+        self.add_edge([from_id, to_id], transformation, sensor_id)
 
     # logistics
+    def fix(self):
+        self._true.get_current().fix()
+        self._perturbed.get_current().fix()
+
     def reset(self):
         self._true = Simulation2D()
         self._perturbed = Simulation2D()
@@ -137,6 +167,10 @@ class BiSimulation2D(object):
 
     def get_perturbed(self) -> SubGraph:
         return self._perturbed.get_graph()
+
+    def get_current_id(self) -> int:
+        assert self._true.get_current_id() == self._perturbed.get_current_id()
+        return self._true.get_current_id()
 
     # parameters
     def set_parameters(self, parameters: ParameterSet) -> None:
