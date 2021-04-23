@@ -5,7 +5,7 @@ from src.framework.graph.types.scslam2d.edges.EdgePoses2DSE2 import EdgePoses2DS
 from src.framework.graph.types.scslam2d.nodes.information import \
     InformationNodeDiagonal2, InformationNodeDiagonal3, InformationNodeFull2, InformationNodeFull3
 from src.framework.graph.types.scslam2d.nodes.parameter import ParameterNodeSE2, ParameterNodeV3
-from src.framework.graph.types.scslam2d.nodes.typological import NodeSE2, NodeV2
+from src.framework.graph.types.scslam2d.nodes.topological import NodeSE2, NodeV2
 
 database = SuffixDatabase()
 

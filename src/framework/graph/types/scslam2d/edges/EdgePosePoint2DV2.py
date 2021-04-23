@@ -1,7 +1,7 @@
 from src.framework.graph.types.scslam2d.edges.CalibratingEdgeSE2 import CalibratingEdgeSE2
 from src.framework.graph.types.scslam2d.nodes.CalibratingNode import SubCalibratingNode
-from src.framework.graph.types.scslam2d.nodes.typological import NodeV2
-from src.framework.graph.types.scslam2d.nodes.typological.NodeSE2 import NodeSE2
+from src.framework.graph.types.scslam2d.nodes.topological import NodeV2
+from src.framework.graph.types.scslam2d.nodes.topological.NodeSE2 import NodeSE2
 from src.framework.math.matrix.vector import Vector2
 
 

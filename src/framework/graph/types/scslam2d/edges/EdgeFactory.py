@@ -6,7 +6,7 @@ from src.framework.graph.types.scslam2d.edges.EdgePose2DV2 import EdgePose2DV2
 from src.framework.graph.types.scslam2d.edges.EdgePosePoint2DV2 import EdgePosePoint2DV2
 from src.framework.graph.types.scslam2d.edges.EdgePoses2DSE2 import EdgePoses2DSE2
 from src.framework.graph.types.scslam2d.nodes.CalibratingNode import SubCalibratingNode
-from src.framework.graph.types.scslam2d.nodes.typological import NodeSE2, NodeV2
+from src.framework.graph.types.scslam2d.nodes.topological import NodeSE2, NodeV2
 from src.framework.math.lie.transformation import SE2
 from src.framework.math.matrix.vector import Vector2
 
