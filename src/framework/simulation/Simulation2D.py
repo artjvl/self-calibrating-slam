@@ -22,6 +22,7 @@ class Simulation2D(object):
 
         # starting position
         self._id_counter: int = 0
+        self._par_counter: int = 10**9
         self._pose_ids: tp.List[int] = []
         self._current: NodeSE2 = self.add_pose(SE2.from_translation_angle_elements(0, 0, 0))
         self._current.fix()
@@ -80,12 +81,14 @@ class Simulation2D(object):
     ):
         parameter: SubParameterNode
         for parameter in sensor.get_parameters():
-            parameter.set_id(self.get_id(increment=True))
+            parameter.set_id(self._par_counter)
+            self._par_counter += 1
             self._graph.add_node(parameter)
 
         if sensor.has_info_node():
             information: SubInformationNode = sensor.get_info_node()
-            information.set_id(self.get_id(increment=True))
+            information.set_id(self._par_counter)
+            self._par_counter += 1
             self._graph.add_node(information)
 
         self._sensors[id_] = sensor
@@ -122,7 +125,7 @@ class Simulation2D(object):
         return self._current.get_id()
 
     def set_current_id(self, id_: int) -> None:
-        assert id_ > self.get_current_id()
+        assert id_ >= self.get_current_id()
         self._id_counter = id_
 
     def get_pose_ids(self) -> tp.List[int]:

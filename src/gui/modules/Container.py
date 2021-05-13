@@ -192,6 +192,12 @@ class ViewerContainer(Container, QtCore.QObject):
             self._children[str(id_)] = GraphContainer(self.get_types(), new)
             self.signal_update.emit(id_)
 
+    def clear_graphs(self) -> None:
+        for graph in self.get_graphs():
+            id_: int = graph.get_id()
+            del self._children[str(id_)]
+        self.signal_update.emit(0)
+
     @staticmethod
     def load_from_file() -> tp.Optional[SubGraph]:
         filename: tp.Optional[tp.Tuple[str, str]] = QtWidgets.QFileDialog.getOpenFileName(

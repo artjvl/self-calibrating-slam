@@ -1,6 +1,8 @@
 from typing import *
 
 import numpy as np
+from framework.graph.types.scslam2d.nodes.parameter import ParameterNodeV3
+from framework.math.matrix.vector import Vector3
 from src.framework.graph.Graph import Graph
 from src.framework.graph.types.scslam2d.nodes.parameter import ParameterNodeSE2
 from src.framework.math.lie.transformation import SE2
@@ -22,18 +24,18 @@ class CalibrationSimulation(BiSimulation2D):
         # info.set_value(Vector6([800, 0, 0, 600, 0, 400]))
         info_matrix = Square3([[800, 0, 0], [0, 600, 0], [0, 0, 400]])
 
-        true_par = ParameterNodeSE2()
-        true_par.set_value(SE2.from_translation_angle_elements(0.0, 0.4, 0.00))
-        true_par.set_as_bias()
+        true_par = ParameterNodeV3()
+        true_par.set_value(Vector3(1.0, 1.0, 1.0))
+        true_par.set_as_scale()
         true = SensorSE2()
         true.add_parameter(true_par)
         true.set_information(info_matrix)
 
-        perturbed_par = ParameterNodeSE2()
-        perturbed_par.set_value(SE2.from_translation_angle_elements(0.0, 0.0, 0.00))
-        perturbed_par.set_as_bias()
+        perturbed_par = ParameterNodeV3()
+        perturbed_par.set_value(Vector3(1.2, 0.8, 1.2))
+        perturbed_par.set_as_scale()
         perturbed = SensorSE2()
-        # perturbed.add_parameter(perturbed_par)
+        perturbed.add_parameter(perturbed_par)
         perturbed.set_information(info_matrix)
 
         self.add_sensor('lidar', true, perturbed)

@@ -7,7 +7,7 @@ from src.gui.modules.Container import ViewerContainer
 from src.gui.viewer.Viewer import Viewer
 
 
-class InfoPane(QtWidgets.QSplitter):
+class InfoPane(QtWidgets.QWidget):
 
     # constructor
     def __init__(
@@ -17,24 +17,49 @@ class InfoPane(QtWidgets.QSplitter):
             *args, **kwargs
     ):
         super().__init__(*args, **kwargs)
-        self.setOrientation(QtCore.Qt.Vertical)
-        self.setContentsMargins(10, 10, 10, 10)
+        # self.setOrientation(QtCore.Qt.Vertical)
+        # self.setContentsMargins(10, 10, 10, 10)
 
+        # vertical layout
+        layout = QtWidgets.QVBoxLayout(self)
+
+        # BUTTONS
         # load-button
         button_load = QtWidgets.QPushButton(self)
         button_load.setText('Load file')
-        button_load.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Preferred))
+        # button_load.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Preferred))
         button_load.clicked.connect(container.load_graph)
 
-        self.addWidget(button_load)
+        # clear-button
+        button_clear = QtWidgets.QPushButton(self)
+        button_clear.setText('Clear')
+        # button_clear.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Preferred))
+        button_clear.clicked.connect(container.clear_graphs)
+
+        # button layout
+        button_layout = QtWidgets.QHBoxLayout()
+        button_layout.setContentsMargins(0, 0, 0, 0)
+        button_layout.addWidget(button_load)
+        button_layout.addWidget(button_clear)
+        buttons = QtWidgets.QWidget(self)
+        buttons.setLayout(button_layout)
+        layout.addWidget(buttons)
+
+        # PANELS
+        panels = QtWidgets.QSplitter(self)
+        panels.setOrientation(QtCore.Qt.Vertical)
+        # panels.setContentsMargins(10, 10, 10, 10)
         # self.setStretchFactor(0, 0)
 
         inspector = InspectorTree(self)
         browser = BrowserTree(container, inspector, viewer, self)
 
-        self.addWidget(LabelPane(browser, 'Graph browser'))
-        self.addWidget(LabelPane(inspector, 'Graph-element inspector'))
+        panels.addWidget(LabelPane(browser, 'Graph browser'))
+        panels.addWidget(LabelPane(inspector, 'Graph-element inspector'))
+        layout.addWidget(panels)
 
-        self.setSizes([20, 400, 400])
+        # self.setLayout(layout)
+        panels.setStretchFactor(0, 2)
+        panels.setStretchFactor(1, 2)
         # print(self.sizes())
 
