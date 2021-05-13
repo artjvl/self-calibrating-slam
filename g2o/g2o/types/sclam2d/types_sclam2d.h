@@ -28,14 +28,15 @@
 #define G2O_TYPES_SCLAM_H
 
 #include "edge_se2_sensor_calib.h"
-#include "edge_se2_odom_differential_calib.h"
 #include "vertex_odom_differential_params.h"
+#include "edge_se2_odom_differential_calib.h"
 
 #include "node_se2.h"
-#include "param_se2.h"
 #include "node_v3.h"
+#include "param_se2.h"
 #include "param_v3.h"
 #include "constraint_poses2d_se2.h"
 #include "constraint_poses2d_se2_pse2.h"
+#include "constraint_poses2d_se2_pv3.h"
 
 #endif

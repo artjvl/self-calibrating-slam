@@ -1,34 +1,35 @@
 //
-// Created by art on 12-04-21.
+// Created by art on 24-04-21.
 //
 
-#ifndef G2O_CONSTRAINT_POSES2D_SE2_PSE2_H
-#define G2O_CONSTRAINT_POSES2D_SE2_PSE2_H
+#ifndef G2O_CONSTRAINT_POSES2D_SE2_PV3_H
+#define G2O_CONSTRAINT_POSES2D_SE2_PV3_H
 
 #include "g2o_types_sclam2d_api.h"
 #include "g2o/core/base_fixed_sized_edge.h"
 #include "g2o/types/slam2d/se2.h"
 #include "node_se2.h"
-#include "param_se2.h"
+#include "param_v3.h"
 
 namespace g2o {
 
     /**
      * \brief scanmatch measurement that also calibrates an offset for the laser
      */
-    class G2O_TYPES_SCLAM2D_API ConstraintPoses2DSE2PSE2 : public BaseFixedSizedEdge<3, SE2, NodeSE2, NodeSE2, ParamSE2> {
+    class G2O_TYPES_SCLAM2D_API ConstraintPoses2DSE2PV3 : public BaseFixedSizedEdge<3, SE2, NodeSE2, NodeSE2, ParamV3> {
     public:
         EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
-        ConstraintPoses2DSE2PSE2();
+        ConstraintPoses2DSE2PV3();
 
         void computeError() {
             const NodeSE2* v1       = static_cast<const NodeSE2*>(_vertices[0]);
             const NodeSE2* v2       = static_cast<const NodeSE2*>(_vertices[1]);
-            const ParamSE2* offset  = static_cast<const ParamSE2*>(_vertices[2]);
+            const ParamV3* p        = static_cast<const ParamV3*>(_vertices[2]);
             const SE2& x1 = v1->estimate();
             const SE2& x2 = v2->estimate();
+            const Vector3& scale = p->estimate();
 //            SE2 delta = _inverseMeasurement * ((x1 * offset->estimate()).inverse() * x2 * offset->estimate());
-            SE2 delta = _inverseMeasurement * (v1->estimate().inverse()*v2->estimate());
+            SE2 delta = SE2(scale.asDiagonal() * _measurement.toVector()).inverse() * (x1.inverse()*x2);
             _error = delta.toVector();
         }
 
@@ -37,15 +38,13 @@ namespace g2o {
             _inverseMeasurement = m.inverse();
         }
 
-        virtual number_t initialEstimatePossible(const OptimizableGraph::VertexSet& from, OptimizableGraph::Vertex* to)
-        {
-            if (   from.count(_vertices[2]) == 1 // need the laser offset
+        virtual number_t initialEstimatePossible(const OptimizableGraph::VertexSet& from, OptimizableGraph::Vertex* to) {
+            if (from.count(_vertices[2]) == 1 // need the laser offset
                    && ((from.count(_vertices[0]) == 1 && to == _vertices[1]) || ((from.count(_vertices[1]) == 1 && to == _vertices[0])))) {
                 return 1.0;
             }
             return -1.0;
         }
-        virtual void initialEstimate(const OptimizableGraph::VertexSet& from, OptimizableGraph::Vertex* to);
 
         virtual bool read(std::istream& is);
         virtual bool write(std::ostream& os) const;
@@ -56,4 +55,4 @@ namespace g2o {
 
 } // end namespace
 
-#endif //G2O_CONSTRAINT_POSES2D_SE2_PSE2_H
+#endif //G2O_CONSTRAINT_POSES2D_SE2_PV3_H

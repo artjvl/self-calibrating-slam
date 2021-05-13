@@ -26,9 +26,8 @@
 
 #include "g2o/config.h"
 #include "g2o/core/factory.h"
-#include "g2o/stuff/macros.h"
-
 #include "types_sclam2d.h"
+#include "g2o/stuff/macros.h"
 
 namespace g2o {
 
@@ -40,11 +39,12 @@ namespace g2o {
   G2O_REGISTER_TYPE(EDGE_SE2_ODOM_DIFFERENTIAL_CALIB, EdgeSE2OdomDifferentialCalib);
 
   G2O_REGISTER_TYPE(NODE_SE2, NodeSE2)
-  G2O_REGISTER_TYPE(PARAM_SE2, ParamSE2)
   G2O_REGISTER_TYPE(NODE_V3, NodeV3)
+  G2O_REGISTER_TYPE(PARAM_SE2, ParamSE2)
   G2O_REGISTER_TYPE(PARAM_V3, ParamV3)
   G2O_REGISTER_TYPE(CONSTRAINT_POSES2D_SE2, ConstraintPoses2DSE2)
   G2O_REGISTER_TYPE(CONSTRAINT_POSES2D_SE2_PSE2, ConstraintPoses2DSE2PSE2)
+  G2O_REGISTER_TYPE(CONSTRAINT_POSES2D_SE2_PV3, ConstraintPoses2DSE2PV3)
 
 
 #ifdef G2O_HAVE_OPENGL

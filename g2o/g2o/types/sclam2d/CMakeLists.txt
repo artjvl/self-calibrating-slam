@@ -3,16 +3,17 @@ add_library(types_sclam2d ${G2O_LIB_TYPE}
   vertex_odom_differential_params.cpp vertex_odom_differential_params.h
   edge_se2_odom_differential_calib.cpp edge_se2_odom_differential_calib.h
   odometry_measurement.cpp odometry_measurement.h
+
+  node_se2.h node_se2.cpp
+  node_v3.h node_v3.cpp
+  param_se2.h param_se2.cpp
+  param_v3.h param_v3.cpp
+  constraint_poses2d_se2.h constraint_poses2d_se2.cpp
+  constraint_poses2d_se2_pse2.h constraint_poses2d_se2_pse2.cpp
+  constraint_poses2d_se2_pv3.h constraint_poses2d_se2_pv3.cpp
   types_sclam2d.cpp types_sclam2d.h
-        g2o_types_sclam2d_api.h
-        node_se2.cpp node_se2.h
-        constraint_poses2d_se2.cpp constraint_poses2d_se2.h
-        param.cpp param.h
-        param_se2.cpp param_se2.h
-        node_v3.cpp node_v3.h
-        param_v3.cpp param_v3.h
-        constraint_poses2d_se2_pse2.cpp
-        constraint_poses2d_se2_pse2.h)
+  g2o_types_sclam2d_api.h
+        )
 
 set_target_properties(types_sclam2d PROPERTIES OUTPUT_NAME ${LIB_PREFIX}types_sclam2d)
 if (APPLE)

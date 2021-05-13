@@ -7,7 +7,7 @@
 namespace g2o {
 
     ConstraintPoses2DSE2PSE2::ConstraintPoses2DSE2PSE2() :
-            BaseFixedSizedEdge<3, SE2, NodeSE2, NodeSE2, NodeSE2>()
+            BaseFixedSizedEdge<3, SE2, NodeSE2, NodeSE2, ParamSE2>()
     {
     }
 
@@ -15,7 +15,7 @@ namespace g2o {
         (void) to;
         NodeSE2* vi = static_cast<NodeSE2*>(_vertices[0]);
         NodeSE2* vj = static_cast<NodeSE2*>(_vertices[1]);
-        NodeSE2* l = static_cast<NodeSE2*>(_vertices[2]);
+        ParamSE2* l = static_cast<ParamSE2*>(_vertices[2]);
         if (from.count(l) == 0)
             return;
         if (from.count(vi) == 1) {
