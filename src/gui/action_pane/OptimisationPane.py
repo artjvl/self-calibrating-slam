@@ -3,7 +3,7 @@ from PyQt5 import QtWidgets
 from src.gui.action_pane.GraphBox import GraphBox
 from src.gui.action_pane.LibraryBox import LibraryBox
 from src.gui.action_pane.SolverBox import SolverBox
-from src.gui.modules.Container import ViewerContainer
+from src.gui.modules.Container import TopContainer
 from src.gui.modules.OptimisationHandler import OptimisationHandler
 
 
@@ -12,7 +12,7 @@ class OptimisationPane(QtWidgets.QWidget):
     # constructor
     def __init__(
             self,
-            container: ViewerContainer,
+            container: TopContainer,
             *args, **kwargs
     ):
         super().__init__(*args, **kwargs)

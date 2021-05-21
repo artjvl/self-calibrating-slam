@@ -4,7 +4,7 @@ from PyQt5.QtCore import QObject, pyqtSignal
 
 from src.framework.simulation.BiSimulation2D import BiSimulation2D
 from src.gui.action_pane.ParameterTree import ParameterTree
-from src.gui.modules.Container import ViewerContainer
+from src.gui.modules.Container import TopContainer
 
 
 class SimulationHandler(QObject):
@@ -14,12 +14,12 @@ class SimulationHandler(QObject):
     # constructor
     def __init__(
             self,
-            container: ViewerContainer,
+            container: TopContainer,
             tree: ParameterTree,
             *args, **kwargs
     ):
         super().__init__(*args, **kwargs)
-        self._container: ViewerContainer = container
+        self._container: TopContainer = container
         self._tree: ParameterTree = tree
         self._simulation: Optional[BiSimulation2D] = None
 
@@ -38,5 +38,4 @@ class SimulationHandler(QObject):
 
     def simulate(self):
         graph_true, graph_perturbed = self._simulation.simulate()
-        self._container.add_graph(graph_true)
-        self._container.add_graph(graph_perturbed)
+        self._container.add_graphs(graph_true, graph_perturbed)

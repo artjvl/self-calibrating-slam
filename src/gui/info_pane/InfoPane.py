@@ -1,9 +1,11 @@
 from PyQt5 import QtCore, QtWidgets
 
+from src.framework.graph.Graph import SubGraph
 from src.gui.info_pane.BrowserTree import BrowserTree
 from src.gui.info_pane.InspectorTree import InspectorTree
 from src.gui.info_pane.LabelPane import LabelPane
-from src.gui.modules.Container import ViewerContainer
+from src.gui.modules.Container import TopContainer
+from src.gui.modules.PopUp import PopUp
 from src.gui.viewer.Viewer import Viewer
 
 
@@ -12,11 +14,13 @@ class InfoPane(QtWidgets.QWidget):
     # constructor
     def __init__(
             self,
-            container: ViewerContainer,
+            container: TopContainer,
             viewer: Viewer,
             *args, **kwargs
     ):
         super().__init__(*args, **kwargs)
+        self._container = container
+
         # self.setOrientation(QtCore.Qt.Vertical)
         # self.setContentsMargins(10, 10, 10, 10)
 
@@ -28,13 +32,13 @@ class InfoPane(QtWidgets.QWidget):
         button_load = QtWidgets.QPushButton(self)
         button_load.setText('Load file')
         # button_load.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Preferred))
-        button_load.clicked.connect(container.load_graph)
+        button_load.clicked.connect(self.handle_load_graph)
 
         # clear-button
         button_clear = QtWidgets.QPushButton(self)
         button_clear.setText('Clear')
         # button_clear.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Preferred))
-        button_clear.clicked.connect(container.clear_graphs)
+        button_clear.clicked.connect(self._container.clear)
 
         # button layout
         button_layout = QtWidgets.QHBoxLayout()
@@ -52,7 +56,7 @@ class InfoPane(QtWidgets.QWidget):
         # self.setStretchFactor(0, 0)
 
         inspector = InspectorTree(self)
-        browser = BrowserTree(container, inspector, viewer, self)
+        browser = BrowserTree(self._container, inspector, viewer, self)
 
         panels.addWidget(LabelPane(browser, 'Graph browser'))
         panels.addWidget(LabelPane(inspector, 'Graph-element inspector'))
@@ -63,3 +67,7 @@ class InfoPane(QtWidgets.QWidget):
         panels.setStretchFactor(1, 2)
         # print(self.sizes())
 
+    def handle_load_graph(self) -> None:
+        graph: SubGraph = PopUp.load_from_file()
+        if graph is not None:
+            self._container.add_graphs(None, graph)

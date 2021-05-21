@@ -1,4 +1,4 @@
-from typing import *
+import typing as tp
 
 from PyQt5.QtWidgets import QMenu
 
@@ -17,9 +17,9 @@ class Menu(QMenu):
     def add_action(
             menu: QMenu,
             name: str,
-            handler: Callable,
-            tip: Optional[str] = None,
-            checked: Optional[bool] = None
+            handler: tp.Callable,
+            tip: tp.Optional[str] = None,
+            checked: tp.Optional[bool] = None
     ):
         action = menu.addAction(name)
         action.triggered.connect(handler)

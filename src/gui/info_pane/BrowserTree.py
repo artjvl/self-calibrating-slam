@@ -7,7 +7,7 @@ from src.framework.graph.Graph import Graph
 from src.framework.graph.protocols.Visualisable import SubVisualisable
 from src.framework.graph.protocols.visualisable.DrawPoint import DrawPoint
 from src.gui.info_pane.InspectorTree import InspectorTree
-from src.gui.modules.Container import ViewerContainer, GraphContainer, ElementContainer, SubContainer
+from src.gui.modules.Container import TopContainer, GraphContainer, ElementContainer, SubContainer, TrajectoryContainer
 from src.gui.viewer.Viewer import Viewer
 
 
@@ -16,13 +16,13 @@ class BrowserTree(QtWidgets.QTreeWidget):
     # constructor
     def __init__(
             self,
-            container: ViewerContainer,
+            container: TopContainer,
             inspector: InspectorTree,
             viewer: Viewer,
             *args, **kwargs
     ):
         super().__init__(*args, **kwargs)
-        self._container: ViewerContainer = container
+        self._container: TopContainer = container
         self._inspector: InspectorTree = inspector
         self._viewer: Viewer = viewer
 
@@ -45,10 +45,11 @@ class BrowserTree(QtWidgets.QTreeWidget):
         # update
         self._container.signal_update.connect(self._handle_signal)
 
-    def _construct_browser(self):
+    def _construct_browser_(self):
         self.clear()
-        container: GraphContainer
-        for container in self._container.get_children():
+        trajectory_container: TrajectoryContainer
+        for trajectory_container in self._container.get_children():
+
             item = self._construct_graph_tree(container)
             self.addTopLevelItem(item)
 
@@ -97,6 +98,62 @@ class BrowserTree(QtWidgets.QTreeWidget):
 
         return graph_item
 
+    def _construct_browser(self):
+        self.clear()
+
+        for trajectory_container in self._container.get_children():
+
+            # trajectory-container
+            graph_containers: tp.List[GraphContainer] = trajectory_container.get_children()
+            trajectory_item: QtWidgets.QTreeWidgetItem = self._construct_tree_item(
+                trajectory_container.get_name(),
+                f'({len(graph_containers)})',
+                None
+            )
+            trajectory_item.setCheckState(
+                0, QtCore.Qt.Checked if trajectory_container.is_checked() else QtCore.Qt.Unchecked
+            )
+            trajectory_item.obj = trajectory_container
+            self.addTopLevelItem(trajectory_item)
+
+            for graph_container in graph_containers:
+
+                # graph-container
+                element_containers: tp.List[ElementContainer] = graph_container.get_children()
+                graph_item: QtWidgets.QTreeWidgetItem = self._construct_tree_item(
+                    graph_container.get_name(),
+                    f'({len(element_containers)})',
+                    trajectory_item
+                )
+                graph_item.setCheckState(
+                    0, QtCore.Qt.Checked if graph_container.is_checked() else QtCore.Qt.Unchecked
+                )
+                graph_item.obj = graph_container
+
+                for elements_container in element_containers:
+
+                    # elements-container
+                    elements: tp.List[SubElement] = elements_container.get_elements()
+                    elements_item: QtWidgets.QTreeWidgetItem = self._construct_tree_item(
+                        elements_container.get_name(),
+                        f'({len(elements)})',
+                        graph_item
+                    )
+                    elements_item.setCheckState(
+                        0, QtCore.Qt.Checked if elements_container.is_checked() else QtCore.Qt.Unchecked
+                    )
+                    elements_item.obj = elements_container
+
+                    for element in elements:
+
+                        # element
+                        element_item = self._construct_tree_item(
+                            f'({element.to_id()})',
+                            f'{type(element).__name__}',
+                            elements_item
+                        )
+                        element_item.obj = element
+
     def _update_browser(self):
         for i in range(self.topLevelItemCount()):
             graph_item: QtWidgets.QTreeWidgetItem = self.topLevelItem(i)
@@ -141,16 +198,12 @@ class BrowserTree(QtWidgets.QTreeWidget):
                     graph: Graph = obj.get_graph()
 
                     menu = QtWidgets.QMenu()
-                    action_replace = QtWidgets.QAction('&Replace', self)
-                    menu.addAction(action_replace)
                     action_delete = QtWidgets.QAction('&Delete', self)
                     menu.addAction(action_delete)
                     action_save = QtWidgets.QAction('&Save as', self)
                     menu.addAction(action_save)
                     action = menu.exec_(self.mapToGlobal(point))
-                    if action == action_replace:
-                        self._container.replace_graph(graph)
-                    elif action == action_delete:
+                    if action == action_delete:
                         self._container.remove_graph(graph)
                     elif action == action_save:
                         print('save')
@@ -174,7 +227,7 @@ class BrowserTree(QtWidgets.QTreeWidget):
     def _construct_tree_item(
             object_string: str,
             type_string: str,
-            root: tp.Optional[tp.Union[QtWidgets.QTreeWidget, QtWidgets.QTreeWidgetItem]] = None
+            root: tp.Optional[tp.Union[QtWidgets.QTreeWidget, QtWidgets.QTreeWidgetItem]]
     ):
         item = QtWidgets.QTreeWidgetItem(root)
         item.setText(0, object_string)

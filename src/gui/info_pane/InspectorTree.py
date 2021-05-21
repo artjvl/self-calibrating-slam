@@ -2,7 +2,7 @@ import typing as tp
 
 from PyQt5 import QtGui, QtWidgets
 
-from src.framework.graph.FactorGraph import SubEdge, SubNode, SubElement
+from src.framework.graph.FactorGraph import SubFactorEdge, SubFactorNode, SubElement
 from src.framework.graph.Graph import SubGraph
 from src.framework.graph.data.DataFactory import Supported
 from src.framework.graph.types.scslam2d.nodes.CalibratingNode import CalibratingNode
@@ -45,7 +45,7 @@ class InspectorTree(QtWidgets.QTreeWidget):
 
     def construct_node_tree(
             self,
-            node: SubNode
+            node: SubFactorNode
     ):
         self.clear()
 
@@ -62,7 +62,7 @@ class InspectorTree(QtWidgets.QTreeWidget):
 
     def construct_edge_tree(
             self,
-            edge: SubEdge
+            edge: SubFactorEdge
     ):
         self.clear()
 

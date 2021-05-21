@@ -1,19 +1,18 @@
 import functools
 
 from PyQt5.QtWidgets import QMenu, QAction
-
 from src.gui.menus.Menu import Menu
-from src.gui.modules.Container import ViewerContainer, Type, GraphContainer, ElementContainer, SubToggle
+from src.gui.modules.Container import TopContainer, Type, SubToggle, SubContainer
 from src.gui.viewer.Viewer import Viewer
 
 
 class ViewMenu(Menu):
 
     # constructor
-    def __init__(self, container: ViewerContainer, viewer: Viewer, *args, **kwargs):
+    def __init__(self, container: TopContainer, viewer: Viewer, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.setTitle('&View')
-        self._container: ViewerContainer = container
+        self._container: TopContainer = container
         self._viewer = viewer
 
         self._construct_menu()
@@ -40,63 +39,37 @@ class ViewMenu(Menu):
             checked=True
         )
 
-    def _construct_container_section(self):
-        container: ViewerContainer = self._container
-
-        # top-menu
+    def _construct_recursive_container(
+            self,
+            menu: QMenu,
+            container: SubContainer
+    ):
+        # type-toggles
         type_: Type
         for type_ in container.get_types():
             toggle: SubToggle = container.get_toggle(type_)
             action = self.add_action(
-                menu=self,
+                menu=menu,
                 name=type_.__name__,
-                handler=functools.partial(container.toggle, toggle),
+                handler=functools.partial(self._container.toggle, toggle),
                 checked=toggle.is_checked()
             )
             action.obj = toggle
 
-        self.addSeparator()
+        # separator
+        menu.addSeparator()
 
-        graph_container: GraphContainer
-        for graph_container in container.get_children():
-
-            # graph sub-menu
-            graph_menu: QMenu = self.add_menu(
-                menu=self,
-                name=graph_container.get_graph().to_name()
+        # sub-menus
+        sub_container: SubContainer
+        for sub_container in container.get_children():
+            sub_menu: QMenu = self.add_menu(
+                menu=menu,
+                name=sub_container.get_name()
             )
-            for type_ in graph_container.get_types():
-                toggle: SubToggle = graph_container.get_toggle(type_)
-                action = self.add_action(
-                    menu=graph_menu,
-                    name=type_.__name__,
-                    handler=functools.partial(container.toggle, toggle),
-                    checked=toggle.is_checked()
-                )
-                action.obj = toggle
+            self._construct_recursive_container(sub_menu, sub_container)
 
-            graph_menu.addSeparator()
-
-            element_container: ElementContainer
-            for element_container in graph_container.get_children():
-
-                # element sub-menu
-                element_menu: QMenu = self.add_menu(
-                    menu=graph_menu,
-                    name=element_container.get_element_type().__name__
-                )
-
-                element_menu.addSeparator()
-
-                for type_ in element_container.get_types():
-                    toggle: SubToggle = element_container.get_toggle(type_)
-                    action = self.add_action(
-                        menu=element_menu,
-                        name=type_.__name__,
-                        handler=functools.partial(container.toggle, toggle),
-                        checked=toggle.is_checked()
-                    )
-                    action.obj = toggle
+    def _construct_container_section(self):
+        self._construct_recursive_container(self, self._container)
 
     def _construct_view_section(self):
         self.add_action(

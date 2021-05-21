@@ -4,19 +4,19 @@ from PyQt5.QtCore import QSize
 from PyQt5.QtGui import QVector3D
 
 from src.framework.math.matrix.vector import Vector3
-from src.gui.modules.Container import ViewerContainer
+from src.gui.modules.Container import TopContainer
 from src.gui.viewer.Grid import Grid
 
 
 class Viewer(gl.GLViewWidget):
     # reference: https://pyqtgraph.readthedocs.io/en/latest/
 
-    def __init__(self, container: ViewerContainer, *args, **kwargs):
+    def __init__(self, container: TopContainer, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.setMinimumSize(QSize(600, 400))
         self.setCameraPosition(distance=40)
         self.set_isometric_view()
-        self._container: ViewerContainer = container
+        self._container: TopContainer = container
         self._container.signal_update.connect(self.update_items)
         self._is_grid = True
         self._grid = Grid(size=(100, 100), spacing=(1, 1))

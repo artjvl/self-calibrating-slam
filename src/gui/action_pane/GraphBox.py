@@ -1,10 +1,9 @@
-from typing import *
+import typing as tp
 
 from PyQt5 import QtCore
-
-from src.framework.graph import Graph
+from src.framework.graph.Graph import SubGraph
 from src.gui.action_pane.UpdateBox import UpdateBox
-from src.gui.modules.Container import ViewerContainer
+from src.gui.modules.Container import TopContainer
 from src.gui.modules.OptimisationHandler import OptimisationHandler
 
 
@@ -15,7 +14,7 @@ class GraphBox(UpdateBox):
     # constructor
     def __init__(
             self,
-            container: ViewerContainer,
+            container: TopContainer,
             optimisation_handler: OptimisationHandler,
             *args, **kwargs
     ):
@@ -25,7 +24,7 @@ class GraphBox(UpdateBox):
         self._optimisation_handler = optimisation_handler
         self.currentIndexChanged.connect(self._handle_index_change)
 
-        self._graphs: List[Graph] = []
+        self._graphs: tp.List[SubGraph] = []
 
     # handlers
     def _handle_graph_update(self, signal: int):
@@ -34,7 +33,7 @@ class GraphBox(UpdateBox):
             self._update_box([graph.get_pathname() for graph in self._graphs])
 
     def _handle_index_change(self, index):
-        graphs: List[Graph] = self._container.get_graphs()
+        graphs: tp.List[SubGraph] = self._container.get_graphs()
         if graphs and index >= 0:
             graph = self._graphs[index]
             if graph != self._optimisation_handler.get_graph():
