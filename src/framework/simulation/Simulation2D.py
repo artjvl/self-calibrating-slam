@@ -1,15 +1,15 @@
 import typing as tp
 
-from framework.graph.data.DataFactory import Supported
-from framework.graph.types.scslam2d.nodes.topological.NodeFactory import NodeFactory
-from src.framework.graph.FactorGraph import SubNode
-from src.framework.graph.types.scslam2d.CalibratingGraph import SubCalibratingGraph, CalibratingGraph
+from src.framework.graph.FactorGraph import SubFactorNode
+from src.framework.graph.Graph import SubGraph, Graph
+from src.framework.graph.data.DataFactory import Supported
 from src.framework.graph.types.scslam2d.edges import EdgeFactory
 from src.framework.graph.types.scslam2d.edges.CalibratingEdge import SubCalibratingEdge
 from src.framework.graph.types.scslam2d.nodes.CalibratingNode import SubCalibratingNode
 from src.framework.graph.types.scslam2d.nodes.information.InformationNode import SubInformationNode
 from src.framework.graph.types.scslam2d.nodes.parameter.ParameterNode import SubParameterNode
 from src.framework.graph.types.scslam2d.nodes.topological import NodeSE2
+from src.framework.graph.types.scslam2d.nodes.topological.NodeFactory import NodeFactory
 from src.framework.math.lie.transformation import SE2
 from src.framework.simulation.sensors import SubSensor
 
@@ -17,7 +17,7 @@ from src.framework.simulation.sensors import SubSensor
 class Simulation2D(object):
 
     def __init__(self):
-        self._graph: SubCalibratingGraph = CalibratingGraph()
+        self._graph: SubGraph = Graph()
         self._sensors: tp.Dict[str, SubSensor] = {}
 
         # starting position
@@ -31,7 +31,7 @@ class Simulation2D(object):
     def add_node(
             self,
             value: Supported
-    ) -> SubNode:
+    ) -> SubFactorNode:
         id_: int = self.get_id(increment=True)
         node = NodeFactory.from_value(value, id_)
         self._graph.add_node(node)
@@ -51,7 +51,7 @@ class Simulation2D(object):
             ids: tp.List[int],
             measurement: Supported,
             sensor_id: str
-    ) -> SubCalibratingGraph:
+    ) -> SubGraph:
         nodes: tp.List[SubCalibratingNode] = [self._graph.get_node(id_) for id_ in ids]
         edge: SubCalibratingEdge = EdgeFactory.from_measurement_nodes(measurement, *nodes)
 
@@ -70,6 +70,7 @@ class Simulation2D(object):
 
         current: NodeSE2 = self.get_current()
         position: SE2 = current.get_value() + transformation
+        print(f'current ({current.get_value().translation().to_list()}) + transformation ({transformation.translation().to_list()}) = position ({position.translation().to_list()})')
         new: NodeSE2 = self.add_pose(position)
         self.add_edge([current.get_id(), new.get_id()], transformation, sensor_id)
 
@@ -112,7 +113,7 @@ class Simulation2D(object):
             self._id_counter += 1
         return self._id_counter
 
-    def get_node(self, id_: int) -> SubNode:
+    def get_node(self, id_: int) -> SubFactorNode:
         return self._graph.get_node(id_)
 
     def get_current(self) -> NodeSE2:
@@ -131,5 +132,5 @@ class Simulation2D(object):
     def get_pose_ids(self) -> tp.List[int]:
         return self._pose_ids
 
-    def get_graph(self) -> SubCalibratingGraph:
+    def get_graph(self) -> SubGraph:
         return self._graph

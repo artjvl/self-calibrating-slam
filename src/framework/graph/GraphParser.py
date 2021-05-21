@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import TextIO
 
 from src.definitions import get_project_root
-from src.framework.graph.FactorGraph import FactorNode, FactorEdge, SubNode, SubEdge
+from src.framework.graph.FactorGraph import FactorNode, FactorEdge, SubFactorNode, SubFactorEdge
 from src.framework.graph.Graph import Graph, SubGraph
 from src.framework.graph.types.scslam2d.database import database
 
@@ -24,7 +24,7 @@ class GraphParser(object):
 
         writer: TextIO = file.open('w')
 
-        node: SubNode
+        node: SubFactorNode
         for node in graph.get_nodes():
             tag: str = cls._database.from_element(node)
             id_: str = f'{node.get_id()}'
@@ -33,7 +33,7 @@ class GraphParser(object):
             if node.is_fixed():
                 writer.write(f'FIX {id_}\n')
 
-        edge: SubEdge
+        edge: SubFactorEdge
         for edge in graph.get_edges():
             tag: str = cls._database.from_element(edge)
             ids: str = ' '.join([f'{id_}' for id_ in edge.get_node_ids()])
@@ -104,7 +104,7 @@ class GraphParser(object):
                     cardinality: int = element.get_cardinality()
                     node_ids: tp.List[int] = [int(id_) for id_ in words[1: 1 + cardinality]]
                     for id_ in node_ids:
-                        node: SubNode = graph.get_node(id_)
+                        node: SubFactorNode = graph.get_node(id_)
                         element.add_node(node)
                     element.read(words[1 + cardinality:])
                     graph.add_edge(element)
