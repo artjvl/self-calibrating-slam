@@ -22,7 +22,6 @@ class Lie(Dimensional):
         )
 
     def __add__(self, other: SubLie) -> SubLie:
-        assert type(self) == type(other)
         return self * other
 
     def __sub__(self, other: SubLie) -> SubLie:

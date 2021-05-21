@@ -24,6 +24,14 @@ class Vector(Matrix, Dimensional):
         assert vector.shape[0] == self.get_dimension()
         super().__init__(vector)
 
+    def __add__(self, other: SubVector) -> SubVector:
+        assert type(other) == type(self)
+        return type(self)(self.array() + other.array())
+
+    def __sub__(self, other: SubVector) -> SubVector:
+        assert type(other) == type(self)
+        return type(self)(self.array() - other.array())
+
     def __getitem__(self, item):
         if isinstance(item, int):
             return self._matrix[item, 0]
