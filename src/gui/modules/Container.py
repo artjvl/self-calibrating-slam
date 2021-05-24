@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import typing as tp
 from abc import abstractmethod
 
@@ -31,19 +33,6 @@ class Toggle(object):
         return self._checked
 
 
-class GraphicsToggle(Toggle):
-    """
-    A toggleable object that stores a graphics-item.
-    """
-
-    def __init__(self, graphic: SubGraphicsItem):
-        super().__init__()
-        self._graphic = graphic
-
-    def get_graphic(self) -> SubGraphicsItem:
-        return self._graphic
-
-
 class Container(object):
     """
     An abstract class for a tree-element that (at least) stores toggles for graphics-item-types.
@@ -52,8 +41,12 @@ class Container(object):
     _toggles: tp.Dict[Type, SubToggle]
     _children: tp.Dict[str, SubContainer]
 
-    def __init__(self):
+    def __init__(
+            self,
+            parent: tp.Optional[SubContainer] = None
+    ):
         super().__init__()
+        self._parent: tp.Optional[SubContainer] = parent
         self._toggles = {}
         self._children = {}
 
@@ -74,6 +67,10 @@ class Container(object):
         """ Returns the list of all graphic-item-types that comrpise this tree-element. """
         return list(self._toggles.keys())
 
+    def add_toggle(self, type_: Type):
+        """ Creates a new toggle for the given graphics-item type. """
+        self._toggles[type_] = Toggle()
+
     def get_toggle(self, type_: Type):
         """ Returns the toggle corresponding to a given graphics-item-type. """
         return self._toggles[type_]
@@ -81,6 +78,20 @@ class Container(object):
     def get_toggles(self) -> tp.List[SubToggle]:
         """ Returns the list of all available toggles. """
         return list(self._toggles.values())
+
+    def has_parent(self) -> bool:
+        return self._parent is not None
+
+    def get_parent(self) -> SubContainer:
+        assert self.has_parent()
+        return self._parent
+
+    def has_child(self, key: str) -> bool:
+        return key in self._children
+
+    def get_child(self, key: str) -> SubContainer:
+        assert self.has_child(key)
+        return self._children[key]
 
     def get_children(self) -> tp.List[SubContainer]:
         """ Returns the list of all child tree-elements. """
@@ -102,12 +113,14 @@ class ElementContainer(Container, Toggle):
 
     def __init__(
             self,
+            parent: GraphContainer,
             types: tp.List[Type],
             elements: tp.List[SubElement]
     ):
-        super().__init__()
+        super().__init__(parent)
         self._elements = elements
         self._element_type: tp.Type[SubElement] = type(elements[0])
+        self._graphics: tp.Dict[Type, SubGraphicsItem] = {}
 
         # for all of the given graphics-item-types
         type_: tp.Type[SubGraphicsItem]
@@ -119,7 +132,8 @@ class ElementContainer(Container, Toggle):
                 # create the graphics-item
                 graphic: SubGraphicsItem = type_.from_elements(elements)
 
-                self._toggles[type_] = GraphicsToggle(graphic)
+                self.add_toggle(type_)
+                self._graphics[type_] = graphic
 
     def get_name(self) -> str:
         return str(self.get_element_type().__name__)
@@ -133,8 +147,8 @@ class ElementContainer(Container, Toggle):
 
     def get_graphic(self, type_: Type) -> tp.List[SubGraphicsItem]:
         graphics: tp.List[SubGraphicsItem] = []
-        if self.is_checked() and self.contains_graphic(type_) and self._toggles[type_].is_checked():
-            graphics.append(self._toggles[type_].get_graphic())
+        if self.is_checked() and self.contains_graphic(type_) and self.get_toggle(type_).is_checked():
+            graphics.append(self._graphics[type_])
         return graphics
 
     def show_all(self, checked: bool = True) -> None:
@@ -149,10 +163,13 @@ class GraphContainer(Container, Toggle):
 
     def __init__(
             self,
+            parent: TrajectoryContainer,
             types: tp.List[Type],
+            id_: int,
             graph: SubGraph
     ):
-        super().__init__()
+        super().__init__(parent)
+        self._id: int = id_
         self._graph = graph
 
         # for all of the given graphics-item-types
@@ -168,14 +185,17 @@ class GraphContainer(Container, Toggle):
 
                     # create a subtree-element for each graph-element
                     elements: tp.List[SubElement] = graph.get_of_type(element_type)
-                    self._children[str(element_type.__name__)] = ElementContainer(types, elements)
+                    self._children[str(element_type.__name__)] = ElementContainer(self, types, elements)
 
                     # if a toggle is not yet defined
                     if type_ not in self._toggles:
-                        self._toggles[type_] = Toggle()
+                        self.add_toggle(type_)
+
+    def get_id(self) -> int:
+        return self._id
 
     def get_name(self) -> str:
-        return self.get_graph().to_name()
+        return f'{type(self.get_graph()).__name__}({self.get_id()})'
 
     def get_graph(self) -> SubGraph:
         """ Returns the graph that this tree-element represents. """
@@ -189,13 +209,13 @@ class GraphContainer(Container, Toggle):
                 graphics += child.get_graphic(type_)
         return graphics
 
-    def has_child(self, type_: tp.Type[SubElement]):
+    def has_child_type(self, type_: tp.Type[SubElement]):
         """ Returns whether this tree-element is comprised of the given graph-element-type. """
         return str(type_.__name__) in self._children
 
-    def get_child(self, type_: tp.Type[SubElement]):
+    def get_child_type(self, type_: tp.Type[SubElement]):
         """ Returns the child tree-element that represents the given graph-element-type. """
-        assert self.has_child(type_)
+        assert self.has_child_type(type_)
         return self._children[str(type_.__name__)]
 
     def show_all(self, checked: bool = True) -> None:
@@ -217,18 +237,20 @@ class TrajectoryContainer(Container, Toggle, QtCore.QObject):
 
     def __init__(
             self,
+            parent: TopContainer,
             types: tp.List[Type],
-            id_: int,
+            id_: int
     ):
-        super().__init__()
+        super().__init__(parent)
         self._id: int = id_
+
         for type_ in types:
-            self._toggles[type_] = Toggle()
+            self.add_toggle(type_)
         self._id_counter: int = 0
         self._true: tp.Optional[SubGraph] = None
 
     def get_name(self) -> str:
-        return str(self.get_id())
+        return f'Trajectory({self.get_id()}): {self.get_children()[0].get_graph().to_name()}'
 
     def get_id(self) -> int:
         return self._id
@@ -240,11 +262,16 @@ class TrajectoryContainer(Container, Toggle, QtCore.QObject):
             self._id_counter += 1
         return id_
 
-    def add_graph(self, graph: SubGraph) -> None:
+    def add_graph(
+            self,
+            graph: SubGraph,
+            suppress: bool = False
+    ) -> None:
         id_: int = self.count_id(increment=True)
         graph.set_id(id_)
-        self._children[str(id_)] = GraphContainer(self.get_types(), graph)
-        self.signal_update.emit(id_)
+        self._children[str(id_)] = GraphContainer(self, self.get_types(), id_, graph)
+        if not suppress:
+            self.signal_update.emit(self.get_id())
 
     def get_graphs(self) -> tp.List[SubGraph]:
         return [child.get_graph() for child in self.get_children()]
@@ -256,11 +283,17 @@ class TrajectoryContainer(Container, Toggle, QtCore.QObject):
         assert self.has_true()
         return self._true
 
-    def set_as_true(self, graph: SubGraph):
+    def set_as_true(
+            self,
+            graph: SubGraph,
+            suppress: bool = False
+    ):
         assert not self.has_true()
         self._true = graph
         for child in self.get_nontrue_children():
             child.get_graph().assign_true(graph)
+        if not suppress:
+            self.signal_update.emit(self.get_id())
 
     def get_nontrue_children(self) -> tp.List[GraphContainer]:
         if self.has_true():
@@ -268,21 +301,31 @@ class TrajectoryContainer(Container, Toggle, QtCore.QObject):
             return [child for child in self.get_children() if child.get_graph().get_id() != id_]
         return self.get_children()
 
-    def add_true_graph(self, graph: SubGraph):
+    def add_true_graph(
+            self,
+            graph: SubGraph,
+            suppress: bool = False
+    ):
         assert not graph.is_perturbed()
-        self.add_graph(graph)
-        self.set_as_true(graph)
+        self.add_graph(graph, suppress=True)
+        self.set_as_true(graph, suppress=True)
+        if not suppress:
+            self.signal_update.emit(self.get_id())
 
     def remove_graph(self, graph: SubGraph):
-        assert graph is not self._true
         id_: int = graph.get_id()
+        self.remove_id(id_)
+
+    def remove_id(self, id_: int):
         assert str(id_) in self._children
         del self._children[str(id_)]
-        self.signal_update.emit(id_)
+        self.signal_update.emit(self.get_id())
+        if len(self.get_children()) == 0:
+            self.get_parent().remove_id(self.get_id())
 
     def get_graphic(self, type_: Type) -> tp.List[SubGraphicsItem]:
         graphics: tp.List[SubGraphicsItem] = []
-        if self.contains_graphic(type_) and self._toggles[type_].is_checked():
+        if self.is_checked() and self.contains_graphic(type_) and self._toggles[type_].is_checked():
             child: GraphContainer
             for child in self.get_children():
                 graphics += child.get_graphic(type_)
@@ -306,7 +349,7 @@ class TopContainer(Container, QtCore.QObject):
         self._id_counter: int = 0
 
         for item in Items:
-            self._toggles[item.value] = Toggle()
+            self.add_toggle(item.value)
 
     # graph-management
     def count_id(self, increment: bool = False) -> int:
@@ -321,24 +364,34 @@ class TopContainer(Container, QtCore.QObject):
             *graphs: SubGraph
     ) -> TrajectoryContainer:
         id_: int = self.count_id(increment=True)
-        trajectory = TrajectoryContainer(self.get_types(), id_)
+        trajectory = TrajectoryContainer(self, self.get_types(), id_)
+        trajectory.signal_update.connect(self.handle_signal)
         self._children[str(id_)] = trajectory
 
         if true is not None:
-            trajectory.add_true_graph(true)
+            trajectory.add_true_graph(true, suppress=True)
         for graph in graphs:
-            trajectory.add_graph(graph)
+            if true is not None:
+                graph.assign_true(true)
+            trajectory.add_graph(graph, suppress=True)
 
+        print(
+            'gui/TopContainer: graphs added to {}:\n{}'.format(
+                f'{trajectory.get_name()}',
+                '\n'.join([f'    {child.get_name()} = {child.get_graph().to_unique()}' for child in trajectory.get_children()])
+            )
+        )
         self.signal_update.emit(id_)
         return trajectory
 
-    def remove_trajectory(self, id_: int) -> None:
-        assert id_ in self._children
+    def remove_id(self, id_: int) -> None:
+        assert str(id_) in self._children
         del self._children[str(id_)]
         self.signal_update.emit(id_)
 
     def clear(self) -> None:
-        for id_ in self._children.keys():
+        keys: tp.List[str] = list(self._children.keys())
+        for id_ in keys:
             del self._children[id_]
         self.signal_update.emit(0)
 
@@ -350,7 +403,7 @@ class TopContainer(Container, QtCore.QObject):
         return graphs
 
     def is_empty(self) -> bool:
-        return len(self.get_graphs()) == 0
+        return len(self.get_children()) == 0
 
     # graphics
     def get_graphic(self, type_: Type) -> tp.List[SubGraphicsItem]:

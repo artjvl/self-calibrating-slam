@@ -23,7 +23,7 @@ class InspectorTree(QtWidgets.QTreeWidget):
         super().__init__(*args, **kwargs)
         self.headerItem().setText(0, 'Property')
         self.headerItem().setText(1, 'Value')
-        self.setColumnWidth(0, 128)
+        self.setColumnWidth(0, 180)
         self.setAlternatingRowColors(True)
 
     # helper-methods
@@ -33,14 +33,26 @@ class InspectorTree(QtWidgets.QTreeWidget):
     ):
         self.clear()
 
-        sub_elements = QtWidgets.QTreeWidgetItem(self)
-        sub_elements.setText(0, 'Elements:')
+        # sub-elements
+        sub_elements = self._construct_tree_property(self, 'Elements', '')
         element_type: tp.Type[SubElement]
         for element_type in graph.get_types():
             self._construct_tree_property(
-                sub_elements, f"size '{element_type.__name__}'", f'{len(graph.get_of_type(element_type))}'
+                sub_elements, f"num '{element_type.__name__}'", f'{len(graph.get_of_type(element_type))}'
             )
-        self._construct_tree_property(self, 'error', '{:f}'.format(graph.compute_error()))
+
+        # error
+        sub_error = self._construct_tree_property(self, 'Error', '')
+        self._construct_tree_property(sub_error, 'is_perturbed', f'{graph.is_perturbed()}')
+        self._construct_tree_property(sub_error, 'error', f'{graph.compute_error()}')
+
+        # metrics
+        if graph.is_metric():
+            sub_metrics = self._construct_tree_property(self, 'Metrics', '')
+            self._construct_tree_property(sub_metrics, 'ate', f'{graph.compute_ate()}')
+            self._construct_tree_property(sub_metrics, 'rpe_translation', f'{graph.compute_rpe_translation()}')
+            self._construct_tree_property(sub_metrics, 'rpe_rotation', f'{graph.compute_rpe_rotation()}')
+
         self.expandAll()
 
     def construct_node_tree(
@@ -116,11 +128,12 @@ class InspectorTree(QtWidgets.QTreeWidget):
     @staticmethod
     def _construct_tree_property(
             root: Item,
-            property_string: str,
-            value_string: str
-    ):
+            first: str,
+            second: str
+    ) -> Item:
         item = QtWidgets.QTreeWidgetItem(root)
-        item.setText(0, '{}:'.format(property_string))
-        item.setText(1, value_string)
+        item.setText(0, f'{first}:')
+        item.setText(1, second)
         item.setFont(1, QtGui.QFont('Courier New', 10))
-        item.setToolTip(1, value_string)
+        item.setToolTip(1, second)
+        return item

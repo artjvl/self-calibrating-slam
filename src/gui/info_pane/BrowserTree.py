@@ -1,9 +1,9 @@
 import typing as tp
 
-from PyQt5 import QtCore, QtWidgets
+from PyQt5 import QtCore, QtWidgets, QtGui
 
 from src.framework.graph.FactorGraph import SubElement, FactorNode, FactorEdge
-from src.framework.graph.Graph import Graph
+from src.framework.graph.Graph import Graph, SubGraph
 from src.framework.graph.protocols.Visualisable import SubVisualisable
 from src.framework.graph.protocols.visualisable.DrawPoint import DrawPoint
 from src.gui.info_pane.InspectorTree import InspectorTree
@@ -29,7 +29,7 @@ class BrowserTree(QtWidgets.QTreeWidget):
         # formatting
         self.headerItem().setText(0, 'Object')
         self.headerItem().setText(1, 'Type')
-        self.setColumnWidth(0, 140)
+        self.setColumnWidth(0, 240)
         self.setAlternatingRowColors(True)
 
         # selection
@@ -45,62 +45,10 @@ class BrowserTree(QtWidgets.QTreeWidget):
         # update
         self._container.signal_update.connect(self._handle_signal)
 
-    def _construct_browser_(self):
-        self.clear()
-        trajectory_container: TrajectoryContainer
-        for trajectory_container in self._container.get_children():
-
-            item = self._construct_graph_tree(container)
-            self.addTopLevelItem(item)
-
-    def _construct_graph_tree(self, container: GraphContainer) -> QtWidgets.QTreeWidgetItem:
-
-        # top-level: Graph
-        graph: Graph = container.get_graph()
-        graph_item: QtWidgets.QTreeWidgetItem = self._construct_tree_item(
-            graph.get_pathname(),
-            graph.to_name()
-        )
-        graph_item.setToolTip(0, str(graph.get_path()))
-        graph_item.setCheckState(0, QtCore.Qt.Checked if container.is_checked() else QtCore.Qt.Unchecked)
-        graph_item.obj = container
-
-        # for each Element-type in Graph
-        element_type: tp.Type[SubElement]
-        for element_type in graph.get_types():
-
-            # level-2: Element-type
-            elements: tp.List[SubElement] = graph.get_of_type(element_type)
-            element_type_item = self._construct_tree_item(
-                element_type.__name__,
-                f'({len(elements)})',
-                graph_item
-            )
-
-            if container.has_child(element_type):
-                element_container: ElementContainer = container.get_child(element_type)
-                element_type_item.setCheckState(
-                    0, QtCore.Qt.Checked if element_container.is_checked() else QtCore.Qt.Unchecked
-                )
-                element_type_item.obj = element_container
-
-            # for each Element of Element-type
-            element: SubElement
-            for element in elements:
-
-                # level-3: Element
-                element_item = self._construct_tree_item(
-                    f'({element.to_id()})',
-                    element_type.__name__,
-                    element_type_item
-                )
-                element_item.obj = element
-
-        return graph_item
-
     def _construct_browser(self):
         self.clear()
 
+        trajectory_container: TrajectoryContainer
         for trajectory_container in self._container.get_children():
 
             # trajectory-container
@@ -115,34 +63,54 @@ class BrowserTree(QtWidgets.QTreeWidget):
             )
             trajectory_item.obj = trajectory_container
             self.addTopLevelItem(trajectory_item)
+            trajectory_item.setExpanded(True)
 
+            graph_container: GraphContainer
             for graph_container in graph_containers:
 
                 # graph-container
-                element_containers: tp.List[ElementContainer] = graph_container.get_children()
+                graph: SubGraph = graph_container.get_graph()
+                is_true: bool = trajectory_container.has_true() and graph == trajectory_container.get_true()
+                name: str = graph_container.get_name()
+                if is_true:
+                    name = f'[true] {name}'
+
+                element_types: tp.List[tp.Type[SubElement]] = graph.get_types()
                 graph_item: QtWidgets.QTreeWidgetItem = self._construct_tree_item(
-                    graph_container.get_name(),
-                    f'({len(element_containers)})',
+                    name,
+                    f'({len(element_types)})',
                     trajectory_item
                 )
+
+                if is_true:
+                    graph_item.setForeground(0, QtGui.QBrush(QtGui.QColor("#00a000")))
+                else:
+                    graph_item.setForeground(0, QtGui.QBrush(QtGui.QColor("#ff0000")))
+
+                # graph-container: checkbox
                 graph_item.setCheckState(
                     0, QtCore.Qt.Checked if graph_container.is_checked() else QtCore.Qt.Unchecked
                 )
                 graph_item.obj = graph_container
 
-                for elements_container in element_containers:
+                element_type: tp.Type[SubElement]
+                for element_type in element_types:
 
                     # elements-container
-                    elements: tp.List[SubElement] = elements_container.get_elements()
+                    elements: tp.List[SubElement] = graph.get_of_type(element_type)
                     elements_item: QtWidgets.QTreeWidgetItem = self._construct_tree_item(
-                        elements_container.get_name(),
+                        f'{element_type.__name__}',
                         f'({len(elements)})',
                         graph_item
                     )
-                    elements_item.setCheckState(
-                        0, QtCore.Qt.Checked if elements_container.is_checked() else QtCore.Qt.Unchecked
-                    )
-                    elements_item.obj = elements_container
+
+                    # elements-container: checkbox
+                    if graph_container.has_child_type(element_type):
+                        elements_container: ElementContainer = graph_container.get_child_type(element_type)
+                        elements_item.setCheckState(
+                            0, QtCore.Qt.Checked if elements_container.is_checked() else QtCore.Qt.Unchecked
+                        )
+                        elements_item.obj = elements_container
 
                     for element in elements:
 
@@ -194,19 +162,48 @@ class BrowserTree(QtWidgets.QTreeWidget):
             item = self.itemAt(point)
             if hasattr(item, 'obj'):
                 obj: tp.Union[SubContainer, SubVisualisable] = item.obj
-                if isinstance(obj, GraphContainer):
-                    graph: Graph = obj.get_graph()
 
+                # if graph
+                if isinstance(obj, TrajectoryContainer):
+                    trajectory_container: TrajectoryContainer = obj
+                    top_container: TopContainer = trajectory_container.get_parent()
+
+                    # create menu
+                    menu = QtWidgets.QMenu()
+                    action_delete = QtWidgets.QAction('&Delete', self)
+                    menu.addAction(action_delete)
+
+                    # select action
+                    action: QtWidgets.QAction = menu.exec_(self.mapToGlobal(point))
+                    if action == action_delete:
+                        top_container.remove_id(trajectory_container.get_id())
+
+                elif isinstance(obj, GraphContainer):
+                    graph_container: GraphContainer = obj
+                    graph: Graph = graph_container.get_graph()
+                    trajectory_container: TrajectoryContainer = graph_container.get_parent()
+                    is_not_true: bool = not trajectory_container.has_true() and not graph.is_perturbed() and not graph.has_true()
+
+                    # create menu
                     menu = QtWidgets.QMenu()
                     action_delete = QtWidgets.QAction('&Delete', self)
                     menu.addAction(action_delete)
                     action_save = QtWidgets.QAction('&Save as', self)
                     menu.addAction(action_save)
+                    action_true = QtWidgets.QAction('Set as true', self)
+                    if is_not_true:
+                        menu.addAction(action_true)
+
+                    # select action
                     action = menu.exec_(self.mapToGlobal(point))
                     if action == action_delete:
-                        self._container.remove_graph(graph)
+                        trajectory_container.remove_graph(graph)
                     elif action == action_save:
                         print('save')
+                    elif action == action_true:
+                        trajectory_container.set_as_true(graph)
+
+                # if topological node
                 elif isinstance(obj, DrawPoint):
                     menu = QtWidgets.QMenu()
                     action_focus = QtWidgets.QAction('&Focus', self)
@@ -219,7 +216,8 @@ class BrowserTree(QtWidgets.QTreeWidget):
         checked: bool = item.checkState(column) == QtCore.Qt.Checked
         if hasattr(item, 'obj'):
             container: SubContainer = item.obj
-            if isinstance(container, (GraphContainer, ElementContainer)) and container.is_checked() != checked:
+            if isinstance(container, (TrajectoryContainer, GraphContainer, ElementContainer)) \
+                    and container.is_checked() != checked:
                 self._container.toggle(container)
 
     # helper-methods
