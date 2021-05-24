@@ -53,7 +53,7 @@ class MainWindow(QMainWindow):
                 self._viewer
             )
         )
-        splitter.setSizes([50, 200, 200])
+        splitter.setSizes([50, 200, 300])
         self.setCentralWidget(splitter)
 
         # additional settings
@@ -61,6 +61,7 @@ class MainWindow(QMainWindow):
 
         # show
         self.show()
+        print('gui/MainWindow: Graph-Viewer GUI MainWindow opened.')
 
     def __del__(self):
         print('Exiting application...')
