@@ -1,10 +1,10 @@
 from PyQt5 import QtWidgets
+from framework.optimiser.Optimiser import Optimiser
+from src.gui.modules.OptimisationHandler import OptimisationHandler
 
 from src.gui.action_pane.GraphBox import GraphBox
-from src.gui.action_pane.LibraryBox import LibraryBox
 from src.gui.action_pane.SolverBox import SolverBox
 from src.gui.modules.Container import TopContainer
-from src.gui.modules.OptimisationHandler import OptimisationHandler
 
 
 class OptimisationPane(QtWidgets.QWidget):
@@ -31,16 +31,9 @@ class OptimisationPane(QtWidgets.QWidget):
         layout.addWidget(graph_box_label)
         layout.addWidget(graph_box)
 
-        library_box = LibraryBox(self._optimisation_handler, self)
-        library_box_label = QtWidgets.QLabel(graph_box)
-        library_box_label.setText('Choose an optimisation library:')
-
-        layout.addWidget(library_box_label)
-        layout.addWidget(library_box)
-
-        solver_box = SolverBox(self._optimisation_handler, self)
+        solver_box = SolverBox(self._optimisation_handler.get_optimiser(), self)
         solver_box_label = QtWidgets.QLabel(graph_box)
-        solver_box_label.setText('Choose a solver:')
+        solver_box_label.setText('Choose a Library/Solver:')
 
         layout.addWidget(solver_box_label)
         layout.addWidget(solver_box)
@@ -48,9 +41,9 @@ class OptimisationPane(QtWidgets.QWidget):
         self._button_optimise = QtWidgets.QPushButton(self)
         self._button_optimise.setText('Optimise graph')
         self._button_optimise.clicked.connect(self._optimisation_handler.optimise)
-        graph_box.signal_update.connect(self._handle_graph_selection_update)
         self._button_optimise.setEnabled(False)
+        self._optimisation_handler.signal_update.connect(self._handle_graph_selection_update)
         layout.addWidget(self._button_optimise)
 
     def _handle_graph_selection_update(self, signal: int):
-        self._button_optimise.setEnabled(True if signal >= 0 else -1)
+        self._button_optimise.setEnabled(True if signal >= 0 else False)

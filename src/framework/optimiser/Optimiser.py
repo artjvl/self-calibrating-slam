@@ -1,7 +1,7 @@
 import subprocess
+import typing as tp
 from enum import Enum
 from pathlib import Path
-from typing import *
 
 from src.definitions import get_project_root
 from src.framework.graph.Graph import Graph
@@ -52,31 +52,51 @@ class Optimiser(object):
 
     # constructor
     def __init__(self):
-        self._graph: Optional[Graph] = None
+        self._graph: tp.Optional[Graph] = None
         self._library = Library.CHOLMOD
         self._solver = Solver.GN
 
-    # public methods
-    def set_graph(self, graph: Optional[Graph]):
+    # graph
+    def set_graph(self, graph: tp.Optional[Graph]):
         self._graph = graph
 
-    def get_graph(self) -> Optional[Graph]:
+    def get_graph(self) -> tp.Optional[Graph]:
         return self._graph
+
+    # solver
+    def set(
+            self,
+            library: Library,
+            solver: Solver
+    ):
+        self.set_library(library)
+        self.set_solver(solver)
 
     def set_library(self, library: Library):
         self._library = library
+
+    def get_library(self) -> Library:
+        return self._library
 
     def set_solver(self, solver: Solver):
         assert solver in self.solvers[self._library]
         self._solver = solver
 
-    def get_libraries(self) -> List[Library]:
+    def get_solver(self) -> Solver:
+        return self._solver
+
+    def get_libraries(self) -> tp.List[Library]:
         return list(self.solvers.keys())
 
-    def get_solvers(self) -> List[Solver]:
-        return list(self.solvers[self._library].keys())
+    def get_solvers(
+            self,
+            library: tp.Optional[Library] = None
+    ) -> tp.List[Solver]:
+        if library is None:
+            library = self._library
+        return list(self.solvers[library].keys())
 
-    def _get_solver_string(self) -> str:
+    def get_solver_string(self) -> str:
         return self.solvers[self._library][self._solver]
 
     def optimise(self) -> Graph:
@@ -89,7 +109,7 @@ class Optimiser(object):
         path_output: Path = (root / (relative_to + '/after.g2o')).resolve()
         path_summary: Path = (root / (relative_to + '/summary.g2o')).resolve()
 
-        solver_string: str = self._get_solver_string()
+        solver_string: str = self.get_solver_string()
         process = subprocess.run([
             str(path_g2o_bin),
             '-solver', solver_string,

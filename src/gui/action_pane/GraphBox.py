@@ -2,12 +2,12 @@ import typing as tp
 
 from PyQt5 import QtCore
 from src.framework.graph.Graph import SubGraph
-from src.gui.action_pane.UpdateBox import UpdateBox
-from src.gui.modules.Container import TopContainer
+from src.gui.action_pane.GroupUpdateComboBox import GroupItem, GroupComboBox
+from src.gui.modules.Container import TopContainer, TrajectoryContainer, GraphContainer
 from src.gui.modules.OptimisationHandler import OptimisationHandler
 
 
-class GraphBox(UpdateBox):
+class GraphBox(GroupComboBox):
 
     signal_update = QtCore.pyqtSignal(int)
 
@@ -24,21 +24,40 @@ class GraphBox(UpdateBox):
         self._optimisation_handler = optimisation_handler
         self.currentIndexChanged.connect(self._handle_index_change)
 
-        self._graphs: tp.List[SubGraph] = []
+        self._graph_containers: tp.List[tp.Optional[GraphContainer]] = []
+        self._current_text: str = ''
 
     # handlers
     def _handle_graph_update(self, signal: int):
         if signal >= 0:
-            self._graphs = self._container.get_graphs()
-            self._update_box([graph.get_pathname() for graph in self._graphs])
+            if self._container.is_empty():
+                self.clear()
+            else:
+                self._current_text: str = self.currentText()
+                self.blockSignals(True)
+
+                self.clear()
+                trajectory_container: TrajectoryContainer
+                for trajectory_container in self._container.get_children():
+                    group: GroupItem = self.add_group(trajectory_container.get_name())
+                    self._graph_containers.append(None)
+
+                    graph_container: GraphContainer
+                    for graph_container in trajectory_container.get_children():
+                        graph: SubGraph = graph_container.get_graph()
+                        if graph.is_perturbed():
+                            group.add_child(graph_container.get_name())
+                            self._graph_containers.append(graph_container)
+                self.setCurrentIndex(-1)
+                index: int = self.findText(self._current_text, QtCore.Qt.MatchFixedString)
+                if index >= 0:
+                    self.setCurrentIndex(index)
+                else:
+                    self.blockSignals(False)
+                    self.setCurrentIndex(1)
 
     def _handle_index_change(self, index):
-        graphs: tp.List[SubGraph] = self._container.get_graphs()
-        if graphs and index >= 0:
-            graph = self._graphs[index]
-            if graph != self._optimisation_handler.get_graph():
-                self._optimisation_handler.set_graph(graph)
-                self.signal_update.emit(0)
-        else:
-            self._optimisation.set_graph(None)
-            self.signal_update.emit(-1)
+        graph_container: tp.Optional[GraphContainer] = None
+        if index >= 0:
+            graph_container = self._graph_containers[index]
+        self._optimisation_handler.set_graph(graph_container)
