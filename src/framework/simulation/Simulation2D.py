@@ -70,7 +70,6 @@ class Simulation2D(object):
 
         current: NodeSE2 = self.get_current()
         position: SE2 = current.get_value() + transformation
-        print(f'current ({current.get_value().translation().to_list()}) + transformation ({transformation.translation().to_list()}) = position ({position.translation().to_list()})')
         new: NodeSE2 = self.add_pose(position)
         self.add_edge([current.get_id(), new.get_id()], transformation, sensor_id)
 

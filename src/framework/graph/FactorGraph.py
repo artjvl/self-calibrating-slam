@@ -22,6 +22,9 @@ class FactorGraph(BaseGraph):
     def is_perturbed(self) -> bool:
         return not np.isclose(self.compute_error(), 0.)
 
+    def is_metric(self) -> bool:
+        return self.is_perturbed() and self.has_true()
+
     # true
     def assign_true(self, graph: SubFactorGraph):
         # assert self.is_perturbed()
@@ -60,19 +63,21 @@ class FactorGraph(BaseGraph):
     def compute_ate(self) -> float:
         """ Returns the Absolute Trajectory Error (APE). """
 
-        assert self.is_perturbed()
-        assert self.has_true()
+        assert self.is_metric()
         ate: float = 0
+        count: int = 0
         node: SubFactorNode
         for node in self.get_nodes():
-            ate += node.compute_ate2()
-        return np.sqrt(ate)
+            node_ate = node.compute_ate2()
+            if node_ate is not None:
+                ate += node_ate
+                count += 1
+        return np.sqrt(ate/count)
 
     def compute_rpe_translation(self) -> float:
         """ Returns the translation portion of the Relative Pose Error (RPE). """
 
-        assert self.is_perturbed()
-        assert self.has_true()
+        assert self.is_metric()
         rpe2: float = 0
         count: int = 0
         edge: SubFactorEdge
@@ -86,8 +91,7 @@ class FactorGraph(BaseGraph):
     def compute_rpe_rotation(self) -> float:
         """ Returns the rotation portion of the Relative Pose Error (RPE). """
 
-        assert self.is_perturbed()
-        assert self.has_true()
+        assert self.is_metric()
         rpe: float = 0
         count: int = 0
         edge: SubFactorEdge

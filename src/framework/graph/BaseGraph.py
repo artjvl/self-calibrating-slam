@@ -51,7 +51,7 @@ class BaseGraph(Printable):
 
     # Printable
     def to_id(self) -> str:
-        return f'{len(self._nodes)}; {len(self._edges)}'
+        return f'{len(self._nodes)};{len(self._edges)}'
 
 
 class BaseNode(Printable):

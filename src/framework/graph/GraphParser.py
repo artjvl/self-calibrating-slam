@@ -19,7 +19,7 @@ class GraphParser(object):
             graph: SubGraph,
             file: pathlib.Path
     ) -> None:
-        print(f"Saving '{graph.to_unique()}' to '{file}'...")
+        # print(f"Saving '{graph.to_unique()}' to '{file}'...")
         graph.set_path(file)
 
         writer: TextIO = file.open('w')
