@@ -19,7 +19,7 @@ class EdgeFactory(object):
         tp.Type[SubCalibratingEdge]
     ] = {
         (SE2, (NodeSE2, NodeSE2)): EdgePoses2DSE2,
-        (Vector2, (NodeSE2)): EdgePose2DV2,
+        (Vector2, (NodeSE2, )): EdgePose2DV2,
         (Vector2, (NodeSE2, NodeV2)): EdgePosePoint2DV2
     }
 

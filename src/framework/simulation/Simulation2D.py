@@ -32,7 +32,7 @@ class Simulation2D(object):
             self,
             value: Supported
     ) -> SubFactorNode:
-        id_: int = self.get_id(increment=True)
+        id_: int = self.count_id(increment=True)
         node = NodeFactory.from_value(value, id_)
         self._graph.add_node(node)
         return node
@@ -71,7 +71,7 @@ class Simulation2D(object):
         current: NodeSE2 = self.get_current()
         position: SE2 = current.get_value() + transformation
         new: NodeSE2 = self.add_pose(position)
-        self.add_edge([current.get_id(), new.get_id()], transformation, sensor_id)
+        self.add_edge([current.get_id(), new.get_id()], measurement, sensor_id)
 
     # sensors
     def add_sensor(
@@ -81,14 +81,14 @@ class Simulation2D(object):
     ):
         parameter: SubParameterNode
         for parameter in sensor.get_parameters():
-            parameter.set_id(self._par_counter)
-            self._par_counter += 1
+            parameter.set_id(self.count_id(increment=True))
+            # self._id_counter += 1
             self._graph.add_node(parameter)
 
         if sensor.has_info_node():
             information: SubInformationNode = sensor.get_info_node()
-            information.set_id(self._par_counter)
-            self._par_counter += 1
+            information.set_id(self.count_id(increment=True))
+            # self._id_counter += 1
             self._graph.add_node(information)
 
         self._sensors[id_] = sensor
@@ -107,7 +107,7 @@ class Simulation2D(object):
         return self._sensors[sensor_id]
 
     # getters
-    def get_id(self, increment: bool = False) -> int:
+    def count_id(self, increment: bool = False) -> int:
         if increment:
             self._id_counter += 1
         return self._id_counter

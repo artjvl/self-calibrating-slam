@@ -42,14 +42,14 @@ class BiSimulation2D(object):
     ) -> None:
         self._true.add_sensor(sensor_id, sensor_true)
         self._perturbed.add_sensor(sensor_id, sensor_perturbed)
-        max_id: int = max(self._true.get_id(), self._perturbed.get_id())
+        max_id: int = max(self._true.count_id(), self._perturbed.count_id())
         self._true.set_current_id(max_id)
         self._perturbed.set_current_id(max_id)
 
     def add_odometry(
             self,
-            transformation: SE2,
-            sensor_id: str
+            sensor_id: str,
+            transformation: SE2
     ) -> None:
         true_sensor: SubSensor = self._true.get_sensor(sensor_id)
         true_measurement: SE2 = true_sensor.decompose(transformation)
@@ -63,9 +63,11 @@ class BiSimulation2D(object):
 
     def add_gps(
             self,
-            translation: Vector2,
-            sensor_id: str
+            sensor_id: str,
+            translation: tp.Optional[Vector2] = None
     ) -> None:
+        if translation is None:
+            translation = self._true.get_current_pose().translation()
         current_id: int = self.get_current_id()
         self.add_edge([current_id], translation, sensor_id)
 
@@ -84,8 +86,8 @@ class BiSimulation2D(object):
 
     def add_closure(
             self,
-            distance: float,
             sensor_id: str,
+            distance: float,
             separation: int = 10,
             threshold: float = 1.
     ) -> None:
