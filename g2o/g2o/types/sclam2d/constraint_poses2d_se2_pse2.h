@@ -22,14 +22,25 @@ namespace g2o {
         ConstraintPoses2DSE2PSE2();
 
         void computeError() {
-            const NodeSE2* v1       = static_cast<const NodeSE2*>(_vertices[0]);
-            const NodeSE2* v2       = static_cast<const NodeSE2*>(_vertices[1]);
-            const ParamSE2* offset  = static_cast<const ParamSE2*>(_vertices[2]);
+            const NodeSE2* v1   = static_cast<const NodeSE2*>(_vertices[0]);
+            const NodeSE2* v2   = static_cast<const NodeSE2*>(_vertices[1]);
+            const ParamSE2* p   = static_cast<const ParamSE2*>(_vertices[2]);
+
             const SE2& x1 = v1->estimate();
             const SE2& x2 = v2->estimate();
-//            SE2 delta = _inverseMeasurement * ((x1 * offset->estimate()).inverse() * x2 * offset->estimate());
-            SE2 delta = _inverseMeasurement * (v1->estimate().inverse()*v2->estimate());
-            _error = delta.toVector();
+            const std::string interpretation = p->getInterpretation();
+            const SE2& par = p->estimate();
+
+            SE2 delta = x1.inverse() * x2;
+            SE2 error;
+            if (interpretation == "BIAS") {
+                error = _inverseMeasurement * (delta * par);
+            } else if (interpretation == "OFFSET") {
+                error = _inverseMeasurement * (par * delta * par.inverse());
+            } else {
+                error = _inverseMeasurement * delta;
+            }
+            _error = error.toVector();
         }
 
         void setMeasurement(const SE2& m){
