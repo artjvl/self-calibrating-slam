@@ -42,7 +42,7 @@ class InspectorTree(QtWidgets.QTreeWidget):
     ) -> Item:
 
         # sub-elements
-        sub_elements = self._construct_tree_property(root, 'Elements', '')
+        sub_elements = self._construct_tree_property(root, 'Elements', '', bold=True)
         element_type: tp.Type[SubElement]
         for element_type in graph.get_types():
             self._construct_tree_property(
@@ -51,14 +51,14 @@ class InspectorTree(QtWidgets.QTreeWidget):
         sub_elements.setExpanded(True)
 
         # error
-        sub_error = self._construct_tree_property(root, 'Error', '')
+        sub_error = self._construct_tree_property(root, 'Error', '', bold=True)
         self._construct_tree_property(sub_error, 'is_perturbed', f'{graph.is_perturbed()}')
         self._construct_tree_property(sub_error, 'error', f'{graph.compute_error()}')
         sub_error.setExpanded(True)
 
         # metrics
         if graph.is_metric():
-            sub_metrics = self._construct_tree_property(root, 'Metrics', '')
+            sub_metrics = self._construct_tree_property(root, 'Metrics', '', bold=True)
             true: SubGraph = graph.get_true()
             sub_true = self._construct_tree_property(sub_metrics, 'true', f'{true.to_unique()}')
             self._construct_graph_tree(true, sub_true)
@@ -67,7 +67,7 @@ class InspectorTree(QtWidgets.QTreeWidget):
             self._construct_tree_property(sub_metrics, 'rpe_rotation', f'{graph.compute_rpe_rotation()}')
             sub_metrics.setExpanded(True)
 
-        sub_properties = self._construct_tree_property(root, 'Properties', '')
+        sub_properties = self._construct_tree_property(root, 'Properties', '', bold=True)
         self._construct_tree_property(sub_properties, 'path', f'{graph.get_path()}')
         sub_properties.setExpanded(True)
         return root
@@ -93,7 +93,7 @@ class InspectorTree(QtWidgets.QTreeWidget):
             elif isinstance(node, InformationNode):
                 self._construct_tree_property(root, 'matrix', f'{node.get_matrix()}')
         if node.has_true():
-            sub_metrics = self._construct_tree_property(root, 'Metrics', '')
+            sub_metrics = self._construct_tree_property(root, 'Metrics', '', bold=True)
             true: SubFactorNode = node.get_true()
             sub_true = self._construct_tree_property(sub_metrics, 'true', f'{true.to_unique()}')
             self._construct_node_tree(true, sub_true)
@@ -101,7 +101,8 @@ class InspectorTree(QtWidgets.QTreeWidget):
             if ate2 is not None:
                 self._construct_tree_property(sub_metrics, 'ate2', f'{ate2}')
             sub_metrics.setExpanded(True)
-        self._construct_value_tree(root, 'Value', node.get_value())
+        sub_value = self._construct_tree_property(root, 'Value', '', bold=True)
+        self._construct_value_tree(sub_value, node.get_value())
         return root
 
     # edge
@@ -118,7 +119,7 @@ class InspectorTree(QtWidgets.QTreeWidget):
             root: Item
     ):
         nodes = edge.get_nodes()
-        sub_nodes = self._construct_tree_property(root, 'Nodes', f'({len(nodes)})')
+        sub_nodes = self._construct_tree_property(root, 'Nodes', f'({len(nodes)})', bold=True)
         for i, node in enumerate(nodes):
             sub_node = self._construct_tree_property(sub_nodes, f'{i}', f'{node.to_unique()}')
             self._construct_node_tree(node, sub_node)
@@ -126,13 +127,13 @@ class InspectorTree(QtWidgets.QTreeWidget):
         self._construct_tree_property(root, 'cardinality', f'{edge.get_cardinality()}')
         self._construct_tree_property(root, 'information', f'{edge.get_information()}')
 
-        sub_error = self._construct_tree_property(root, 'Error', '')
+        sub_error = self._construct_tree_property(root, 'Error', '', bold=True)
         self._construct_tree_property(sub_error, 'error_vector', f'{edge.compute_error_vector()}')
         self._construct_tree_property(sub_error, 'error', '{:f}'.format(edge.compute_error()))
         sub_error.setExpanded(True)
 
         if edge.has_true():
-            sub_metrics = self._construct_tree_property(root, 'Metrics', '')
+            sub_metrics = self._construct_tree_property(root, 'Metrics', '', bold=True)
             true: SubFactorEdge = edge.get_true()
             sub_true = self._construct_tree_property(sub_metrics, 'true', f'{true.to_unique()}')
             self._construct_edge_tree(true, sub_true)
@@ -140,8 +141,11 @@ class InspectorTree(QtWidgets.QTreeWidget):
             self._construct_tree_property(sub_metrics, 'rpe_rotation', f'{edge.compute_rpe_rotation()}')
             sub_metrics.setExpanded(True)
 
-        self._construct_value_tree(root, 'Measurement', edge.get_measurement())
-        self._construct_value_tree(root, 'Estimate', edge.get_estimate())
+        sub_measurement = self._construct_tree_property(root, 'Measurement', '', bold=True)
+        self._construct_value_tree(sub_measurement, edge.get_measurement())
+        sub_measurement = self._construct_tree_property(root, 'Estimate', '', bold=True)
+        self._construct_value_tree(sub_measurement, edge.get_estimate())
+
         # root.expandAll()
 
     # helper-methods
@@ -149,36 +153,41 @@ class InspectorTree(QtWidgets.QTreeWidget):
     def _construct_value_tree(
             cls,
             root: Item,
-            name: str,
             value: Supported,
             expanded: bool = True
     ) -> Item:
-        sub = cls._construct_tree_property(root, name, '')
-        cls._construct_tree_property(sub, 'type', f'{type(value).__name__}')
+        cls._construct_tree_property(root, 'type', f'{type(value).__name__}')
         if isinstance(value, Dimensional):
-            cls._construct_tree_property(sub, 'dimension', f'{value.get_dimension()}')
+            cls._construct_tree_property(root, 'dimension', f'{value.get_dimension()}')
             if isinstance(value, Lie):
-                cls._construct_tree_property(sub, 'dof', f'{value.get_dof()}')
-                cls._construct_tree_property(sub, 'vector', f'{value.vector()}')
+                cls._construct_tree_property(root, 'dof', f'{value.get_dof()}')
+                cls._construct_tree_property(root, 'vector', f'{value.vector()}')
                 if isinstance(value, SO):
-                    cls._construct_tree_property(sub, 'angle', f'{value.angle()}')
-                    cls._construct_tree_property(sub, 'jacobian', f'{value.jacobian()}')
-                    cls._construct_tree_property(sub, 'inverse_jacobian', f'{value.inverse_jacobian()}')
+                    cls._construct_tree_property(root, 'angle', f'{value.angle()}')
+                    cls._construct_tree_property(root, 'jacobian', f'{value.jacobian()}')
+                    cls._construct_tree_property(root, 'inverse_jacobian', f'{value.inverse_jacobian()}')
                 elif isinstance(value, SE):
                     if isinstance(value, SE2):
-                        cls._construct_tree_property(sub, 'translation_angle', f'{value.translation_angle_vector()}')
-                    cls._construct_value_tree(sub, 'translation', value.translation(), expanded=False)
-                    cls._construct_value_tree(sub, 'rotation', value.rotation(), expanded=False)
-        sub.setExpanded(expanded)
-        return sub
+                        cls._construct_tree_property(root, 'translation_angle', f'{value.translation_angle_vector()}')
+                    sub_translation = cls._construct_tree_property(root, 'translation', '')
+                    cls._construct_value_tree(sub_translation, value.translation(), expanded=False)
+                    sub_rotation = cls._construct_tree_property(root, 'rotation', '')
+                    cls._construct_value_tree(sub_rotation, value.rotation(), expanded=False)
+        root.setExpanded(expanded)
+        return root
 
     @staticmethod
     def _construct_tree_property(
             root: tp.Optional[Item],
             first: str,
-            second: str
+            second: str,
+            bold: bool = False
     ) -> Item:
         item = QtWidgets.QTreeWidgetItem(root)
+        if bold:
+            font = item.font(0)
+            font.setBold(True)
+            item.setFont(0, font)
         item.setText(0, f'{first}:')
         item.setText(1, second)
         item.setFont(1, QtGui.QFont('Courier New', 10))
