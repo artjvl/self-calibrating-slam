@@ -150,11 +150,11 @@ class BrowserTree(QtWidgets.QTreeWidget):
         if hasattr(item, 'obj'):
             obj: tp.Union[SubContainer, SubVisualisable] = item.obj
             if isinstance(obj, GraphContainer):
-                self._inspector.construct_graph_tree(obj.get_graph())
+                self._inspector.display_graph(obj.get_graph())
             elif isinstance(obj, FactorNode):
-                self._inspector.construct_node_tree(obj)
+                self._inspector.display_node(obj)
             elif isinstance(obj, FactorEdge):
-                self._inspector.construct_edge_tree(obj)
+                self._inspector.display_edge(obj)
 
     def _handle_context_menu(self, point):
         index = self.indexAt(point)

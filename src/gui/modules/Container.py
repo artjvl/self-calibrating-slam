@@ -274,7 +274,6 @@ class TrajectoryContainer(Container, Toggle, QtCore.QObject):
         if self.has_true():
             graph.assign_true(self.get_true())
         id_: int = self.count_id(increment=True)
-        graph.set_id(id_)
         graph_container = GraphContainer(self, self.get_types(), id_, graph)
         self._children[str(id_)] = graph_container
         if not suppress:
@@ -289,7 +288,7 @@ class TrajectoryContainer(Container, Toggle, QtCore.QObject):
     ) -> None:
         suppress: bool = False
         if kwargs:
-            kwargs['suppress'] = True
+            suppress = kwargs['suppress']
 
         graph_containers: tp.List[GraphContainer] = []
         if true is not None:
@@ -300,7 +299,7 @@ class TrajectoryContainer(Container, Toggle, QtCore.QObject):
             graph_containers.append(self.add_graph(graph, suppress=True))
 
         print(
-            "gui/TrajectoryContainer: graphs added to '{}':\n{}".format(
+            "gui/TrajectoryContainer: Graphs added to '{}':\n{}".format(
                 f'{self.get_name()}',
                 '\n'.join([f'    {child.get_name()} = {child.get_graph().to_unique()}' for child in graph_containers])
             )
@@ -332,8 +331,8 @@ class TrajectoryContainer(Container, Toggle, QtCore.QObject):
 
     def get_nontrue_children(self) -> tp.List[GraphContainer]:
         if self.has_true():
-            id_: int = self.get_true().get_id()
-            return [child for child in self.get_children() if child.get_graph().get_id() != id_]
+            true: SubGraph = self.get_true()
+            return [child for child in self.get_children() if child.get_graph() != true]
         return self.get_children()
 
     def add_true_graph(
@@ -419,7 +418,7 @@ class TopContainer(Container, QtCore.QObject):
         assert str(id_) in self._children
         trajectory_container: TrajectoryContainer = self._children[str(id_)]
         print(
-            "gui/TrajectoryContainer: '{}' removed".format(
+            "gui/TrajectoryContainer: '{}' removed.".format(
                 trajectory_container.get_name()
             )
         )

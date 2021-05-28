@@ -19,11 +19,14 @@ from src.utils import GeoHash2D
 
 class BiSimulation2D(object):
 
+    _rng = np.random.RandomState
+
     def __init__(
             self,
-            seed: int = 0
+            seed: tp.Optional[int] = None
     ):
-        self._rng = np.random.RandomState(seed)
+        self._seed: tp.Optional[int] = seed
+        self.set_seed(self._seed)
         self._geo = GeoHash2D[int]()
 
         self._true = Simulation2D()
@@ -40,7 +43,9 @@ class BiSimulation2D(object):
             sensor_true: SubSensor,
             sensor_perturbed: SubSensor
     ) -> None:
+        sensor_true.set_seed(self._seed)
         self._true.add_sensor(sensor_id, sensor_true)
+        sensor_perturbed.set_seed(self._seed)
         self._perturbed.add_sensor(sensor_id, sensor_perturbed)
         max_id: int = max(self._true.count_id(), self._perturbed.count_id())
         self._true.set_current_id(max_id)
@@ -197,6 +202,11 @@ class BiSimulation2D(object):
     def get_parameters(self) -> ParameterSet:
         assert self.has_parameters()
         return self._parameters
+
+    # seed
+    def set_seed(self, seed: tp.Optional[int] = None):
+        self._seed = seed
+        self._rng = np.random.RandomState(self._seed)
 
     # simulation
     def simulate(self) -> tp.Tuple[SubGraph, SubGraph]:
