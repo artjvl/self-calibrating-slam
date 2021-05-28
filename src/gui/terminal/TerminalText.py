@@ -25,6 +25,10 @@ class TerminalText(QTextEdit):
     # constructor
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.setFont(QFont('Courier New', 10))
+        self.setFont(QFont('Courier New', 8))
         self.setReadOnly(True)
         sys.stdout = Stream(self)
+
+    def insertPlainText(self, text: str) -> None:
+        super().insertPlainText(text)
+        self.verticalScrollBar().setValue(self.verticalScrollBar().maximum())
