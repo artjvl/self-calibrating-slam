@@ -36,6 +36,7 @@ class GraphBox(GroupComboBox):
                 self._current_text: str = self.currentText()
                 self.blockSignals(True)
 
+                self._graph_containers = []
                 self.clear()
                 trajectory_container: TrajectoryContainer
                 for trajectory_container in self._container.get_children():
