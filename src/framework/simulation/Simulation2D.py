@@ -129,6 +129,7 @@ class Simulation2D(object):
         self._id_counter = id_
 
     def get_pose_ids(self) -> tp.List[int]:
+        """ Returns the pose-id history. """
         return self._pose_ids
 
     def get_graph(self) -> SubGraph:

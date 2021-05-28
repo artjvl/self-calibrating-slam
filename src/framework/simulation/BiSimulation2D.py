@@ -33,7 +33,7 @@ class BiSimulation2D(object):
 
         self._parameters: tp.Optional[ParameterSet] = None
 
-    # graph-construction
+    # sensors
     def add_sensor(
             self,
             sensor_id: str,
@@ -46,6 +46,30 @@ class BiSimulation2D(object):
         self._true.set_current_id(max_id)
         self._perturbed.set_current_id(max_id)
 
+    # edges
+    def add_edge(
+            self,
+            ids: tp.List[int],
+            value: Supported,
+            sensor_id: str
+    ) -> None:
+        true_sensor: SubSensor = self._true.get_sensor(sensor_id)
+        true_measurement: Supported = true_sensor.decompose(value)
+        self._true.add_edge(ids, true_measurement, sensor_id)
+
+        perturbed_measurement: Supported = true_sensor.measure(true_measurement)
+        self._perturbed.add_edge(ids, perturbed_measurement, sensor_id)
+
+    def add_poses_edge(
+            self,
+            sensor_id: str,
+            from_id: int,
+            to_id: int
+    ) -> None:
+        transformation: SE2 = self._true.get_node(to_id).get_value() - self._true.get_node(from_id).get_value()
+        self.add_edge([from_id, to_id], transformation, sensor_id)
+
+    # odometry
     def add_odometry(
             self,
             sensor_id: str,
@@ -61,6 +85,7 @@ class BiSimulation2D(object):
         perturbed_measurement: SE2 = true_sensor.measure(true_measurement)
         self._perturbed.add_odometry(perturbed_measurement, sensor_id)
 
+    # gps
     def add_gps(
             self,
             sensor_id: str,
@@ -71,72 +96,60 @@ class BiSimulation2D(object):
         current_id: int = self.get_current_id()
         self.add_edge([current_id], translation, sensor_id)
 
-    def add_edge(
-            self,
-            ids: tp.List[int],
-            value: Supported,
-            sensor_id: str
-    ) -> None:
-        true_sensor: SubSensor = self._true.get_sensor(sensor_id)
-        true_measurement: Supported = true_sensor.decompose(value)
-        self._true.add_edge(ids, true_measurement, sensor_id)
-
-        perturbed_measurement: Supported = true_sensor.measure(true_measurement)
-        self._perturbed.add_edge(ids, perturbed_measurement, sensor_id)
-
-    def add_closure(
+    # loop-closure
+    def roll_closure(
             self,
             sensor_id: str,
             distance: float,
             separation: int = 10,
-            threshold: float = 1.
-    ) -> None:
-        if self._rng.uniform(0, 1) >= 1 - threshold:
-            pose_ids: tp.List[int] = self._true.get_pose_ids()
-            if len(pose_ids) > separation:
-                current: NodeSE2 = self._true.get_current()
-                location: Vector2 = current.get_value().translation()
-
-                closures: tp.List[int] = self._geo.find_within(location[0], location[1], distance)
-                filtered: tp.List[int] = pose_ids[:-1 - separation]
-                matches: tp.List[int] = []
-                for closure in closures:
-                    if closure in filtered:
-                        matches.append(closure)
-                if matches:
-                    closure_id: int = matches[0]
-                    # closure_id: int = self._rng.choice(closures)
-                    current_id: int = self.get_current_id()
-
-                    closure: NodeSE2 = self.get_true().get_node(closure_id)
-                    transformation: SE2 = current.get_value() - closure.get_value()
-                    self.add_edge([closure_id, current_id], transformation, sensor_id)
-
-    def add_proximity(
-            self,
-            steps: int,
-            sensor_id: str,
             threshold: float = 0.
     ) -> None:
-        if self._rng.uniform(0, 1) >= 1 - threshold:
-            pose_ids: tp.List[int] = self._true.get_pose_ids()
-            if len(pose_ids) > steps:
-                current: NodeSE2 = self._true.get_current()
-                proximity_id: int = pose_ids[-1 - steps]
-                proximity: NodeSE2 = self._true.get_node(proximity_id)
+        if self._rng.uniform(0, 1) >= threshold:
+            self.try_closure(sensor_id, distance, separation)
 
-                transformation: SE2 = current.get_value() - proximity.get_value()
-                ids: tp.List[int] = [proximity.get_id(), current.get_id()]
-                self.add_edge(ids, transformation, sensor_id)
-
-    def add_poses_edge(
+    def try_closure(
             self,
-            from_id: int,
-            to_id: int,
-            sensor_id: str
+            sensor_id: str,
+            distance: float,
+            separation: int = 10
     ) -> None:
-        transformation: SE2 = self._true.get_node(to_id).get_value() - self._true.get_node(from_id).get_value()
-        self.add_edge([from_id, to_id], transformation, sensor_id)
+        pose_ids: tp.List[int] = self._true.get_pose_ids()
+        if len(pose_ids) > separation:
+            current: NodeSE2 = self._true.get_current()
+            location: Vector2 = current.get_value().translation()
+
+            closures: tp.List[int] = self._geo.find_within(location[0], location[1], distance)
+            filtered: tp.List[int] = pose_ids[:-1 - separation]
+            matches: tp.List[int] = []
+            for closure in closures:
+                if closure in filtered:
+                    matches.append(closure)
+            if matches:
+                closure_id: int = matches[0]
+                # closure_id: int = self._rng.choice(closures)
+                current_id: int = self.get_current_id()
+                self.add_poses_edge(sensor_id, closure_id, current_id)
+
+    # proximity constraint
+    def roll_proximity(
+            self,
+            sensor_id: str,
+            steps: int,
+            threshold: float = 0.
+    ) -> None:
+        if self._rng.uniform(0, 1) >= threshold:
+            self.try_proximity(sensor_id, steps)
+
+    def try_proximity(
+            self,
+            sensor_id: str,
+            steps: int
+    ) -> None:
+        pose_ids: tp.List[int] = self._true.get_pose_ids()
+        if len(pose_ids) > steps:
+            current_id: int = self._true.get_current_id()
+            proximity_id: int = pose_ids[-1 - steps]
+            self.add_poses_edge(sensor_id, proximity_id, current_id)
 
     # logistics
     def fix(self):
@@ -194,5 +207,6 @@ class BiSimulation2D(object):
         return true, perturbed
 
     @abstractmethod
-    def _simulate(self):
+    def _simulate(self) -> None:
+        """ Override this method to define a simulation that modifies '_true' and '_perturbed'. """
         pass
