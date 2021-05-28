@@ -2,7 +2,7 @@ import typing as tp
 
 from PyQt5 import QtCore
 from src.framework.graph.Graph import SubGraph
-from src.gui.action_pane.GroupUpdateComboBox import GroupItem, GroupComboBox
+from src.gui.action_pane.GroupComboBox import GroupItem, GroupComboBox
 from src.gui.modules.Container import TopContainer, TrajectoryContainer, GraphContainer
 from src.gui.modules.OptimisationHandler import OptimisationHandler
 
@@ -25,7 +25,7 @@ class GraphBox(GroupComboBox):
         self.currentIndexChanged.connect(self._handle_index_change)
 
         self._graph_containers: tp.List[tp.Optional[GraphContainer]] = []
-        self._current_text: str = ''
+        # self._current_text: str = ''
 
     # handlers
     def _handle_graph_update(self, signal: int):
@@ -49,12 +49,12 @@ class GraphBox(GroupComboBox):
                             group.add_child(graph_container.get_name())
                             self._graph_containers.append(graph_container)
                 self.setCurrentIndex(-1)
-                index: int = self.findText(self._current_text, QtCore.Qt.MatchFixedString)
-                if index >= 0:
-                    self.setCurrentIndex(index)
-                else:
-                    self.blockSignals(False)
-                    self.setCurrentIndex(1)
+                # index: int = self.findText(self._current_text, QtCore.Qt.MatchFixedString)
+                # if index >= 0:
+                #     self.setCurrentIndex(index)
+                # else:
+                self.blockSignals(False)
+                self.setCurrentIndex(1)
 
     def _handle_index_change(self, index):
         graph_container: tp.Optional[GraphContainer] = None

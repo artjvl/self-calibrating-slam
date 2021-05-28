@@ -2,6 +2,7 @@ from PyQt5 import QtCore, QtWidgets, QtGui
 
 GroupRole = QtCore.Qt.UserRole
 
+# reference: https://stackoverflow.com/questions/57437204/qcombobox-add-bold-parent-items
 
 class GroupDelegate(QtWidgets.QStyledItemDelegate):
     def initStyleOption(self, option, index):
