@@ -250,7 +250,11 @@ class TrajectoryContainer(Container, Toggle, QtCore.QObject):
         self._true: tp.Optional[SubGraph] = None
 
     def get_name(self) -> str:
-        return f'Trajectory({self.get_id()}): {self.get_children()[0].get_graph().to_name()}'
+        name: str = f'Trajectory({self.get_id()})'
+        children: tp.List[GraphContainer] = self.get_children()
+        if children:
+            name = f'{name}: {children[0].get_graph().to_name()}'
+        return name
 
     def get_id(self) -> int:
         return self._id
@@ -266,10 +270,41 @@ class TrajectoryContainer(Container, Toggle, QtCore.QObject):
             self,
             graph: SubGraph,
             suppress: bool = False
-    ) -> None:
+    ) -> GraphContainer:
+        if self.has_true():
+            graph.assign_true(self.get_true())
         id_: int = self.count_id(increment=True)
         graph.set_id(id_)
-        self._children[str(id_)] = GraphContainer(self, self.get_types(), id_, graph)
+        graph_container = GraphContainer(self, self.get_types(), id_, graph)
+        self._children[str(id_)] = graph_container
+        if not suppress:
+            self.signal_update.emit(self.get_id())
+        return graph_container
+
+    def add_graphs(
+            self,
+            true: tp.Optional[SubGraph],
+            *graphs: SubGraph,
+            **kwargs: bool
+    ) -> None:
+        suppress: bool = False
+        if kwargs:
+            kwargs['suppress'] = True
+
+        graph_containers: tp.List[GraphContainer] = []
+        if true is not None:
+            graph_containers.append(self.add_true_graph(true, suppress=True))
+        for graph in graphs:
+            if true is not None:
+                graph.assign_true(true)
+            graph_containers.append(self.add_graph(graph, suppress=True))
+
+        print(
+            "gui/TrajectoryContainer: graphs added to '{}':\n{}".format(
+                f'{self.get_name()}',
+                '\n'.join([f'    {child.get_name()} = {child.get_graph().to_unique()}' for child in graph_containers])
+            )
+        )
         if not suppress:
             self.signal_update.emit(self.get_id())
 
@@ -307,17 +342,25 @@ class TrajectoryContainer(Container, Toggle, QtCore.QObject):
             suppress: bool = False
     ):
         assert not graph.is_perturbed()
-        self.add_graph(graph, suppress=True)
+        graph_container: GraphContainer = self.add_graph(graph, suppress=True)
         self.set_as_true(graph, suppress=True)
         if not suppress:
             self.signal_update.emit(self.get_id())
+        return graph_container
 
-    def remove_graph(self, graph: SubGraph):
-        id_: int = graph.get_id()
+    def remove_graph(self, graph_container: GraphContainer):
+        id_: int = graph_container.get_id()
         self.remove_id(id_)
 
     def remove_id(self, id_: int):
         assert str(id_) in self._children
+        graph_container: GraphContainer = self._children[str(id_)]
+        print(
+            "gui/TrajectoryContainer: '{}' removed from '{}'.".format(
+                graph_container.get_name(),
+                self.get_name()
+            )
+        )
         del self._children[str(id_)]
         self.signal_update.emit(self.get_id())
         if len(self.get_children()) == 0:
@@ -368,24 +411,18 @@ class TopContainer(Container, QtCore.QObject):
         trajectory.signal_update.connect(self.handle_signal)
         self._children[str(id_)] = trajectory
 
-        if true is not None:
-            trajectory.add_true_graph(true, suppress=True)
-        for graph in graphs:
-            if true is not None:
-                graph.assign_true(true)
-            trajectory.add_graph(graph, suppress=True)
-
-        print(
-            'gui/TopContainer: graphs added to {}:\n{}'.format(
-                f'{trajectory.get_name()}',
-                '\n'.join([f'    {child.get_name()} = {child.get_graph().to_unique()}' for child in trajectory.get_children()])
-            )
-        )
+        trajectory.add_graphs(true, *graphs, suppress=True)
         self.signal_update.emit(id_)
         return trajectory
 
     def remove_id(self, id_: int) -> None:
         assert str(id_) in self._children
+        trajectory_container: TrajectoryContainer = self._children[str(id_)]
+        print(
+            "gui/TrajectoryContainer: '{}' removed".format(
+                trajectory_container.get_name()
+            )
+        )
         del self._children[str(id_)]
         self.signal_update.emit(id_)
 

@@ -197,7 +197,7 @@ class BrowserTree(QtWidgets.QTreeWidget):
                     # select action
                     action = menu.exec_(self.mapToGlobal(point))
                     if action == action_delete:
-                        trajectory_container.remove_graph(graph)
+                        trajectory_container.remove_graph(graph_container)
                     elif action == action_save:
                         print('save')
                     elif action == action_true:

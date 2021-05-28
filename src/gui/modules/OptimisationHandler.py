@@ -39,4 +39,4 @@ class OptimisationHandler(QtCore.QObject):
         print(f"gui/OptimisationHandler: Optimising '{self._optimiser.get_graph().to_unique()}'...")
         graph: Graph = self._optimiser.optimise()
         trajectory_container: TrajectoryContainer = self._graph_container.get_parent()
-        trajectory_container.add_graph(graph)
+        trajectory_container.add_graphs(None, graph)
