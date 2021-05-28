@@ -19,7 +19,9 @@ class GraphParser(object):
             graph: SubGraph,
             file: pathlib.Path
     ) -> None:
-        # print(f"Saving '{graph.to_unique()}' to '{file}'...")
+        print(
+            f"framework/GraphParser: Saving '{graph.to_unique()}' to:\n    '{file}'"
+        )
         graph.set_path(file)
 
         writer: TextIO = file.open('w')
@@ -74,9 +76,12 @@ class GraphParser(object):
             cls,
             file: pathlib.Path
     ) -> SubGraph:
-        print(f"Loading '{file}'...")
-
         graph = Graph()
+
+        print(
+            f"framework/GraphParser: Loading '{graph.to_unique()}' from:\n    '{file}'"
+        )
+
         graph.set_path(file)
 
         reader: TextIO = file.open('r')
