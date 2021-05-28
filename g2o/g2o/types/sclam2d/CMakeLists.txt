@@ -11,6 +11,7 @@ add_library(types_sclam2d ${G2O_LIB_TYPE}
   constraint_poses2d_se2.h constraint_poses2d_se2.cpp
   constraint_poses2d_se2_pse2.h constraint_poses2d_se2_pse2.cpp
   constraint_poses2d_se2_pv3.h constraint_poses2d_se2_pv3.cpp
+  constraint_pose2d_v2.h constraint_pose2d_v2.cpp
   types_sclam2d.cpp types_sclam2d.h
   g2o_types_sclam2d_api.h
         )

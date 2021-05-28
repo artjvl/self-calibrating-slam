@@ -38,5 +38,6 @@
 #include "constraint_poses2d_se2.h"
 #include "constraint_poses2d_se2_pse2.h"
 #include "constraint_poses2d_se2_pv3.h"
+#include "constraint_pose2d_v2.h"
 
 #endif

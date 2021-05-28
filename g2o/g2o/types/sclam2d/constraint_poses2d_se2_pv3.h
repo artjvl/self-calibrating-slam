@@ -22,15 +22,23 @@ namespace g2o {
         ConstraintPoses2DSE2PV3();
 
         void computeError() {
-            const NodeSE2* v1       = static_cast<const NodeSE2*>(_vertices[0]);
-            const NodeSE2* v2       = static_cast<const NodeSE2*>(_vertices[1]);
-            const ParamV3* p        = static_cast<const ParamV3*>(_vertices[2]);
+            const NodeSE2* v1   = static_cast<const NodeSE2*>(_vertices[0]);
+            const NodeSE2* v2   = static_cast<const NodeSE2*>(_vertices[1]);
+            const ParamV3* p    = static_cast<const ParamV3*>(_vertices[2]);
+
             const SE2& x1 = v1->estimate();
             const SE2& x2 = v2->estimate();
-            const Vector3& scale = p->estimate();
-//            SE2 delta = _inverseMeasurement * ((x1 * offset->estimate()).inverse() * x2 * offset->estimate());
-            SE2 delta = SE2(scale.asDiagonal() * _measurement.toVector()).inverse() * (x1.inverse()*x2);
-            _error = delta.toVector();
+            const std::string interpretation = p->getInterpretation();
+            const Vector3& par = p->estimate();
+
+            SE2 delta = x1.inverse() * x2;
+            SE2 error;
+            if (interpretation == "SCALE") {
+                error = _inverseMeasurement * SE2(par.asDiagonal() * delta.toVector());
+            } else {
+                error = _inverseMeasurement * delta;
+            }
+            _error = error.toVector();
         }
 
         void setMeasurement(const SE2& m){
