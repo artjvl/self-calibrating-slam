@@ -40,7 +40,6 @@ class InspectorTree(QtWidgets.QTreeWidget):
             graph: SubGraph,
             root: Item
     ) -> Item:
-
         # sub-elements
         sub_elements = self._construct_tree_property(root, 'Elements', '', bold=True)
         element_type: tp.Type[SubElement]
@@ -67,6 +66,7 @@ class InspectorTree(QtWidgets.QTreeWidget):
             self._construct_tree_property(sub_metrics, 'rpe_rotation', f'{graph.compute_rpe_rotation()}')
             sub_metrics.setExpanded(True)
 
+        # properties
         sub_properties = self._construct_tree_property(root, 'Properties', '', bold=True)
         self._construct_tree_property(sub_properties, 'path', f'{graph.get_path()}')
         sub_properties.setExpanded(True)
@@ -85,6 +85,7 @@ class InspectorTree(QtWidgets.QTreeWidget):
             node: SubFactorNode,
             root: Item
     ) -> Item:
+        # top
         self._construct_tree_property(root, 'id', f'{node.get_id()}')
         self._construct_tree_property(root, 'is_fixed', f'{node.is_fixed()}')
         if isinstance(node, CalibratingNode):
@@ -92,6 +93,8 @@ class InspectorTree(QtWidgets.QTreeWidget):
                 self._construct_tree_property(root, 'interpretation', f'{node.get_interpretation()}')
             elif isinstance(node, InformationNode):
                 self._construct_tree_property(root, 'matrix', f'{node.get_matrix()}')
+
+        # metrics
         if node.has_true():
             sub_metrics = self._construct_tree_property(root, 'Metrics', '', bold=True)
             true: SubFactorNode = node.get_true()
@@ -101,6 +104,8 @@ class InspectorTree(QtWidgets.QTreeWidget):
             if ate2 is not None:
                 self._construct_tree_property(sub_metrics, 'ate2', f'{ate2}')
             sub_metrics.setExpanded(True)
+
+        # value
         sub_value = self._construct_tree_property(root, 'Value', '', bold=True)
         self._construct_value_tree(sub_value, node.get_value())
         return root
@@ -118,20 +123,25 @@ class InspectorTree(QtWidgets.QTreeWidget):
             edge: SubFactorEdge,
             root: Item
     ):
+        # top
+        self._construct_tree_property(root, 'cardinality', f'{edge.get_cardinality()}')
+        self._construct_tree_property(root, 'information', f'{edge.get_information()}')
+
+        # nodes
         nodes = edge.get_nodes()
         sub_nodes = self._construct_tree_property(root, 'Nodes', f'({len(nodes)})', bold=True)
         for i, node in enumerate(nodes):
             sub_node = self._construct_tree_property(sub_nodes, f'{i}', f'{node.to_unique()}')
             self._construct_node_tree(node, sub_node)
         sub_nodes.setExpanded(True)
-        self._construct_tree_property(root, 'cardinality', f'{edge.get_cardinality()}')
-        self._construct_tree_property(root, 'information', f'{edge.get_information()}')
 
+        # error
         sub_error = self._construct_tree_property(root, 'Error', '', bold=True)
         self._construct_tree_property(sub_error, 'error_vector', f'{edge.compute_error_vector()}')
         self._construct_tree_property(sub_error, 'error', '{:f}'.format(edge.compute_error()))
         sub_error.setExpanded(True)
 
+        # metrics
         if edge.has_true():
             sub_metrics = self._construct_tree_property(root, 'Metrics', '', bold=True)
             true: SubFactorEdge = edge.get_true()
@@ -141,10 +151,13 @@ class InspectorTree(QtWidgets.QTreeWidget):
             self._construct_tree_property(sub_metrics, 'rpe_rotation', f'{edge.compute_rpe_rotation()}')
             sub_metrics.setExpanded(True)
 
+        # measurement
         sub_measurement = self._construct_tree_property(root, 'Measurement', '', bold=True)
         self._construct_value_tree(sub_measurement, edge.get_measurement())
-        sub_measurement = self._construct_tree_property(root, 'Estimate', '', bold=True)
-        self._construct_value_tree(sub_measurement, edge.get_estimate())
+
+        # estimate
+        sub_estimate = self._construct_tree_property(root, 'Estimate', '', bold=True)
+        self._construct_value_tree(sub_estimate, edge.get_estimate())
 
         # root.expandAll()
 
