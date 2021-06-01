@@ -26,6 +26,13 @@ class ParameterNode(tp.Generic[T], CalibratingNode[T]):
             transformation: SE2,
             inverse: bool = False
     ) -> SE2:
+        """
+        Composition of a value:
+        - inverse = True: add parameter to value
+              e.g. convert measurement (= transformation - parameter) to transformation
+        - inverse = False: subtract parameter to value
+              e.g. convert transformation (= measurement + parameter) to measurement
+        """
         pass
 
     def compose_translation(

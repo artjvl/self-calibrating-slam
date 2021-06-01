@@ -30,6 +30,9 @@ class ParameterNodeV3(ParameterNode[Vector3]):
         if inverse:
             parameter = Vector3(1 / parameter.array())
         if self._interpretation == self.SCALE:
-            return SE2.from_vector(
-                Square3.from_diagonal(parameter.to_list()).array() @ transformation.vector().array()
+            return SE2.from_translation_angle_vector(
+                Vector3(
+                    Square3.from_diagonal(parameter.to_list()).array() @
+                    transformation.translation_angle_vector().array()
+                )
             )
