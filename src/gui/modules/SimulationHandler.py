@@ -30,7 +30,7 @@ class SimulationHandler(QObject):
         else:
             self._tree.clear()
 
-        print("Simulation '{}' selected".format(type(simulation).__name__))
+        print(f"gui/SimulationHandler: Simulation '{type(simulation).__name__}' selected")
         self.signal_update.emit(1)
 
     def get_simulation(self) -> BiSimulation2D:

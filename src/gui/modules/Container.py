@@ -249,6 +249,10 @@ class TrajectoryContainer(Container, Toggle, QtCore.QObject):
         self._id_counter: int = 0
         self._true: tp.Optional[SubGraph] = None
 
+    def remove(self) -> None:
+        parent: TopContainer = self.get_parent()
+        parent.remove_id(self.get_id())
+
     def get_name(self) -> str:
         name: str = f'Trajectory({self.get_id()})'
         children: tp.List[GraphContainer] = self.get_children()
@@ -271,6 +275,11 @@ class TrajectoryContainer(Container, Toggle, QtCore.QObject):
             graph: SubGraph,
             suppress: bool = False
     ) -> GraphContainer:
+        if not self.is_empty():
+            first: SubGraph = self.get_children()[0].get_graph()
+            assert len(graph.get_types()) == len(first.get_types())
+            assert len(graph.get_nodes()) == len(first.get_nodes())
+            assert len(graph.get_edges()) == len(first.get_edges())
         if self.has_true():
             graph.assign_true(self.get_true())
         id_: int = self.count_id(increment=True)
@@ -351,6 +360,9 @@ class TrajectoryContainer(Container, Toggle, QtCore.QObject):
         id_: int = graph_container.get_id()
         self.remove_id(id_)
 
+    def is_empty(self) -> bool:
+        return len(self.get_children()) == 0
+
     def remove_id(self, id_: int):
         assert str(id_) in self._children
         graph_container: GraphContainer = self._children[str(id_)]
@@ -362,7 +374,7 @@ class TrajectoryContainer(Container, Toggle, QtCore.QObject):
         )
         del self._children[str(id_)]
         self.signal_update.emit(self.get_id())
-        if len(self.get_children()) == 0:
+        if self.is_empty():
             self.get_parent().remove_id(self.get_id())
 
     def get_graphic(self, type_: Type) -> tp.List[SubGraphicsItem]:
@@ -418,7 +430,7 @@ class TopContainer(Container, QtCore.QObject):
         assert str(id_) in self._children
         trajectory_container: TrajectoryContainer = self._children[str(id_)]
         print(
-            "gui/TrajectoryContainer: '{}' removed.".format(
+            "gui/TopContainer: '{}' removed.".format(
                 trajectory_container.get_name()
             )
         )

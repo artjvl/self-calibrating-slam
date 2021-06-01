@@ -20,3 +20,16 @@ class PopUp(object):
             graph: SubGraph = GraphParser.load(path)
             return graph
         return None
+
+    @classmethod
+    def load_with_callback(
+            cls,
+            callback: tp.Callable,
+            *args, **kwargs
+    ) -> None:
+        graph: tp.Optional[SubGraph] = cls.load_from_file()
+        if graph is not None:
+            try:
+                callback(graph, *args, **kwargs)
+            finally:
+                pass

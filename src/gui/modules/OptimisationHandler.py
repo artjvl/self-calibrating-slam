@@ -28,7 +28,7 @@ class OptimisationHandler(QtCore.QObject):
             self._graph_container = graph_container
             self._optimiser.set_graph(graph_container.get_graph())
             print(
-                "gui/OptimisationHandler: Graph {}/{} set.".format(
+                "gui/OptimisationHandler: Graph '{}/{}' set.".format(
                     graph_container.get_parent().get_name(),
                     graph_container.get_name()
                 )

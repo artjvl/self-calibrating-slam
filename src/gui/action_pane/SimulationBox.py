@@ -25,5 +25,4 @@ class SimulationBox(QComboBox):
     # handlers
     def _handle_index_change(self, index):
         if index >= 0:
-            print(self._sim_types[index])
             self._simulation.set_simulation(self._sim_types[index])

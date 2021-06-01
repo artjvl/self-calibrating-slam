@@ -1,10 +1,8 @@
 from PyQt5 import QtWidgets
-from framework.optimiser.Optimiser import Optimiser
-from src.gui.modules.OptimisationHandler import OptimisationHandler
-
 from src.gui.action_pane.GraphBox import GraphBox
 from src.gui.action_pane.SolverBox import SolverBox
 from src.gui.modules.Container import TopContainer
+from src.gui.modules.OptimisationHandler import OptimisationHandler
 
 
 class OptimisationPane(QtWidgets.QWidget):

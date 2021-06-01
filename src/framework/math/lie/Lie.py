@@ -89,6 +89,13 @@ class Lie(Dimensional):
         pass
 
     # print
+    def to_string(
+            self,
+            precision: tp.Optional[int] = None,
+            suppress_small: bool = False
+    ):
+        return self.matrix().to_string(precision=precision, suppress_small=suppress_small)
+
     def __str__(self):
         return str(self.matrix())
 

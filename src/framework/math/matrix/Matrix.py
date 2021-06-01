@@ -36,10 +36,16 @@ class Matrix(object):
     def ones(cls) -> SubMatrix:
         pass
 
+    def to_string(
+            self,
+            precision: tp.Optional[int] = None,
+            suppress_small: bool = False
+    ) -> str:
+        return np.array2string(self.array(), precision=precision, suppress_small=suppress_small)
+
     # print
     def __str__(self):
-        return np.array2string(
-            self.array(),
+        return self.to_string(
             precision=3,
             suppress_small=True
         )

@@ -1,13 +1,14 @@
 import typing as tp
 
 from PyQt5 import QtCore, QtWidgets, QtGui
-
 from src.framework.graph.FactorGraph import SubElement, FactorNode, FactorEdge
 from src.framework.graph.Graph import Graph, SubGraph
-from src.framework.graph.protocols.Visualisable import SubVisualisable
+from src.framework.graph.protocols.Visualisable import SubVisualisable, Visualisable
+from src.framework.graph.protocols.visualisable.DrawEdge import DrawEdge
 from src.framework.graph.protocols.visualisable.DrawPoint import DrawPoint
 from src.gui.info_pane.InspectorTree import InspectorTree
 from src.gui.modules.Container import TopContainer, GraphContainer, ElementContainer, SubContainer, TrajectoryContainer
+from src.gui.modules.PopUp import PopUp
 from src.gui.viewer.Viewer import Viewer
 
 
@@ -170,13 +171,21 @@ class BrowserTree(QtWidgets.QTreeWidget):
 
                     # create menu
                     menu = QtWidgets.QMenu()
+                    action_load = QtWidgets.QAction('&Load', self)
+                    menu.addAction(action_load)
+                    action_load_true = QtWidgets.QAction('Load true', self)
+                    menu.addAction(action_load_true)
                     action_delete = QtWidgets.QAction('&Delete', self)
                     menu.addAction(action_delete)
 
                     # select action
                     action: QtWidgets.QAction = menu.exec_(self.mapToGlobal(point))
-                    if action == action_delete:
-                        top_container.remove_id(trajectory_container.get_id())
+                    if action == action_load:
+                        PopUp.load_with_callback(trajectory_container.add_graph)
+                    elif action == action_load_true:
+                        PopUp.load_with_callback(trajectory_container.add_true_graph)
+                    elif action == action_delete:
+                        trajectory_container.remove()
 
                 elif isinstance(obj, GraphContainer):
                     graph_container: GraphContainer = obj
@@ -204,13 +213,16 @@ class BrowserTree(QtWidgets.QTreeWidget):
                         trajectory_container.set_as_true(graph)
 
                 # if topological node
-                elif isinstance(obj, DrawPoint):
+                elif isinstance(obj, Visualisable):
                     menu = QtWidgets.QMenu()
                     action_focus = QtWidgets.QAction('&Focus', self)
                     menu.addAction(action_focus)
                     action = menu.exec_(self.mapToGlobal(point))
                     if action == action_focus:
-                        self._viewer.focus(obj.draw_point())
+                        if isinstance(obj, DrawPoint):
+                            self._viewer.focus(obj.draw_point())
+                        elif isinstance(obj, DrawEdge):
+                            self._viewer.focus(obj.draw_nodeset()[0])
 
     def _handle_checked(self, item: QtWidgets.QTreeWidgetItem, column: int):
         checked: bool = item.checkState(column) == QtCore.Qt.Checked
