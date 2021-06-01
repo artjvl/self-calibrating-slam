@@ -33,8 +33,12 @@ namespace g2o {
 
             SE2 delta = x1.inverse() * x2;
             SE2 error;
+
+            // decomposition: estimate = delta - parameters
             if (interpretation == "SCALE") {
-                error = _inverseMeasurement * SE2(par.asDiagonal() * delta.toVector());
+                Eigen::Matrix<double, 3, 3> diagonal = par.asDiagonal();
+                Vector3 scaled = diagonal.inverse() * delta.toVector();
+                error = _inverseMeasurement * SE2(scaled);
             } else {
                 error = _inverseMeasurement * delta;
             }

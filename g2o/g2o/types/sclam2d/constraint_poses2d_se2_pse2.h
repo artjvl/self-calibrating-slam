@@ -33,10 +33,12 @@ namespace g2o {
 
             SE2 delta = x1.inverse() * x2;
             SE2 error;
+
+            // decomposition: estimate = delta - parameters
             if (interpretation == "BIAS") {
-                error = _inverseMeasurement * (delta * par);
+                error = _inverseMeasurement * (delta * par.inverse());
             } else if (interpretation == "OFFSET") {
-                error = _inverseMeasurement * (par * delta * par.inverse());
+                error = _inverseMeasurement * (par.inverse() * delta * par);
             } else {
                 error = _inverseMeasurement * delta;
             }
