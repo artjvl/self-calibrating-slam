@@ -97,7 +97,7 @@ class GraphParser(object):
             tag: str = words[0]
             if tag == 'FIX':
                 id_: int = int(words[1])
-                node = graph.get_node(id_)
+                node = nodes[id_]
                 node.fix()
             else:
                 element = cls._database.from_tag(tag)

@@ -24,7 +24,7 @@ class BaseGraph(Printable):
         self._sorted.add(node)
 
     def get_nodes(self) -> tp.List[SubBaseNode]:
-        return list(self._nodes.values())
+        return [self._nodes[key] for key in sorted(self._nodes)]
 
     def get_node(self, id_: int) -> SubBaseNode:
         assert self.contains_id(id_), f'{id_} not present in {self.to_unique()}.'
