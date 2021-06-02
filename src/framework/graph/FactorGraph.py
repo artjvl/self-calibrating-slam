@@ -102,6 +102,15 @@ class FactorGraph(BaseGraph):
                 count += 1
         return rpe/count
 
+    def get_subgraphs(self) -> tp.List[SubFactorGraph]:
+        graphs: tp.List[SubFactorGraph] = super().get_subgraphs()
+        if self.has_true():
+            true_graphs: tp.List[SubFactorGraph] = self.get_true().get_subgraphs()
+            for i, graph in graphs:
+                true_graph: SubFactorGraph = true_graphs[i]
+                graph.assign_true(true_graph)
+        return graphs
+
 
 T = tp.TypeVar('T')
 

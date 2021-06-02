@@ -85,7 +85,8 @@ class GraphParser(object):
         graph.set_path(file)
 
         reader: TextIO = file.open('r')
-        lines = reader.readlines()
+        lines: tp.List[str] = reader.readlines()
+        nodes: tp.Dict[int, SubFactorNode] = {}
 
         line: str
         for i, line in enumerate(lines):
@@ -104,12 +105,16 @@ class GraphParser(object):
                     id_: int = int(words[1])
                     element.set_id(id_)
                     element.read(words[2:])
-                    graph.add_node(element)
+                    nodes[id_] = element
+                    # graph.add_node(element)
                 elif isinstance(element, FactorEdge):
                     cardinality: int = element.get_cardinality()
                     node_ids: tp.List[int] = [int(id_) for id_ in words[1: 1 + cardinality]]
                     for id_ in node_ids:
-                        node: SubFactorNode = graph.get_node(id_)
+                        assert id_ in nodes
+                        node: SubFactorNode = nodes[id_]
+                        if not graph.contains_id(id_):
+                            graph.add_node(node)
                         element.add_node(node)
                     element.read(words[1 + cardinality:])
                     graph.add_edge(element)

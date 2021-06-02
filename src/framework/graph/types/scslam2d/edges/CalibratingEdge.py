@@ -1,7 +1,7 @@
 import typing as tp
 from abc import ABC, abstractmethod
 
-from src.framework.graph.BaseGraph import Node
+from src.framework.graph.BaseGraph import SubBaseNode
 from src.framework.graph.FactorGraph import FactorEdge
 from src.framework.graph.data import SubData, SubDataSquare
 from src.framework.graph.data.DataFactory import DataFactory
@@ -72,7 +72,7 @@ class CalibratingEdge(tp.Generic[T], FactorEdge[T], ABC):
         return self._info_matrix.get_value()
 
     # override
-    def add_node(self, node: Node) -> None:
+    def add_node(self, node: SubBaseNode) -> None:
         assert isinstance(node, CalibratingNode)
 
         if isinstance(node, ParameterNode):
