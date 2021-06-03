@@ -1,5 +1,5 @@
+from src.framework.graph.FactorGraph import SubFactorNode
 from src.framework.graph.types.scslam2d.edges.CalibratingEdgeSE2 import CalibratingEdgeSE2
-from src.framework.graph.types.scslam2d.nodes.CalibratingNode import SubCalibratingNode
 from src.framework.graph.types.scslam2d.nodes.topological import NodeV2
 from src.framework.graph.types.scslam2d.nodes.topological.NodeSE2 import NodeSE2
 from src.framework.math.matrix.vector import Vector2
@@ -10,7 +10,7 @@ class EdgePosePoint2DV2(CalibratingEdgeSE2):
 
     def __init__(
             self,
-            *nodes: SubCalibratingNode
+            *nodes: SubFactorNode
     ):
         if nodes:
             assert isinstance(nodes[0], NodeSE2)

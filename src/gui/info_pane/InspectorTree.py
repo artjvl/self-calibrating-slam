@@ -1,10 +1,9 @@
 import typing as tp
 
 from PyQt5 import QtGui, QtWidgets
-from src.framework.graph.FactorGraph import SubFactorEdge, SubFactorNode, SubElement
+from src.framework.graph.FactorGraph import SubFactorEdge, SubFactorNode, SubElement, FactorNode
 from src.framework.graph.Graph import SubGraph
 from src.framework.graph.data.DataFactory import Supported
-from src.framework.graph.types.scslam2d.nodes.CalibratingNode import CalibratingNode
 from src.framework.graph.types.scslam2d.nodes.information.InformationNode import InformationNode
 from src.framework.graph.types.scslam2d.nodes.parameter.ParameterNode import ParameterNode
 from src.framework.math.Dimensional import Dimensional
@@ -12,7 +11,6 @@ from src.framework.math.lie.Lie import Lie
 from src.framework.math.lie.rotation.SO import SO
 from src.framework.math.lie.transformation import SE2
 from src.framework.math.lie.transformation.SE import SE
-from src.framework.math.matrix.vector import Vector3
 
 Item = tp.Union[QtWidgets.QTreeWidget, QtWidgets.QTreeWidgetItem]
 
@@ -88,7 +86,7 @@ class InspectorTree(QtWidgets.QTreeWidget):
         # top
         self._construct_tree_property(root, 'id', str(node.get_id()))
         self._construct_tree_property(root, 'is_fixed', str(node.is_fixed()))
-        if isinstance(node, CalibratingNode):
+        if isinstance(node, FactorNode):
             if isinstance(node, ParameterNode):
                 self._construct_tree_property(root, 'interpretation', node.get_interpretation())
             elif isinstance(node, InformationNode):
@@ -125,7 +123,7 @@ class InspectorTree(QtWidgets.QTreeWidget):
     ):
         # top
         self._construct_tree_property(root, 'cardinality', str(edge.get_cardinality()))
-        self._construct_tree_property_from_value(root, 'information', edge.get_information())
+        self._construct_tree_property_from_value(root, 'information', edge.get_info_matrix())
 
         # nodes
         nodes = edge.get_nodes()

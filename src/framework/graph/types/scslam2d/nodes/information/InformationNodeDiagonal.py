@@ -8,11 +8,11 @@ class InformationNodeDiagonal(InformationNode):
 
     def get_matrix(self) -> SubSquare:
         diagonal: tp.List[float] = self.get_value().to_list()
-        return SquareFactory.from_dim(self.get_dimension()).from_diagonal(diagonal)
+        return SquareFactory.from_dim(self.get_dim()).from_diagonal(diagonal)
 
     @classmethod
     def get_length(cls) -> int:
-        return cls.get_dimension()
+        return cls.get_dim()
 
 
 class InformationNodeDiagonal2(InformationNodeDiagonal):

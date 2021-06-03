@@ -69,6 +69,8 @@ class BaseGraph(Printable):
 
 class BaseNode(Printable):
 
+    _id: int
+
     def __init__(
             self,
             id_: int = 0
@@ -90,19 +92,22 @@ class BaseNode(Printable):
 
 class BaseEdge(Printable):
 
+    _nodes: tp.Dict[int, SubBaseNode]
+
     def __init__(
             self,
             *nodes: SubBaseNode
     ):
         super().__init__()
-        self._nodes: tp.List[SubBaseNode] = []
+        self._nodes = {}
         for node in nodes:
             self.add_node(node)
 
     # nodes
     def add_node(self, node: SubBaseNode) -> None:
-        assert node not in self._nodes, f'{node.to_unique()} already present in {self.to_unique()}.'
-        self._nodes.append(node)
+        id_: int = node.get_id()
+        assert id_ not in self._nodes, f'{node.to_unique()} already present in {self.to_unique()}.'
+        self._nodes[id_] = node
 
     # def set_node(self, index: int, node: Node):
     #     assert 0 <= index < len(self._nodes), f'Index {index} out of bounds.'
@@ -110,11 +115,11 @@ class BaseEdge(Printable):
     #     self._nodes[index] = node
 
     def get_nodes(self) -> tp.List[SubBaseNode]:
-        return self._nodes
+        return [self._nodes[key] for key in sorted(self._nodes)]
 
-    def get_node(self, index: int) -> SubBaseNode:
-        assert 0 <= index < len(self._nodes), f'Index {index} out of bounds.'
-        return self._nodes[index]
+    def get_node(self, id_: int) -> SubBaseNode:
+        assert id_ in self._nodes
+        return self._nodes[id_]
 
     def get_node_ids(self) -> tp.List[int]:
         return [node.get_id() for node in self.get_nodes()]

@@ -1,7 +1,7 @@
 import typing as tp
 from abc import abstractmethod
 
-from src.framework.graph.types.scslam2d.nodes.CalibratingNode import CalibratingNode
+from src.framework.graph.FactorGraph import FactorNode
 from src.framework.math.lie.transformation import SE2
 from src.framework.math.matrix.vector import Vector2
 
@@ -9,7 +9,7 @@ SubParameterNode = tp.TypeVar('SubParameterNode', bound='ParameterNode')
 T = tp.TypeVar('T')
 
 
-class ParameterNode(tp.Generic[T], CalibratingNode[T]):
+class ParameterNode(tp.Generic[T], FactorNode[T]):
 
     def __init__(
             self,

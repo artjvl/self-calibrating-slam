@@ -26,8 +26,13 @@ class DataVector(Data[SubVector]):
         floats: tp.List[float] = self.get_value().to_list()
         return Parser.list_to_words(floats)
 
+    def oplus(self, delta: SubVector) -> SubVector:
+        assert self.has_value()
+        assert delta.get_dimension() == self.get_dim()
+        return self._type(self.get_value().array() + delta.array())
+
     @classmethod
-    def get_length(cls) -> int:
+    def get_dim(cls) -> int:
         return cls._type.get_dimension()
 
 

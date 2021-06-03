@@ -1,13 +1,13 @@
 import typing as tp
 
 from src.framework.graph.Database import Database
+from src.framework.graph.FactorGraph import SubFactorNode, FactorNode
 from src.framework.graph.types.scslam2d.edges.CalibratingEdge import CalibratingEdge, SubCalibratingEdge
-from src.framework.graph.types.scslam2d.nodes.CalibratingNode import CalibratingNode, SubCalibratingNode
 from src.framework.graph.types.scslam2d.nodes.information.InformationNode import SubInformationNode
 from src.framework.graph.types.scslam2d.nodes.parameter.ParameterNode import SubParameterNode
 from src.utils.TwoWayDict import TwoWayDict
 
-Element = tp.Union[SubCalibratingNode, SubCalibratingEdge]
+Element = tp.Union[SubFactorNode, SubCalibratingEdge]
 
 
 class SuffixDatabase(Database):
@@ -54,7 +54,7 @@ class SuffixDatabase(Database):
         element: Element = self._elements[tag]()
 
         # if element is a node
-        if isinstance(element, CalibratingNode):
+        if isinstance(element, FactorNode):
             assert not suffixes, f"'{suffixes}' are unprocessed."
 
         # if element is an edge
@@ -73,7 +73,7 @@ class SuffixDatabase(Database):
         tag: str = self._elements[type(element)]
 
         # if element is a node
-        if isinstance(element, CalibratingNode):
+        if isinstance(element, FactorNode):
             return f"{tag}"
 
         # if element is an edge

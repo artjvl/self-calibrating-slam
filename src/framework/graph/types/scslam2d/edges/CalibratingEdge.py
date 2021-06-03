@@ -2,44 +2,36 @@ import typing as tp
 from abc import ABC, abstractmethod
 
 from src.framework.graph.BaseGraph import SubBaseNode
-from src.framework.graph.FactorGraph import FactorEdge
-from src.framework.graph.data import SubData, SubDataSquare
-from src.framework.graph.data.DataFactory import DataFactory
-from src.framework.graph.types.scslam2d.nodes.CalibratingNode import CalibratingNode, SubCalibratingNode
+from src.framework.graph.FactorGraph import FactorEdge, SubFactorNode, FactorNode
 from src.framework.graph.types.scslam2d.nodes.information.InformationNode import InformationNode, SubInformationNode
 from src.framework.graph.types.scslam2d.nodes.parameter.ParameterNode import ParameterNode, SubParameterNode
-from src.framework.math.matrix.square import SubSquare, SquareFactory
 
 SubCalibratingEdge = tp.TypeVar('SubCalibratingEdge', bound='CalibratingEdge')
 T = tp.TypeVar('T')
 
 
 class CalibratingEdge(tp.Generic[T], FactorEdge[T], ABC):
-    _type: tp.Type[T]
+
     _num_endpoints: int
 
     def __init__(
             self,
-            *nodes: SubCalibratingNode
+            *nodes: SubFactorNode
     ):
         assert len(nodes) in (0, self._num_endpoints)
 
         self._num_additional: int = 0
-        self._endpoints: tp.List[SubCalibratingNode] = []
+        self._endpoints: tp.List[SubFactorNode] = []
         self._parameters: tp.List[SubParameterNode] = []
         self._info_node: tp.Optional[SubInformationNode] = None
         super().__init__(*nodes)
-
-        self._measurement: SubData = DataFactory.from_type(self.get_type())()
-        self._info_matrix: SubDataSquare = DataFactory.from_value(
-            SquareFactory.from_dim(self.get_dimension()).identity()
-        )
 
     # attributes
     def get_cardinality(self) -> int:
         return self._num_endpoints + self._num_additional
 
     def set_num_additional(self, num_additional: int) -> None:
+        """ Sets the number of additional (beyond the number of topological) nodes. """
         self._num_additional = num_additional
 
     @abstractmethod
@@ -47,33 +39,9 @@ class CalibratingEdge(tp.Generic[T], FactorEdge[T], ABC):
         """ Returns a (topological) measure (i.e., 'value') inferred by the connected (topological) nodes. """
         pass
 
-    # measurement
-    def set_measurement(self, measurement: T) -> None:
-        self._measurement.set_value(measurement)
-
-    def get_measurement(self) -> T:
-        assert self._measurement.has_value()
-        return self._measurement.get_value()
-
-    @classmethod
-    def get_type(cls) -> tp.Type[T]:
-        return cls._type
-
-    @classmethod
-    def get_dimension(cls) -> int:
-        return DataFactory.from_type(cls.get_type()).get_length()
-
-    # (information) matrix
-    def set_information(self, matrix: SubSquare) -> None:
-        self._info_matrix.set_value(matrix)
-
-    def get_information(self) -> SubSquare:
-        assert self._info_matrix.has_value()
-        return self._info_matrix.get_value()
-
     # override
     def add_node(self, node: SubBaseNode) -> None:
-        assert isinstance(node, CalibratingNode)
+        assert isinstance(node, FactorNode)
 
         if isinstance(node, ParameterNode):
             self.add_parameter(node)
@@ -83,11 +51,11 @@ class CalibratingEdge(tp.Generic[T], FactorEdge[T], ABC):
             self.add_endpoint(node)
 
     # endpoints
-    def add_endpoint(self, node: CalibratingNode):
+    def add_endpoint(self, node: FactorNode):
         self._endpoints.append(node)
         super().add_node(node)
 
-    def get_endpoints(self) -> tp.List[SubCalibratingNode]:
+    def get_endpoints(self) -> tp.List[SubFactorNode]:
         return self._endpoints
 
     # parameter
@@ -103,7 +71,7 @@ class CalibratingEdge(tp.Generic[T], FactorEdge[T], ABC):
 
     # information
     def add_info_node(self, node: SubInformationNode):
-        assert self.get_dimension() == node.get_dimension()
+        assert self.get_dim() == node.get_dimension()
         self._info_node = node
         super().add_node(node)
 

@@ -40,7 +40,7 @@ class Sensor(tp.Generic[T]):
     # measurement-type
     @classmethod
     def get_dimension(cls):
-        return DataFactory.from_type(cls.get_type()).get_length()
+        return DataFactory.from_type(cls.get_type()).get_dim()
 
     @classmethod
     def get_type(cls) -> tp.Type[SubData]:
@@ -120,7 +120,7 @@ class Sensor(tp.Generic[T]):
             edge.add_parameter(parameter)
 
         # add information
-        edge.set_information(self._info_matrix)
+        edge.set_info_matrix(self._info_matrix)
         if self.has_info_node():
             edge.add_info_node(self._info_node)
 

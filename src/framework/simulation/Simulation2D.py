@@ -5,7 +5,6 @@ from src.framework.graph.Graph import SubGraph, Graph
 from src.framework.graph.data.DataFactory import Supported
 from src.framework.graph.types.scslam2d.edges import EdgeFactory
 from src.framework.graph.types.scslam2d.edges.CalibratingEdge import SubCalibratingEdge
-from src.framework.graph.types.scslam2d.nodes.CalibratingNode import SubCalibratingNode
 from src.framework.graph.types.scslam2d.nodes.information.InformationNode import SubInformationNode
 from src.framework.graph.types.scslam2d.nodes.parameter.ParameterNode import SubParameterNode
 from src.framework.graph.types.scslam2d.nodes.topological import NodeSE2
@@ -52,7 +51,7 @@ class Simulation2D(object):
             measurement: Supported,
             sensor_id: str
     ) -> SubGraph:
-        nodes: tp.List[SubCalibratingNode] = [self._graph.get_node(id_) for id_ in ids]
+        nodes: tp.List[SubFactorNode] = [self._graph.get_node(id_) for id_ in ids]
         edge: SubCalibratingEdge = EdgeFactory.from_measurement_nodes(measurement, *nodes)
 
         sensor: SubSensor = self.get_sensor(sensor_id)

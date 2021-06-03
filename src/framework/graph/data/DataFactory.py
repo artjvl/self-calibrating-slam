@@ -2,7 +2,7 @@ import typing as tp
 
 from src.framework.graph.data.Data import SubData
 from src.framework.graph.data.DataSE import DataSE2
-from src.framework.graph.data.DataSquare import DataSquare2, DataSquare3
+from src.framework.graph.data.DataSymmetric import DataSymmetric2, DataSymmetric3
 from src.framework.graph.data.DataVector import DataV2, DataV3, DataV6
 from src.framework.math.lie.transformation import SE2
 from src.framework.math.lie.transformation.SE import SubSE
@@ -20,8 +20,8 @@ class DataFactory(object):
         Vector2: DataV2,
         Vector3: DataV3,
         Vector6: DataV6,
-        Square2: DataSquare2,
-        Square3: DataSquare3
+        Square2: DataSymmetric2,
+        Square3: DataSymmetric3
     }
 
     @classmethod

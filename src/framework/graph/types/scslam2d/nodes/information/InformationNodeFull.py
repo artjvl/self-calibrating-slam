@@ -13,7 +13,7 @@ class InformationNodeFull(InformationNode):
 
     @classmethod
     def get_length(cls) -> int:
-        dim: int = cls.get_dimension()
+        dim: int = cls.get_dim()
         return int(dim * (dim + 1) / 2)
 
 

@@ -3,11 +3,12 @@ import typing as tp
 from src.framework.graph.data.Data import Data
 from src.framework.graph.data.Parser import Parser
 from src.framework.math.matrix.square import SubSquare, Square3, Square2
+from src.framework.math.matrix.vector import SubVector
 
-SubDataSquare = tp.TypeVar('SubDataSquare', bound='DataSquare', covariant=True)
+SubDataSymmetric = tp.TypeVar('SubDataSymmetric', bound='DataSquare', covariant=True)
 
 
-class DataSquare(Data[SubSquare]):
+class DataSymmetric(Data[SubSquare]):
     _type: tp.Type[SubSquare]
 
     def __init__(
@@ -26,15 +27,21 @@ class DataSquare(Data[SubSquare]):
         floats: tp.List[float] = Parser.symmetric_to_list(self.get_value())
         return Parser.list_to_words(floats)
 
+    def oplus(self, delta: SubVector) -> SubSquare:
+        assert self.has_value()
+        assert delta.get_dimension() == self.get_dim()
+        symmetric: SubSquare = Parser.list_to_symmetric(delta.to_list())
+        return self._type(self.get_value().array() + symmetric.array())
+
     @classmethod
-    def get_length(cls) -> int:
+    def get_dim(cls) -> int:
         dim: int = cls._type.get_dimension()
         return int((dim + 1) * dim / 2)
 
 
-class DataSquare2(DataSquare):
+class DataSymmetric2(DataSymmetric):
     _type = Square2
 
 
-class DataSquare3(DataSquare):
+class DataSymmetric3(DataSymmetric):
     _type = Square3
