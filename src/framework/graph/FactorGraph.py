@@ -326,21 +326,21 @@ class FactorEdge(tp.Generic[T], BaseEdge, ReadWrite):
 
         jacobian: List2D = []
         for i in range(node.get_dim()):
-            edge: SubFactorEdge = copy.deepcopy(self)
-            node: SubFactorNode = edge.get_node(id_)
+            edge_copy: SubFactorEdge = copy.deepcopy(self)
+            node_copy: SubFactorNode = edge_copy.get_node(id_)
 
-            mean: SubData = node._measurement
-            unit_vector: SubVector = VectorFactory.from_dim(self.get_dim())
+            mean: SubData = node_copy._value
+            unit_vector: SubVector = VectorFactory.from_dim(self.get_dim()).zeros()
 
             unit_vector[i] = delta
             plus: T = mean.oplus(unit_vector)
-            node.set_value(plus)
-            plus_error: SubVector = edge.compute_error_vector()
+            node_copy.set_value(plus)
+            plus_error: SubVector = edge_copy.compute_error_vector()
 
             unit_vector[i] = - delta
             minus: T = mean.oplus(unit_vector)
-            node.set_value(minus)
-            minus_error: SubVector = edge.compute_error_vector()
+            node_copy.set_value(minus)
+            minus_error: SubVector = edge_copy.compute_error_vector()
 
             column: SubVector = VectorFactory.from_dim(self.get_dim())(
                 (plus_error.array() + minus_error.array()) / (2 * delta)
