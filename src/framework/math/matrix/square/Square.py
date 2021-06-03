@@ -4,15 +4,17 @@ import numpy as np
 from scipy import linalg
 
 from src.framework.math.Dimensional import Dimensional
-from src.framework.math.matrix.Matrix import Matrix, SubMatrix
+from src.framework.math.matrix.Matrix import Matrix, SubMatrix, List2D
 
 SubSquare = tp.TypeVar('SubSquare', bound='Square', covariant=True)
-List2D = tp.List[tp.List[tp.Union[tp.Any]]]
 
 
 class Square(Matrix, Dimensional):
 
-    def __init__(self, data: tp.Union[List2D, np.ndarray]):
+    def __init__(
+            self,
+            data: tp.Union[List2D, np.ndarray]
+    ):
         square: np.ndarray = np.asarray(data).astype(float)
         assert square.ndim == 2
         assert square.shape[0] == square.shape[1] == self.get_dimension()

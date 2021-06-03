@@ -2,7 +2,6 @@ import typing as tp
 from abc import abstractmethod
 
 import numpy as np
-
 from src.framework.math.Dimensional import Dimensional
 from src.framework.math.matrix.square import SubSquare, SquareFactory
 from src.framework.math.matrix.vector import SubVector

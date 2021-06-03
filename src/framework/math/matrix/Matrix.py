@@ -4,15 +4,18 @@ from abc import abstractmethod
 import numpy as np
 
 SubMatrix = tp.TypeVar('SubMatrix', bound='Matrix', covariant=True)
+List2D = tp.List[tp.List[tp.Union[tp.Any]]]
 
 
 class Matrix(object):
 
+    _matrix: np.ndarray
+
     def __init__(
             self,
-            matrix: np.ndarray
+            data: tp.Union[List2D, np.ndarray]
     ):
-        self._matrix: np.ndarray = matrix
+        self._matrix = np.asarray(data).astype(float)
 
     # alternative representations
     def array(self) -> np.ndarray:
