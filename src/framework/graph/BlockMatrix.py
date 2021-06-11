@@ -60,7 +60,7 @@ class BlockMatrix(object):
         for i, _ in enumerate(self._row_block_sizes):
             for j, __ in enumerate(self._column_block_sizes):
                 if self._blocks[i][j] is not None:
-                    empty = True
+                    empty = False
                     break
         return empty
 

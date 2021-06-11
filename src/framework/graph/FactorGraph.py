@@ -4,7 +4,7 @@ from abc import abstractmethod
 
 import numpy as np
 from src.framework.graph.BaseGraph import BaseGraph, BaseNode, BaseEdge
-from src.framework.graph.BlockMatrix import SparseBlockMatrix, BlockMatrix
+from src.framework.graph.BlockMatrix import SparseBlockMatrix, BlockMatrix, SubSparseBlockMatrix, SubBlockMatrix
 from src.framework.graph.data import SubData, DataFactory
 from src.framework.graph.data import SubDataSymmetric
 from src.framework.graph.protocols.ReadWrite import ReadWrite
@@ -22,10 +22,17 @@ SubElement = tp.Union[SubFactorNode, SubFactorEdge]
 
 class FactorGraph(BaseGraph):
 
+    _true: tp.Optional[SubFactorGraph]
+    _hessian: SubSparseBlockMatrix
+
     def __init__(self):
         super().__init__()
-        self._true: tp.Optional[SubFactorGraph] = None
-        self._hessian = SparseBlockMatrix([node.get_dim() for node in self.get_nodes()])
+        self._true = None
+        self.init_gradient()
+
+    def add_node(self, node: SubFactorNode) -> None:
+        super().add_node(node)
+        self.init_gradient()
 
     def is_perturbed(self) -> bool:
         return not np.isclose(self.compute_error(), 0.)
@@ -111,11 +118,27 @@ class FactorGraph(BaseGraph):
         return rpe/count
 
     # linearise
+    def init_gradient(self) -> None:
+        node_dims: tp.List[int] = [node.get_dim() for node in self.get_nodes()]
+        self._hessian = SparseBlockMatrix(node_dims)
+
+    def get_hessian(self) -> SubSparseBlockMatrix:
+        if not self._hessian:
+            print('Linearising..')
+            self.linearise()
+        return self._hessian
+
     def linearise(self) -> None:
-        nodes: tp.List[SubFactorNode] = self.get_nodes()
-        for i, node_i in enumerate(nodes):
-            for j, node_j in enumerate(nodes):
-                self._hessian[i][j] = None
+        edges: tp.List[FactorEdge] = self.get_edges()
+        for edge in edges:
+            nodes: tp.List[FactorNode] = edge.get_nodes()
+            for node_i in nodes:
+                for node_j in nodes:
+                    i: int = self.get_node_index(node_i)
+                    j: int = self.get_node_index(node_j)
+                    # print(f'{i}-{j}')
+                    self._hessian[i, j] = self._hessian[i, j] + \
+                        edge.get_hessian()[edge.get_node_index(node_i), edge.get_node_index(node_j)]
 
     # subgraphs
     def get_subgraphs(self) -> tp.List[SubFactorGraph]:
@@ -332,12 +355,12 @@ class FactorEdge(tp.Generic[T], BaseEdge, ReadWrite):
         self._jacobian = BlockMatrix([self.get_dim()], node_dims)
         self._hessian = BlockMatrix(node_dims, node_dims)
 
-    def get_jacobian(self) -> BlockMatrix:
+    def get_jacobian(self) -> SubBlockMatrix:
         if not self._jacobian:
             self.linearise()
         return self._jacobian
 
-    def get_hessian(self) -> BlockMatrix:
+    def get_hessian(self) -> SubBlockMatrix:
         if not self._hessian:
             self.linearise()
         return self._hessian

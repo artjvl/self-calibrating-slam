@@ -30,6 +30,12 @@ class BaseGraph(Printable):
         assert self.contains_id(id_), f'{id_} not present in {self.to_unique()}.'
         return self._nodes[id_]
 
+    def get_node_index(self, node: tp.Union[int, SubBaseNode]) -> int:
+        if isinstance(node, BaseNode):
+            node = node.get_id()
+        assert isinstance(node, int)
+        return list(self._nodes.keys()).index(node)
+
     def contains_id(self, id_: int) -> bool:
         return id_ in self._nodes
 
@@ -118,7 +124,7 @@ class BaseEdge(Printable):
         return list(self._nodes.values())
 
     def get_node(self, id_: int) -> SubBaseNode:
-        assert id_ in self._nodes
+        assert self.contains_id(id_)
         return self._nodes[id_]
 
     def get_node_index(self, node: tp.Union[int, SubBaseNode]) -> int:
@@ -129,6 +135,9 @@ class BaseEdge(Printable):
 
     def get_node_ids(self) -> tp.List[int]:
         return [node.get_id() for node in self.get_nodes()]
+
+    def contains_id(self, id_: int) -> bool:
+        return id_ in self._nodes
 
     # Printable
     def to_id(self) -> str:

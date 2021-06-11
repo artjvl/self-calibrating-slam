@@ -1,3 +1,4 @@
+import copy
 import typing as tp
 from abc import abstractmethod
 
@@ -23,9 +24,12 @@ class Matrix(object):
         return self._matrix
 
     # operators
-    def __iadd__(self, other: SubMatrix):
+    def __iadd__(self, other: SubMatrix) -> None:
         assert other.shape() == self.shape()
         self._matrix += other.array()
+
+    def __add__(self, other: SubMatrix) -> SubMatrix:
+        return type(self)(self.array() + other.array())
 
     # access
     def __getitem__(self, item):
@@ -37,6 +41,9 @@ class Matrix(object):
     # properties
     def shape(self) -> tp.Tuple[int, int]:
         return self._matrix.shape
+
+    def is_zero(self) -> bool:
+        return not self._matrix.any()
 
     # print
     def to_string(

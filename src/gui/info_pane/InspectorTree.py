@@ -65,6 +65,21 @@ class InspectorTree(QtWidgets.QTreeWidget):
             self._construct_tree_property(sub_metrics, 'rpe_rotation', str(graph.compute_rpe_rotation()))
             sub_metrics.setExpanded(True)
 
+        # jacobian/hessian
+        sub_linearisation = self._construct_tree_property(root, 'Linearisation', '', bold=True)
+        nodes: tp.List[SubFactorNode] = graph.get_nodes()
+        hessian: SubBlockMatrix = graph.get_hessian()
+        sub_hessian = self._construct_tree_property_from_value(sub_linearisation, 'Hessian', hessian.matrix())
+        for i, node_i in enumerate(nodes):
+            for j, node_j in enumerate(nodes):
+                if not hessian[i, j].is_zero():
+                    self._construct_tree_property_from_value(
+                        sub_hessian,
+                        f'({node_i.get_id()}, {node_j.get_id()})',
+                        hessian[i, j]
+                    )
+        sub_linearisation.setExpanded(True)
+
         # properties
         sub_properties = self._construct_tree_property(root, 'Properties', '', bold=True)
         self._construct_tree_property(sub_properties, 'path', str(graph.get_path()))
@@ -174,7 +189,7 @@ class InspectorTree(QtWidgets.QTreeWidget):
                     f'({node_i.get_id()}, {node_j.get_id()})',
                     hessian[i, j]
                 )
-        
+
         sub_linearisation.setExpanded(True)
 
         # root.expandAll()
