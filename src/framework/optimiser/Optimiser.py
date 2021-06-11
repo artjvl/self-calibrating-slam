@@ -110,14 +110,17 @@ class Optimiser(object):
         path_summary: Path = (root / (relative_to + '/summary.g2o')).resolve()
 
         solver_string: str = self.get_solver_string()
-        process = subprocess.run([
+        commands: tp.List[str] = [
             str(path_g2o_bin),
             '-solver', solver_string,
             '-o', str(path_output),
             '-v',
-            '-summary', str(path_summary),
+            # '-summary', str(path_summary),
+            '-computeMarginals',
             str(path_input)
-        ])
+        ]
+        print(f"framework/Optimiser: Issuing command '{' '.join(commands)}'")
+        process = subprocess.run(commands)
 
         graph: Graph = GraphParser.load(path_output)
         return graph
