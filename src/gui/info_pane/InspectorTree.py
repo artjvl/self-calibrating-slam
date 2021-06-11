@@ -1,6 +1,7 @@
 import typing as tp
 
 from PyQt5 import QtGui, QtWidgets
+from src.framework.graph.BlockMatrix import SubBlockMatrix
 from src.framework.graph.FactorGraph import SubFactorEdge, SubFactorNode, SubElement, FactorNode
 from src.framework.graph.Graph import SubGraph
 from src.framework.graph.data.DataFactory import Supported
@@ -157,12 +158,11 @@ class InspectorTree(QtWidgets.QTreeWidget):
         sub_estimate = self._construct_tree_property(root, 'Estimate', '', bold=True)
         self._construct_value_tree(sub_estimate, edge.get_estimate())
 
-        # jacobians
-        jacobians = edge.get_jacobians()
-        sub_jacobians = self._construct_tree_property(root, 'Jacobians', '', bold=True)
-        for node in nodes:
-            self._construct_tree_property_from_value(sub_jacobians, str(node.get_id()), jacobians[edge.get_node_index(node)])
-        sub_jacobians.setExpanded(True)
+        # jacobian/hessian
+        jacobian: SubBlockMatrix = edge.get_jacobian()
+        self._construct_tree_property_from_value(root, 'Jacobian', jacobian.matrix())
+        hessian: SubBlockMatrix = edge.get_hessian()
+        self._construct_tree_property_from_value(root, 'Hessian', hessian.matrix())
 
         # root.expandAll()
 

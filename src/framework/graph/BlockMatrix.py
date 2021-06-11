@@ -5,6 +5,9 @@ from scipy import linalg
 
 from src.framework.math.matrix.Matrix import SubMatrix, Matrix
 
+SubBlockMatrix = tp.TypeVar('SubBlockMatrix', bound='BlockMatrix', covariant=True)
+SubSparseBlockMatrix = tp.TypeVar('SubSparseBlockMatrix', bound='SparseBlockMatrix', covariant=True)
+
 
 class BlockMatrix(object):
 
@@ -75,6 +78,9 @@ class BlockMatrix(object):
                     for jj in range(column):
                         array[row_index + ii, column_index + jj] = block[ii, jj]
         return array
+
+    def matrix(self) -> SubMatrix:
+        return Matrix(self.array())
 
     def inverse(self) -> np.ndarray:
         array = self.array()

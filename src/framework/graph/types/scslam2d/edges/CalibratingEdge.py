@@ -49,7 +49,6 @@ class CalibratingEdge(tp.Generic[T], FactorEdge[T], ABC):
             self.add_info_node(node)
         else:
             self.add_endpoint(node)
-        super().add_node(node)
 
     def get_nodes(self) -> tp.List[SubFactorNode]:
         nodes: tp.List[SubFactorNode] = []
@@ -64,6 +63,7 @@ class CalibratingEdge(tp.Generic[T], FactorEdge[T], ABC):
     def add_endpoint(self, node: FactorNode):
         assert len(self._endpoints) < self._num_endpoints
         self._endpoints.append(node)
+        super().add_node(node)
 
     def get_endpoints(self) -> tp.List[SubFactorNode]:
         return self._endpoints

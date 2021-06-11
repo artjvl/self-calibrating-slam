@@ -227,6 +227,7 @@ class FactorEdge(tp.Generic[T], BaseEdge, ReadWrite):
 
     # gradient
     _jacobian: BlockMatrix
+    _hessian: BlockMatrix
 
     def __init__(
             self,
@@ -239,11 +240,11 @@ class FactorEdge(tp.Generic[T], BaseEdge, ReadWrite):
         )
 
         self._true = None
-        self.init_jacobian()
+        self.init_gradient()
 
     def add_node(self, node: SubFactorNode) -> None:
         super().add_node(node)
-        self.init_jacobian()
+        self.init_gradient()
 
     # measurement
     @classmethod
@@ -326,23 +327,34 @@ class FactorEdge(tp.Generic[T], BaseEdge, ReadWrite):
         return float(vector.array().transpose() @ information.array() @ vector.array())
 
     # linearisation
-    def init_jacobian(self) -> None:
-        self._jacobian = BlockMatrix(
-            [self.get_dim()],
-            [node.get_dim() for node in self.get_nodes()]
-        )
+    def init_gradient(self) -> None:
+        node_dims: tp.List[int] = [node.get_dim() for node in self.get_nodes()]
+        self._jacobian = BlockMatrix([self.get_dim()], node_dims)
+        self._hessian = BlockMatrix(node_dims, node_dims)
 
-    def get_jacobians(self) -> tp.List[SubMatrix]:
+    def get_jacobian(self) -> BlockMatrix:
         if not self._jacobian:
             self.linearise()
-        _, rows = self._jacobian.shape()
-        return [self._jacobian[0, row] for row in range(rows)]
+        return self._jacobian
+
+    def get_hessian(self) -> BlockMatrix:
+        if not self._hessian:
+            self.linearise()
+        return self._hessian
 
     def linearise(self) -> None:
         id_: int
         node: SubFactorNode
-        for node in self.get_nodes():
+        nodes: tp.List[SubFactorNode] = self.get_nodes()
+        for node in nodes:
             self._jacobian[0, self.get_node_index(node)] = self.central_difference(node)
+
+        for i, node_i in enumerate(nodes):
+            for j, node_j in enumerate(nodes):
+                jacobian_i: SubMatrix = self._jacobian[0, i]
+                jacobian_j: SubMatrix = self._jacobian[0, j]
+                block: SubMatrix = Matrix(jacobian_i.array().transpose() @ self.get_info_matrix().array() @ jacobian_j.array())
+                self._hessian[i, j] = block
 
     def central_difference(self, node: tp.Union[int, SubFactorNode]) -> SubMatrix:
         if isinstance(node, int):
