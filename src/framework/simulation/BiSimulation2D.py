@@ -204,7 +204,14 @@ class BiSimulation2D(object):
         return self._parameters
 
     # seed
+    def get_rng(self) -> np.random.RandomState:
+        return self._rng
+
     def set_seed(self, seed: tp.Optional[int] = None):
+        """
+        Sets the seed for the RNG of this simulation. In order for the seed to propagate to the Sensors, set the
+        seed before adding the Sensors!
+        """
         self._seed = seed
         self._rng = np.random.RandomState(self._seed)
 
