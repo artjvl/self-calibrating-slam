@@ -128,8 +128,8 @@ class InspectorTree(QtWidgets.QTreeWidget):
         # nodes
         nodes = edge.get_nodes()
         sub_nodes = self._construct_tree_property(root, 'Nodes', str(len(nodes)), bold=True)
-        for i, node in enumerate(nodes):
-            sub_node = self._construct_tree_property(sub_nodes, str(i), node.to_unique())
+        for node in nodes:
+            sub_node = self._construct_tree_property(sub_nodes, str(node.get_id()), node.to_unique())
             self._construct_node_tree(node, sub_node)
         sub_nodes.setExpanded(True)
 
@@ -156,6 +156,13 @@ class InspectorTree(QtWidgets.QTreeWidget):
         # estimate
         sub_estimate = self._construct_tree_property(root, 'Estimate', '', bold=True)
         self._construct_value_tree(sub_estimate, edge.get_estimate())
+
+        # jacobians
+        jacobians = edge.get_jacobians()
+        sub_jacobians = self._construct_tree_property(root, 'Jacobians', '', bold=True)
+        for node in nodes:
+            self._construct_tree_property_from_value(sub_jacobians, str(node.get_id()), jacobians[edge.get_node_index(node)])
+        sub_jacobians.setExpanded(True)
 
         # root.expandAll()
 

@@ -115,11 +115,17 @@ class BaseEdge(Printable):
     #     self._nodes[index] = node
 
     def get_nodes(self) -> tp.List[SubBaseNode]:
-        return [self._nodes[key] for key in sorted(self._nodes)]
+        return list(self._nodes.values())
 
     def get_node(self, id_: int) -> SubBaseNode:
         assert id_ in self._nodes
         return self._nodes[id_]
+
+    def get_node_index(self, node: tp.Union[int, SubBaseNode]) -> int:
+        if isinstance(node, BaseNode):
+            node = node.get_id()
+        assert isinstance(node, int)
+        return list(self._nodes.keys()).index(node)
 
     def get_node_ids(self) -> tp.List[int]:
         return [node.get_id() for node in self.get_nodes()]

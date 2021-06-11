@@ -4,6 +4,7 @@ from abc import abstractmethod
 
 import numpy as np
 from src.framework.graph.BaseGraph import BaseGraph, BaseNode, BaseEdge
+from src.framework.graph.BlockMatrix import SparseBlockMatrix, BlockMatrix
 from src.framework.graph.data import SubData, DataFactory
 from src.framework.graph.data import SubDataSymmetric
 from src.framework.graph.protocols.ReadWrite import ReadWrite
@@ -24,6 +25,7 @@ class FactorGraph(BaseGraph):
     def __init__(self):
         super().__init__()
         self._true: tp.Optional[SubFactorGraph] = None
+        self._hessian = SparseBlockMatrix([node.get_dim() for node in self.get_nodes()])
 
     def is_perturbed(self) -> bool:
         return not np.isclose(self.compute_error(), 0.)
@@ -108,6 +110,14 @@ class FactorGraph(BaseGraph):
                 count += 1
         return rpe/count
 
+    # linearise
+    def linearise(self) -> None:
+        nodes: tp.List[SubFactorNode] = self.get_nodes()
+        for i, node_i in enumerate(nodes):
+            for j, node_j in enumerate(nodes):
+                self._hessian[i][j] = None
+
+    # subgraphs
     def get_subgraphs(self) -> tp.List[SubFactorGraph]:
         graphs: tp.List[SubFactorGraph] = super().get_subgraphs()
         if self.has_true():
@@ -216,7 +226,7 @@ class FactorEdge(tp.Generic[T], BaseEdge, ReadWrite):
     _true: tp.Optional[SubFactorEdge]
 
     # gradient
-    _jacobians: tp.Dict[int, SubMatrix]
+    _jacobian: BlockMatrix
 
     def __init__(
             self,
@@ -229,7 +239,11 @@ class FactorEdge(tp.Generic[T], BaseEdge, ReadWrite):
         )
 
         self._true = None
-        self._jacobians = {}
+        self.init_jacobian()
+
+    def add_node(self, node: SubFactorNode) -> None:
+        super().add_node(node)
+        self.init_jacobian()
 
     # measurement
     @classmethod
@@ -312,18 +326,30 @@ class FactorEdge(tp.Generic[T], BaseEdge, ReadWrite):
         return float(vector.array().transpose() @ information.array() @ vector.array())
 
     # linearisation
-    def linearise(self) -> tp.Dict[int, SubMatrix]:
-        if not self._jacobians:
-            id_: int
-            node: SubFactorNode
-            for id_, node in self._nodes.items():
-                self._jacobians[id_] = self.central_difference(node)
-        return self._jacobians
+    def init_jacobian(self) -> None:
+        self._jacobian = BlockMatrix(
+            [self.get_dim()],
+            [node.get_dim() for node in self.get_nodes()]
+        )
 
-    def central_difference(self, node: SubFactorNode) -> SubMatrix:
+    def get_jacobians(self) -> tp.List[SubMatrix]:
+        if not self._jacobian:
+            self.linearise()
+        _, rows = self._jacobian.shape()
+        return [self._jacobian[0, row] for row in range(rows)]
+
+    def linearise(self) -> None:
+        id_: int
+        node: SubFactorNode
+        for node in self.get_nodes():
+            self._jacobian[0, self.get_node_index(node)] = self.central_difference(node)
+
+    def central_difference(self, node: tp.Union[int, SubFactorNode]) -> SubMatrix:
+        if isinstance(node, int):
+            node = self.get_node(node)
         id_: int = node.get_id()
-        delta: float = 1e-9
 
+        delta: float = 1e-9
         jacobian: List2D = []
         for i in range(node.get_dim()):
             edge_copy: SubFactorEdge = copy.deepcopy(self)

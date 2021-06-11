@@ -6,10 +6,11 @@ from src.framework.graph.data.DataSymmetric import DataSymmetric2, DataSymmetric
 from src.framework.graph.data.DataVector import DataV2, DataV3, DataV6
 from src.framework.math.lie.transformation import SE2
 from src.framework.math.lie.transformation.SE import SubSE
-from src.framework.math.matrix.square import SubSquare, Square2, Square3
+from src.framework.math.matrix.Matrix import SubMatrix
+from src.framework.math.matrix.square import Square2, Square3
 from src.framework.math.matrix.vector import Vector2, Vector3, Vector6, SubVector
 
-Supported = tp.Union[SubSE, SubVector, SubSquare]
+Supported = tp.Union[SubSE, SubVector, SubMatrix]
 
 
 class DataFactory(object):

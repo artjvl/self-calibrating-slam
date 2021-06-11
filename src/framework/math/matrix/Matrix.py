@@ -15,30 +15,30 @@ class Matrix(object):
             self,
             data: tp.Union[List2D, np.ndarray]
     ):
+        super().__init__()
         self._matrix = np.asarray(data).astype(float)
 
     # alternative representations
     def array(self) -> np.ndarray:
         return self._matrix
 
+    # operators
+    def __iadd__(self, other: SubMatrix):
+        assert other.shape() == self.shape()
+        self._matrix += other.array()
+
     # access
     def __getitem__(self, item):
         return self._matrix[item]
 
-    def __setitem__(self, key, value) -> None:
+    def __setitem__(self, key, value: float) -> None:
         self._matrix[key] = value
 
-    # alternative creators
-    @classmethod
-    @abstractmethod
-    def zeros(cls) -> SubMatrix:
-        pass
+    # properties
+    def shape(self) -> tp.Tuple[int, int]:
+        return self._matrix.shape
 
-    @classmethod
-    @abstractmethod
-    def ones(cls) -> SubMatrix:
-        pass
-
+    # print
     def to_string(
             self,
             precision: tp.Optional[int] = None,
@@ -46,7 +46,6 @@ class Matrix(object):
     ) -> str:
         return np.array2string(self.array(), precision=precision, suppress_small=suppress_small)
 
-    # print
     def __str__(self):
         return self.to_string(
             precision=3,
