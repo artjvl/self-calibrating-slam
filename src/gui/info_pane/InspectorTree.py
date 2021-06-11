@@ -159,10 +159,23 @@ class InspectorTree(QtWidgets.QTreeWidget):
         self._construct_value_tree(sub_estimate, edge.get_estimate())
 
         # jacobian/hessian
+        sub_linearisation = self._construct_tree_property(root, 'Linearisation', '', bold=True)
         jacobian: SubBlockMatrix = edge.get_jacobian()
-        self._construct_tree_property_from_value(root, 'Jacobian', jacobian.matrix())
+        sub_jacobian = self._construct_tree_property_from_value(sub_linearisation, 'Jacobian', jacobian.matrix())
+        for i, node in enumerate(nodes):
+            self._construct_tree_property_from_value(sub_jacobian, str(node.get_id()), jacobian[0, i])
+
         hessian: SubBlockMatrix = edge.get_hessian()
-        self._construct_tree_property_from_value(root, 'Hessian', hessian.matrix())
+        sub_hessian = self._construct_tree_property_from_value(sub_linearisation, 'Hessian', hessian.matrix())
+        for i, node_i in enumerate(nodes):
+            for j, node_j in enumerate(nodes):
+                self._construct_tree_property_from_value(
+                    sub_hessian,
+                    f'({node_i.get_id()}, {node_j.get_id()})',
+                    hessian[i, j]
+                )
+        
+        sub_linearisation.setExpanded(True)
 
         # root.expandAll()
 
