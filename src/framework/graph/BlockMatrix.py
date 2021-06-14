@@ -1,8 +1,6 @@
 import typing as tp
 
 import numpy as np
-from scipy import linalg
-
 from src.framework.math.matrix.Matrix import SubMatrix, Matrix
 
 SubBlockMatrix = tp.TypeVar('SubBlockMatrix', bound='BlockMatrix', covariant=True)
@@ -84,7 +82,30 @@ class BlockMatrix(object):
 
     def inverse(self) -> np.ndarray:
         array = self.array()
-        return linalg.inv(array)
+        return np.linalg.pinv(array)
+
+    @classmethod
+    def from_array(
+            cls,
+            array: np.ndarray,
+            block_sizes: tp.List[int],
+            column_block_sizes: tp.Optional[tp.List[int]] = None
+    ):
+        if column_block_sizes is None:
+            column_block_sizes = block_sizes
+        assert array.shape == (sum(block_sizes), sum(column_block_sizes))
+        matrix = cls(block_sizes, column_block_sizes)
+        for i, row in enumerate(block_sizes):
+            for j, column in enumerate(column_block_sizes):
+                row_index = sum(block_sizes[:i])
+                column_index = sum(column_block_sizes[:j])
+                matrix[i, j] = Matrix(
+                    array[
+                        row_index: row_index + block_sizes[i],
+                        column_index: column_index + column_block_sizes[j]
+                    ]
+                )
+        return matrix
 
 
 class SparseBlockMatrix(BlockMatrix):

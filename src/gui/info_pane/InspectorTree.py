@@ -1,9 +1,12 @@
+import enum
+import functools
 import typing as tp
 
 from PyQt5 import QtGui, QtWidgets
+from framework.math.matrix.Matrix import SubMatrix
 from src.framework.graph.BlockMatrix import SubBlockMatrix
 from src.framework.graph.FactorGraph import SubFactorEdge, SubFactorNode, SubElement, FactorNode
-from src.framework.graph.Graph import SubGraph
+from src.framework.graph.Graph import SubGraph, Graph
 from src.framework.graph.data.DataFactory import Supported
 from src.framework.graph.types.scslam2d.nodes.information.InformationNode import InformationNode
 from src.framework.graph.types.scslam2d.nodes.parameter.ParameterNode import ParameterNode
@@ -16,7 +19,14 @@ from src.framework.math.lie.transformation.SE import SE
 Item = tp.Union[QtWidgets.QTreeWidget, QtWidgets.QTreeWidgetItem]
 
 
+class Indicator(enum.Enum):
+    HESSIAN: int = 0
+    MARGINAL: int = 1
+
+
 class InspectorTree(QtWidgets.QTreeWidget):
+
+    obj: tp.Optional[tp.Union[SubGraph, SubFactorNode, SubFactorEdge]]
 
     # constructor
     def __init__(self, *args, **kwargs):
@@ -25,6 +35,9 @@ class InspectorTree(QtWidgets.QTreeWidget):
         self.headerItem().setText(1, 'Value')
         self.setColumnWidth(0, 180)
         self.setAlternatingRowColors(True)
+        self.itemSelectionChanged.connect(self.handle_expand)
+
+        self.obj = None
 
     # graph
     def display_graph(
@@ -39,6 +52,8 @@ class InspectorTree(QtWidgets.QTreeWidget):
             graph: SubGraph,
             root: Item
     ) -> Item:
+        self.obj = graph
+
         # sub-elements
         sub_elements = self._construct_tree_property(root, 'Elements', '', bold=True)
         element_type: tp.Type[SubElement]
@@ -67,17 +82,10 @@ class InspectorTree(QtWidgets.QTreeWidget):
 
         # jacobian/hessian
         sub_linearisation = self._construct_tree_property(root, 'Linearisation', '', bold=True)
-        nodes: tp.List[SubFactorNode] = graph.get_nodes()
-        hessian: SubBlockMatrix = graph.get_hessian()
-        sub_hessian = self._construct_tree_property_from_value(sub_linearisation, 'Hessian', hessian.matrix())
-        for i, node_i in enumerate(nodes):
-            for j, node_j in enumerate(nodes):
-                if not hessian[i, j].is_zero():
-                    self._construct_tree_property_from_value(
-                        sub_hessian,
-                        f'({node_i.get_id()}, {node_j.get_id()})',
-                        hessian[i, j]
-                    )
+        sub_hessian = self._construct_tree_property(sub_linearisation, 'Hessian', '(...)')
+        sub_hessian.obj = Indicator.HESSIAN
+        sub_marginal = self._construct_tree_property(sub_linearisation, 'Marginal', '(...)')
+        sub_marginal.obj = Indicator.MARGINAL
         sub_linearisation.setExpanded(True)
 
         # properties
@@ -85,6 +93,44 @@ class InspectorTree(QtWidgets.QTreeWidget):
         self._construct_tree_property(sub_properties, 'path', str(graph.get_path()))
         sub_properties.setExpanded(True)
         return root
+
+    def _construct_hessian(self, item: QtWidgets.QTreeWidgetItem, graph: SubGraph) -> None:
+        nodes: tp.List[SubFactorNode] = graph.get_nodes()
+        hessian: SubBlockMatrix = graph.get_hessian()
+        item.setText(1, str(hessian.shape()))
+        for i, node_i in enumerate(nodes):
+            for j, node_j in enumerate(nodes):
+                if j <= i and not hessian[i, j].is_zero():
+                    self._construct_tree_property_from_value(
+                        item,
+                        f'({node_i.get_id()}, {node_j.get_id()})',
+                        hessian[i, j]
+                    )
+
+    def _construct_marginal(self, item: QtWidgets.QTreeWidgetItem, graph: SubGraph) -> None:
+        nodes: tp.List[SubFactorNode] = graph.get_nodes()
+        marginals: tp.List[SubMatrix] = graph.get_marginals()
+        item.setText(1, f'({len(marginals)})')
+        for i, node in enumerate(nodes):
+            id_: int = node.get_id()
+            self._construct_tree_property_from_value(
+                item,
+                f'({id_}, {id_})',
+                marginals[i]
+            )
+
+    # handlers
+    def handle_expand(self):
+        item = self.currentItem()
+        if hasattr(item, 'obj'):
+            obj: Indicator = item.obj
+            if isinstance(self.obj, Graph):
+                if obj == Indicator.HESSIAN:
+                    self._construct_hessian(item, self.obj)
+                    delattr(item, 'obj')
+                elif obj == Indicator.MARGINAL:
+                    self._construct_marginal(item, self.obj)
+                    delattr(item, 'obj')
 
     # node
     def display_node(
@@ -99,6 +145,8 @@ class InspectorTree(QtWidgets.QTreeWidget):
             node: SubFactorNode,
             root: Item
     ) -> Item:
+        self.obj = node
+
         # top
         self._construct_tree_property(root, 'id', str(node.get_id()))
         self._construct_tree_property(root, 'is_fixed', str(node.is_fixed()))
@@ -137,6 +185,8 @@ class InspectorTree(QtWidgets.QTreeWidget):
             edge: SubFactorEdge,
             root: Item
     ):
+        self.obj = edge
+
         # top
         self._construct_tree_property(root, 'cardinality', str(edge.get_cardinality()))
         self._construct_tree_property_from_value(root, 'information', edge.get_info_matrix())
@@ -176,19 +226,22 @@ class InspectorTree(QtWidgets.QTreeWidget):
         # jacobian/hessian
         sub_linearisation = self._construct_tree_property(root, 'Linearisation', '', bold=True)
         jacobian: SubBlockMatrix = edge.get_jacobian()
-        sub_jacobian = self._construct_tree_property_from_value(sub_linearisation, 'Jacobian', jacobian.matrix())
+        sub_jacobian = self._construct_tree_property(sub_linearisation, 'Jacobian', str(jacobian.shape()))
         for i, node in enumerate(nodes):
             self._construct_tree_property_from_value(sub_jacobian, str(node.get_id()), jacobian[0, i])
+        sub_jacobian.setExpanded(True)
 
         hessian: SubBlockMatrix = edge.get_hessian()
-        sub_hessian = self._construct_tree_property_from_value(sub_linearisation, 'Hessian', hessian.matrix())
+        sub_hessian = self._construct_tree_property(sub_linearisation, 'Hessian', str(hessian.shape()))
         for i, node_i in enumerate(nodes):
             for j, node_j in enumerate(nodes):
-                self._construct_tree_property_from_value(
-                    sub_hessian,
-                    f'({node_i.get_id()}, {node_j.get_id()})',
-                    hessian[i, j]
-                )
+                if j <= i:
+                    self._construct_tree_property_from_value(
+                        sub_hessian,
+                        f'({node_i.get_id()}, {node_j.get_id()})',
+                        hessian[i, j]
+                    )
+        sub_hessian.setExpanded(True)
 
         sub_linearisation.setExpanded(True)
 
@@ -215,7 +268,8 @@ class InspectorTree(QtWidgets.QTreeWidget):
                     cls._construct_tree_property_from_value(root, 'inverse_jacobian', value.inverse_jacobian)
                 elif isinstance(value, SE):
                     if isinstance(value, SE2):
-                        cls._construct_tree_property_from_value(root, 'translation_angle', value.translation_angle_vector())
+                        cls._construct_tree_property_from_value(root, 'translation_angle',
+                                                                value.translation_angle_vector())
                     sub_translation = cls._construct_tree_property(root, 'translation', '')
                     cls._construct_value_tree(sub_translation, value.translation(), expanded=False)
                     sub_rotation = cls._construct_tree_property(root, 'rotation', '')

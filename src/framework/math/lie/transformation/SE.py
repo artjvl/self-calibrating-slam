@@ -23,11 +23,11 @@ class SE(Lie, ABC):
         self._rotation = rotation
 
     # operators
-    def plus(self, vector: SubVector):
+    def oplus(self, vector: SubVector):
         increment: SubSE = type(self).from_vector(vector)
         return self + increment
 
-    def minus(self, transformation: SubSE) -> SubVector:
+    def ominus(self, transformation: SubSE) -> SubVector:
         difference: SubSE = self - transformation
         return difference.vector()
 

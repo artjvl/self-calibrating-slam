@@ -10,7 +10,7 @@ class SensorSE2(Sensor[SE2]):
     def measure(self, value: SE2) -> SE2:
         # value = self.compose(value)
         noise: Vector3 = self.generate_noise()
-        return value.plus(noise)
+        return value.oplus(noise)
 
     def compose(self, value: SE2) -> SE2:
         for parameter in self._parameters:

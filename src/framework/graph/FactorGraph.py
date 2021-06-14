@@ -24,11 +24,13 @@ class FactorGraph(BaseGraph):
 
     _true: tp.Optional[SubFactorGraph]
     _hessian: SubSparseBlockMatrix
+    _covariance: tp.Optional[SubBlockMatrix]
 
     def __init__(self):
         super().__init__()
         self._true = None
         self.init_gradient()
+        self._covariance = None
 
     def add_node(self, node: SubFactorNode) -> None:
         super().add_node(node)
@@ -124,7 +126,7 @@ class FactorGraph(BaseGraph):
 
     def get_hessian(self) -> SubSparseBlockMatrix:
         if not self._hessian:
-            print('Linearising..')
+            print(f'Linearising {self.to_unique()}..')
             self.linearise()
         return self._hessian
 
@@ -139,6 +141,20 @@ class FactorGraph(BaseGraph):
                     # print(f'{i}-{j}')
                     self._hessian[i, j] = self._hessian[i, j] + \
                         edge.get_hessian()[edge.get_node_index(node_i), edge.get_node_index(node_j)]
+
+    def get_covariance(self) -> SubBlockMatrix:
+        if self._covariance is None:
+            hessian: SubSparseBlockMatrix = self.get_hessian()
+            matrix: np.ndarray = hessian.inverse()
+            self._covariance = BlockMatrix.from_array(matrix, hessian.get_row_sizes())
+        return self._covariance
+
+    def get_marginals(self) -> tp.List[SubMatrix]:
+        covariance: SubBlockMatrix = self.get_covariance()
+        marginals: tp.List[SubMatrix] = []
+        for i, _ in enumerate(covariance.get_row_sizes()):
+            marginals.append(covariance[i, i])
+        return marginals
 
     # subgraphs
     def get_subgraphs(self) -> tp.List[SubFactorGraph]:
@@ -390,7 +406,7 @@ class FactorEdge(tp.Generic[T], BaseEdge, ReadWrite):
             edge_copy: SubFactorEdge = copy.deepcopy(self)
             node_copy: SubFactorNode = edge_copy.get_node(id_)
 
-            mean: SubData = node_copy._value
+            mean: SubData = copy.deepcopy(node_copy._value)
             unit_vector: SubVector = VectorFactory.from_dim(self.get_dim()).zeros()
 
             unit_vector[i] = delta
@@ -404,7 +420,7 @@ class FactorEdge(tp.Generic[T], BaseEdge, ReadWrite):
             minus_error: SubVector = edge_copy.compute_error_vector()
 
             column: SubVector = VectorFactory.from_dim(self.get_dim())(
-                (plus_error.array() + minus_error.array()) / (2 * delta)
+                (plus_error.array() - minus_error.array()) / (2 * delta)
             )
             jacobian.append(column.to_list())
         return Matrix(np.array(jacobian).transpose())

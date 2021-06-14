@@ -30,7 +30,7 @@ class DataSE(Data[SubSE]):
     def oplus(self, delta: SubVector) -> SubSE:
         assert self.has_value()
         assert delta.get_dimension() == self.get_dim()
-        return self.get_value().plus(delta)
+        return self.get_value().oplus(delta)
 
     @classmethod
     def get_dim(cls) -> int:

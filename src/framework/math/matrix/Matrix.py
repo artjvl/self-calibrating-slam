@@ -51,7 +51,10 @@ class Matrix(object):
             precision: tp.Optional[int] = None,
             suppress_small: bool = False
     ) -> str:
-        return np.array2string(self.array(), precision=precision, suppress_small=suppress_small)
+        return np.array2string(
+            self.array(), precision=precision, suppress_small=suppress_small,
+            max_line_width=200, edgeitems=5
+        )
 
     def __str__(self):
         return self.to_string(
