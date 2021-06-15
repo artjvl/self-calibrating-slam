@@ -8,6 +8,7 @@ from src.framework.graph.types.scslam2d.edges.EdgePosePoint2DV2 import EdgePoseP
 from src.framework.graph.types.scslam2d.edges.EdgePoses2DSE2 import EdgePoses2DSE2
 from src.framework.graph.types.scslam2d.nodes.topological import NodeSE2, NodeV2
 from src.framework.math.lie.transformation import SE2
+from src.framework.math.matrix.square import SubSquare
 from src.framework.math.matrix.vector import Vector2
 
 Key = tp.Tuple[tp.Type[Supported], tp.Tuple[tp.Type[SubFactorNode], ...]]
@@ -41,6 +42,5 @@ class EdgeFactory(object):
     ) -> SubCalibratingEdge:
         node_types: tp.Tuple[tp.Type[SubFactorNode], ...] = tuple(type(node) for node in nodes)
         edge_type: tp.Type[SubCalibratingEdge] = cls.from_types_measurement_nodes(type(measurement), *node_types)
-        edge: SubCalibratingEdge = edge_type(*nodes)
-        edge.set_measurement(measurement)
+        edge: SubCalibratingEdge = edge_type(measurement, None, *nodes)
         return edge

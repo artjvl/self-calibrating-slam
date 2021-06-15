@@ -21,7 +21,7 @@ class Vector(Matrix, Dimensional):
         else:
             column = np.reshape(args, (-1, 1))
         vector = column.astype(float)
-        assert vector.shape[0] == self.get_dimension()
+        assert vector.shape[0] == self.get_dim()
         super().__init__(vector)
 
     def __add__(self, other: SubVector) -> SubVector:
@@ -56,8 +56,8 @@ class Vector(Matrix, Dimensional):
     # alternative creators
     @classmethod
     def zeros(cls) -> SubVector:
-        return cls(np.zeros((cls.get_dimension(), 1)))
+        return cls(np.zeros((cls.get_dim(), 1)))
 
     @classmethod
     def ones(cls) -> SubVector:
-        return cls(np.ones((cls.get_dimension(), 1)))
+        return cls(np.ones((cls.get_dim(), 1)))

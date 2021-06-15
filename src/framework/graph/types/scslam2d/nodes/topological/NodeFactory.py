@@ -2,7 +2,8 @@ import typing as tp
 
 from src.framework.graph.FactorGraph import SubFactorNode
 from src.framework.graph.data.DataFactory import Supported
-from src.framework.graph.types.scslam2d.nodes.topological import NodeSE2, NodeV2
+from src.framework.graph.types.scslam2d.nodes.topological.NodeSE2 import NodeSE2
+from src.framework.graph.types.scslam2d.nodes.topological.NodeV2 import NodeV2
 from src.framework.math.lie.transformation import SE2
 from src.framework.math.matrix.vector import Vector2
 

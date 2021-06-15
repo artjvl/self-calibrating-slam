@@ -5,6 +5,7 @@ from src.framework.graph.BaseGraph import SubBaseNode
 from src.framework.graph.FactorGraph import FactorEdge, SubFactorNode, FactorNode
 from src.framework.graph.types.scslam2d.nodes.information.InformationNode import InformationNode, SubInformationNode
 from src.framework.graph.types.scslam2d.nodes.parameter.ParameterNode import ParameterNode, SubParameterNode
+from src.framework.math.matrix.square import SubSquare
 
 SubCalibratingEdge = tp.TypeVar('SubCalibratingEdge', bound='CalibratingEdge')
 T = tp.TypeVar('T')
@@ -12,23 +13,30 @@ T = tp.TypeVar('T')
 
 class CalibratingEdge(tp.Generic[T], FactorEdge[T], ABC):
 
-    _num_endpoints: int
+    _num_topological: int
+    _num_additional: int
+
+    _endpoints: tp.List[SubFactorNode]
+    _parameters: tp.List[SubParameterNode]
+    _info_node: tp.Optional[SubInformationNode]
 
     def __init__(
             self,
+            value: tp.Optional[T] = None,
+            info_matrix: tp.Optional[SubSquare] = None,
             *nodes: SubFactorNode
     ):
-        assert len(nodes) in (0, self._num_endpoints)
+        assert len(nodes) in (0, self._num_topological)
 
-        self._num_additional: int = 0
-        self._endpoints: tp.List[SubFactorNode] = []
-        self._parameters: tp.List[SubParameterNode] = []
-        self._info_node: tp.Optional[SubInformationNode] = None
-        super().__init__(*nodes)
+        self._num_additional = 0
+        self._endpoints = []
+        self._parameters = []
+        self._info_node = None
+        super().__init__(value, info_matrix, *[node for node in nodes if node is not None])
 
     # attributes
     def get_cardinality(self) -> int:
-        return self._num_endpoints + self._num_additional
+        return self._num_topological + self._num_additional
 
     def set_num_additional(self, num_additional: int) -> None:
         """ Sets the number of additional (beyond the number of topological) nodes. """
@@ -61,7 +69,7 @@ class CalibratingEdge(tp.Generic[T], FactorEdge[T], ABC):
 
     # endpoints
     def add_endpoint(self, node: FactorNode):
-        assert len(self._endpoints) < self._num_endpoints
+        assert len(self._endpoints) < self._num_topological
         self._endpoints.append(node)
         super().add_node(node)
 
@@ -92,6 +100,11 @@ class CalibratingEdge(tp.Generic[T], FactorEdge[T], ABC):
         assert self.has_info_node(), 'No information-node is present.'
         return self._info_node
 
+    def get_info_matrix(self) -> SubSquare:
+        if self.has_info_node():
+            return self.get_info_node().get_matrix()
+        return super().get_info_matrix()
+
     # read/write
     def read(self, words: tp.List[str]) -> None:
         words = self._measurement.read_rest(words)
@@ -104,7 +117,3 @@ class CalibratingEdge(tp.Generic[T], FactorEdge[T], ABC):
         if not self.has_info_node():
             words += self._info_matrix.write()
         return words
-
-    # ReadWrite: @classmethod
-    def get_length(self) -> int:
-        return self._measurement.get_length() + (self._info_node.get_length() if self.has_info_node() else 0)

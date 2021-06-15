@@ -16,7 +16,7 @@ class DataSymmetric(Data[SubSquare]):
             value: tp.Optional[SubSquare] = None
     ):
         super().__init__(value)
-        self._size = self._type.get_dimension()
+        self._size = self._type.get_dim()
 
     def read(self, words: tp.List[str]) -> None:
         floats: tp.List[float] = Parser.words_to_list(words)
@@ -29,13 +29,13 @@ class DataSymmetric(Data[SubSquare]):
 
     def oplus(self, delta: SubVector) -> SubSquare:
         assert self.has_value()
-        assert delta.get_dimension() == self.get_dim()
+        assert delta.get_dim() == self.get_dim()
         symmetric: SubSquare = Parser.list_to_symmetric(delta.to_list())
         return self._type(self.get_value().array() + symmetric.array())
 
     @classmethod
     def get_dim(cls) -> int:
-        dim: int = cls._type.get_dimension()
+        dim: int = cls._type.get_dim()
         return int((dim + 1) * dim / 2)
 
 

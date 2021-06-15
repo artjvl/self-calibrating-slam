@@ -60,10 +60,10 @@ class BiSimulation2D(object):
     ) -> None:
         true_sensor: SubSensor = self._true.get_sensor(sensor_id)
         true_measurement: Supported = true_sensor.decompose(value)
-        self._true.add_edge(ids, true_measurement, sensor_id)
+        self._true.add_edge_from_value(ids, true_measurement, sensor_id)
 
         perturbed_measurement: Supported = true_sensor.measure(true_measurement)
-        self._perturbed.add_edge(ids, perturbed_measurement, sensor_id)
+        self._perturbed.add_edge_from_value(ids, perturbed_measurement, sensor_id)
 
     def add_poses_edge(
             self,

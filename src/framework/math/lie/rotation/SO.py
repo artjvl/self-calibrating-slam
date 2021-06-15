@@ -22,10 +22,10 @@ class SO(Lie):
     # properties
     @classmethod
     def get_size(cls) -> int:
-        return cls.get_dimension()
+        return cls.get_dim()
 
     def inverse(self) -> SubLie:
-        square: SubSquare = SquareFactory.from_dim(self.get_dimension())(np.transpose(self.array()))
+        square: SubSquare = SquareFactory.from_dim(self.get_dim())(np.transpose(self.array()))
         return type(self)(square)
 
     @abstractmethod

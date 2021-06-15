@@ -258,7 +258,7 @@ class InspectorTree(QtWidgets.QTreeWidget):
         cls._construct_tree_property(root, 'type', type(value).__name__)
         cls._construct_tree_property_from_value(root, 'value', value)
         if isinstance(value, Dimensional):
-            cls._construct_tree_property(root, 'dimension', str(value.get_dimension()))
+            cls._construct_tree_property(root, 'dimension', str(value.get_dim()))
             if isinstance(value, Lie):
                 cls._construct_tree_property(root, 'dof', str(value.get_dof()))
                 cls._construct_tree_property_from_value(root, 'vector', value.vector())

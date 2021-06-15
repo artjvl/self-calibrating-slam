@@ -1,12 +1,10 @@
 import typing as tp
 
-from src.framework.graph.FactorGraph import SubFactorNode
+from src.framework.graph.FactorGraph import SubFactorNode, SubFactorEdge
 from src.framework.graph.Graph import SubGraph, Graph
 from src.framework.graph.data.DataFactory import Supported
 from src.framework.graph.types.scslam2d.edges import EdgeFactory
 from src.framework.graph.types.scslam2d.edges.CalibratingEdge import SubCalibratingEdge
-from src.framework.graph.types.scslam2d.nodes.information.InformationNode import SubInformationNode
-from src.framework.graph.types.scslam2d.nodes.parameter.ParameterNode import SubParameterNode
 from src.framework.graph.types.scslam2d.nodes.topological import NodeSE2
 from src.framework.graph.types.scslam2d.nodes.topological.NodeFactory import NodeFactory
 from src.framework.math.lie.transformation import SE2
@@ -29,23 +27,37 @@ class Simulation2D(object):
     # add elements
     def add_node(
             self,
-            value: Supported
+            node: SubFactorNode
     ) -> SubFactorNode:
         id_: int = self.count_id(increment=True)
-        node = NodeFactory.from_value(value, id_)
+        node.set_id(id_)
         self._graph.add_node(node)
         return node
+
+    def add_node_from_value(
+            self,
+            value: Supported
+    ) -> SubFactorNode:
+        node = NodeFactory.from_value(value)
+        return self.add_node(node)
 
     def add_pose(
             self,
             pose: SE2
     ) -> NodeSE2:
-        node: NodeSE2 = self.add_node(pose)
+        node: NodeSE2 = self.add_node_from_value(pose)
         self._pose_ids.append(node.get_id())
         self._current = node
         return node
 
     def add_edge(
+            self,
+            edge: SubFactorEdge
+    ) -> SubFactorEdge:
+        self._graph.add_edge(edge)
+        return edge
+
+    def add_edge_from_value(
             self,
             ids: tp.List[int],
             measurement: Supported,
@@ -56,8 +68,7 @@ class Simulation2D(object):
 
         sensor: SubSensor = self.get_sensor(sensor_id)
         edge = sensor.extend_edge(edge)
-        self._graph.add_edge(edge)
-        return edge
+        return self.add_edge(edge)
 
     def add_odometry(
             self,
@@ -70,7 +81,7 @@ class Simulation2D(object):
         current: NodeSE2 = self.get_current()
         position: SE2 = current.get_value() + transformation
         new: NodeSE2 = self.add_pose(position)
-        self.add_edge([current.get_id(), new.get_id()], measurement, sensor_id)
+        self.add_edge_from_value([current.get_id(), new.get_id()], measurement, sensor_id)
 
     # sensors
     def add_sensor(
@@ -78,18 +89,7 @@ class Simulation2D(object):
             id_: str,
             sensor: SubSensor
     ):
-        parameter: SubParameterNode
-        for parameter in sensor.get_parameters():
-            parameter.set_id(self.count_id(increment=True))
-            # self._id_counter += 1
-            self._graph.add_node(parameter)
-
-        if sensor.has_info_node():
-            information: SubInformationNode = sensor.get_info_node()
-            information.set_id(self.count_id(increment=True))
-            # self._id_counter += 1
-            self._graph.add_node(information)
-
+        sensor.set_simulation(self)
         self._sensors[id_] = sensor
 
     def has_sensor(

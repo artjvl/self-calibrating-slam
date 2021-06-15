@@ -15,7 +15,7 @@ class DataVector(Data[SubVector]):
             value: tp.Optional[SubVector] = None
     ):
         super().__init__(value)
-        self._size = self._type.get_dimension()
+        self._size = self._type.get_dim()
 
     def read(self, words: tp.List[str]) -> None:
         floats: tp.List[float] = Parser.words_to_list(words)
@@ -28,12 +28,12 @@ class DataVector(Data[SubVector]):
 
     def oplus(self, delta: SubVector) -> SubVector:
         assert self.has_value()
-        assert delta.get_dimension() == self.get_dim()
+        assert delta.get_dim() == self.get_dim()
         return self._type(self.get_value().array() + delta.array())
 
     @classmethod
     def get_dim(cls) -> int:
-        return cls._type.get_dimension()
+        return cls._type.get_dim()
 
 
 class DataV2(DataVector):

@@ -7,7 +7,6 @@ from src.framework.graph.BaseGraph import BaseGraph, BaseNode, BaseEdge
 from src.framework.graph.BlockMatrix import SparseBlockMatrix, BlockMatrix, SubSparseBlockMatrix, SubBlockMatrix
 from src.framework.graph.data import SubData, DataFactory
 from src.framework.graph.data import SubDataSymmetric
-from src.framework.graph.protocols.ReadWrite import ReadWrite
 from src.framework.math.matrix.Matrix import SubMatrix, List2D, Matrix
 from src.framework.math.matrix.square import SquareFactory
 from src.framework.math.matrix.square import SubSquare
@@ -170,7 +169,7 @@ class FactorGraph(BaseGraph):
 T = tp.TypeVar('T')
 
 
-class FactorNode(tp.Generic[T], BaseNode, ReadWrite):
+class FactorNode(tp.Generic[T], BaseNode):
 
     # value variables
     _type: tp.Type[T]
@@ -249,12 +248,8 @@ class FactorNode(tp.Generic[T], BaseNode, ReadWrite):
         words: tp.List[str] = self._value.write()
         return words
 
-    @classmethod
-    def get_length(cls) -> int:
-        return cls.get_dim()
 
-
-class FactorEdge(tp.Generic[T], BaseEdge, ReadWrite):
+class FactorEdge(tp.Generic[T], BaseEdge):
 
     # measurement variables
     _type: tp.Type[T]
@@ -270,13 +265,17 @@ class FactorEdge(tp.Generic[T], BaseEdge, ReadWrite):
 
     def __init__(
             self,
+            measurement: tp.Optional[T] = None,
+            info_matrix: tp.Optional[SubSquare] = None,
             *nodes: SubFactorNode
     ):
         super().__init__(*nodes)
-        self._measurement = DataFactory.from_type(self.get_type())()
-        self._info_matrix = DataFactory.from_value(
-            SquareFactory.from_dim(self.get_dim()).identity()
-        )
+        self._measurement = DataFactory.from_type(self.get_type())(measurement)
+        if info_matrix is None:
+            info_matrix = DataFactory.from_value(
+                SquareFactory.from_dim(self.get_dim()).identity()
+            )
+        self._info_matrix = info_matrix
 
         self._true = None
         self.init_gradient()
@@ -362,7 +361,7 @@ class FactorEdge(tp.Generic[T], BaseEdge, ReadWrite):
             vector: SubVector,
             information: SubSquare
     ) -> float:
-        assert vector.get_dimension() == information.get_dimension(), f'{vector} and {information} are not of appropriate dimensions.'
+        assert vector.get_dim() == information.get_dim(), f'{vector} and {information} are not of appropriate dimensions.'
         return float(vector.array().transpose() @ information.array() @ vector.array())
 
     # linearisation
@@ -428,3 +427,13 @@ class FactorEdge(tp.Generic[T], BaseEdge, ReadWrite):
     @abstractmethod
     def get_cardinality(self) -> int:
         pass
+
+    # read/write
+    def read(self, words: tp.List[str]) -> None:
+        words = self._measurement.read_rest(words)
+        words = self._info_matrix.read_rest(words)
+        assert not words, f"Words '{words} are left unread."
+
+    def write(self) -> tp.List[str]:
+        words: tp.List[str] = self._measurement.write() + self._info_matrix.write()
+        return words

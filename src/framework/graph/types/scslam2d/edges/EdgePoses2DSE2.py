@@ -5,23 +5,23 @@ from src.framework.graph.types.scslam2d.edges.CalibratingEdgeSE2 import Calibrat
 from src.framework.graph.types.scslam2d.nodes.topological.NodeSE2 import NodeSE2
 from src.framework.math.lie.rotation import SO2
 from src.framework.math.lie.transformation import SE2
+from src.framework.math.matrix.square import Square3
 from src.framework.math.matrix.vector import Vector2
 from src.framework.math.matrix.vector import Vector3
 from src.gui.viewer.Rgb import RgbTuple, Rgb
 
 
 class EdgePoses2DSE2(CalibratingEdgeSE2, DrawEdge):
-    _num_endpoints = 2
+    _num_topological = 2
 
     def __init__(
             self,
-            *nodes: NodeSE2
+            value: tp.Optional[SE2] = None,
+            info_matrix: tp.Optional[Square3] = None,
+            node_a: tp.Optional[NodeSE2] = None,
+            node_b: tp.Optional[NodeSE2] = None
     ):
-        if nodes:
-            assert len(nodes) == 2
-            assert isinstance(nodes[0], NodeSE2)
-            assert isinstance(nodes[1], NodeSE2)
-        super().__init__(*nodes)
+        super().__init__(value, info_matrix, node_a, node_b)
 
     def get_value(self) -> SE2:
         a: NodeSE2
