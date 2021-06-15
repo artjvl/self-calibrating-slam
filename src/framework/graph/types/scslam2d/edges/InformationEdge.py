@@ -15,6 +15,7 @@ T = tp.TypeVar('T')
 class InformationEdge(FactorEdge[SubVector]):
 
     _dim: int
+    _multiplier: int
 
     def __init__(
             self,
@@ -27,8 +28,10 @@ class InformationEdge(FactorEdge[SubVector]):
         info_matrix: SubSquare = SquareFactory.from_dim(self.get_dim()).from_diagonal(minimal_diagonal)
         super().__init__(None, info_matrix, node)
 
+        self._multiplier = 0
+
     def compute_error(self) -> float:
-        return float(np.log(super().compute_error()))
+        return self._multiplier * float(np.log(super().compute_error()))
 
     @classmethod
     def get_dim(cls) -> int:
@@ -46,6 +49,9 @@ class InformationEdge(FactorEdge[SubVector]):
 
     def get_cardinality(self) -> int:
         return 1
+
+    def increment_multiplier(self) -> None:
+        self._multiplier += 1
 
 
 class InformationEdge2(InformationEdge):

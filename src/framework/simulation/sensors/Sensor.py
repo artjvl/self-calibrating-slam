@@ -29,6 +29,7 @@ class Sensor(tp.Generic[T]):
     _info_edge: tp.Optional[SubInformationEdge]
 
     _sim: tp.Optional['Simulation2D']
+    _is_connected: bool
 
     def __init__(
             self,
@@ -49,12 +50,17 @@ class Sensor(tp.Generic[T]):
 
         # simulation
         self._sim = None
+        self._is_connected = False
 
     def has_simulation(self) -> bool:
         return self._sim is not None
 
     def set_simulation(self, sim: 'Simulation2D') -> None:
         self._sim = sim
+
+    def register_nodes(self) -> None:
+        assert self.has_simulation()
+        assert self._is_connected
 
         parameter: SubParameterNode
         for parameter in self.get_parameters():
@@ -79,7 +85,7 @@ class Sensor(tp.Generic[T]):
             parameter: SubParameterNode
     ) -> None:
         self._parameters.append(parameter)
-        if self.has_simulation():
+        if self.has_simulation() and self._is_connected:
             self._sim.add_node(parameter)
 
     def get_parameters(self) -> tp.List[SubParameterNode]:
@@ -94,7 +100,7 @@ class Sensor(tp.Generic[T]):
         assert self.get_dim() == node.get_dim() == minimal_diagonal.get_dim()
         self._info_node = node
         self._info_edge = InformationEdgeFactory.from_node(node, minimal_diagonal)
-        if self.has_simulation():
+        if self.has_simulation() and self._is_connected:
             self._sim.add_node(self._info_node)
             self._sim.add_edge(self._info_edge)
 
@@ -142,7 +148,13 @@ class Sensor(tp.Generic[T]):
             self,
             edge: SubCalibratingEdge
     ) -> SubCalibratingEdge:
+        assert self.has_simulation()
         assert edge.get_type() == self.get_type()
+
+        # register nodes (parameters/info) to graph
+        if not self._is_connected:
+            self._is_connected = True
+            self.register_nodes()
 
         # add parameters
         for parameter in self._parameters:
@@ -152,5 +164,6 @@ class Sensor(tp.Generic[T]):
         edge.set_info_matrix(self._info_matrix)
         if self.has_info_node():
             edge.add_info_node(self._info_node)
+            self._info_edge.increment_multiplier()
 
         return edge
