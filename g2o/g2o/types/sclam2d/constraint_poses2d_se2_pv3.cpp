@@ -7,8 +7,7 @@
 namespace g2o {
 
     ConstraintPoses2DSE2PV3::ConstraintPoses2DSE2PV3() :
-            BaseFixedSizedEdge<3, SE2, NodeSE2, NodeSE2, ParamV3>()
-    {
+            BaseFixedSizedEdge<3, SE2, NodeSE2, NodeSE2, ParamV3>() {
     }
 
     bool ConstraintPoses2DSE2PV3::read(std::istream& is) {

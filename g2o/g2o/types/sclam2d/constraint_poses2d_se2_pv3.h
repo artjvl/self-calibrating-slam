@@ -5,7 +5,6 @@
 #ifndef G2O_CONSTRAINT_POSES2D_SE2_PV3_H
 #define G2O_CONSTRAINT_POSES2D_SE2_PV3_H
 
-#include "g2o_types_sclam2d_api.h"
 #include "g2o/core/base_fixed_sized_edge.h"
 #include "g2o/types/slam2d/se2.h"
 #include "node_se2.h"
@@ -13,12 +12,8 @@
 
 namespace g2o {
 
-    /**
-     * \brief scanmatch measurement that also calibrates an offset for the laser
-     */
-    class G2O_TYPES_SCLAM2D_API ConstraintPoses2DSE2PV3 : public BaseFixedSizedEdge<3, SE2, NodeSE2, NodeSE2, ParamV3> {
+    class ConstraintPoses2DSE2PV3 : public BaseFixedSizedEdge<3, SE2, NodeSE2, NodeSE2, ParamV3> {
     public:
-        EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
         ConstraintPoses2DSE2PV3();
 
         void computeError() {
