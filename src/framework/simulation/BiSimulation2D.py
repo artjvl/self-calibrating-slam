@@ -51,6 +51,11 @@ class BiSimulation2D(object):
         self._true.set_current_id(max_id)
         self._perturbed.set_current_id(max_id)
 
+    def align_ids(self) -> None:
+        id_ = max([self._true.count_id(), self._perturbed.count_id()])
+        self._true.set_current_id(id_)
+        self._perturbed.set_current_id(id_)
+
     # edges
     def add_edge(
             self,
@@ -64,6 +69,8 @@ class BiSimulation2D(object):
 
         perturbed_measurement: Supported = true_sensor.measure(true_measurement)
         self._perturbed.add_edge_from_value(ids, perturbed_measurement, sensor_id)
+
+        self.align_ids()
 
     def add_poses_edge(
             self,
@@ -89,6 +96,8 @@ class BiSimulation2D(object):
 
         perturbed_measurement: SE2 = true_sensor.measure(true_measurement)
         self._perturbed.add_odometry(perturbed_measurement, sensor_id)
+
+        self.align_ids()
 
     # gps
     def add_gps(

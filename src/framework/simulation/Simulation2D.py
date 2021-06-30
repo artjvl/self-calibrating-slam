@@ -5,6 +5,7 @@ from src.framework.graph.Graph import SubGraph, Graph
 from src.framework.graph.data.DataFactory import Supported
 from src.framework.graph.types.scslam2d.edges import EdgeFactory
 from src.framework.graph.types.scslam2d.edges.CalibratingEdge import SubCalibratingEdge
+from src.framework.graph.types.scslam2d.nodes.information import SubInformationNode
 from src.framework.graph.types.scslam2d.nodes.topological import NodeSE2
 from src.framework.graph.types.scslam2d.nodes.topological.NodeFactory import NodeFactory
 from src.framework.math.lie.transformation import SE2
@@ -19,7 +20,6 @@ class Simulation2D(object):
 
         # starting position
         self._id_counter: int = 0
-        self._par_counter: int = 10**9
         self._pose_ids: tp.List[int] = []
         self._current: NodeSE2 = self.add_pose(SE2.from_translation_angle_elements(0, 0, 0))
         self._current.fix()
@@ -29,6 +29,7 @@ class Simulation2D(object):
             self,
             node: SubFactorNode
     ) -> SubFactorNode:
+        assert not self._graph.contains_node(node)
         id_: int = self.count_id(increment=True)
         node.set_id(id_)
         self._graph.add_node(node)
@@ -62,11 +63,13 @@ class Simulation2D(object):
             ids: tp.List[int],
             measurement: Supported,
             sensor_id: str
-    ) -> SubGraph:
+    ) -> SubFactorEdge:
         nodes: tp.List[SubFactorNode] = [self._graph.get_node(id_) for id_ in ids]
         edge: SubCalibratingEdge = EdgeFactory.from_measurement_nodes(measurement, *nodes)
 
         sensor: SubSensor = self.get_sensor(sensor_id)
+        if not sensor.is_connected():
+            self.connect_sensor(sensor)
         edge = sensor.extend_edge(edge)
         return self.add_edge(edge)
 
@@ -74,14 +77,14 @@ class Simulation2D(object):
             self,
             measurement: SE2,
             sensor_id: str
-    ) -> None:
+    ) -> SubFactorEdge:
         sensor: SubSensor = self.get_sensor(sensor_id)
         transformation: SE2 = sensor.compose(measurement)
 
         current: NodeSE2 = self.get_current()
         position: SE2 = current.get_value() + transformation
         new: NodeSE2 = self.add_pose(position)
-        self.add_edge_from_value([current.get_id(), new.get_id()], measurement, sensor_id)
+        return self.add_edge_from_value([current.get_id(), new.get_id()], measurement, sensor_id)
 
     # sensors
     def add_sensor(
@@ -89,7 +92,6 @@ class Simulation2D(object):
             id_: str,
             sensor: SubSensor
     ):
-        sensor.set_simulation(self)
         self._sensors[id_] = sensor
 
     def has_sensor(
@@ -104,6 +106,15 @@ class Simulation2D(object):
     ) -> SubSensor:
         assert self.has_sensor(sensor_id)
         return self._sensors[sensor_id]
+
+    def connect_sensor(self, sensor: SubSensor):
+        sensor.set_connected()
+        for parameter in sensor.get_parameters():
+            self.add_node(parameter)
+        if sensor.has_info_node():
+            node: SubInformationNode = sensor.get_info_node()
+            self.add_node(node)
+            self.add_edge(sensor.get_info_edge(node))
 
     # getters
     def count_id(self, increment: bool = False) -> int:

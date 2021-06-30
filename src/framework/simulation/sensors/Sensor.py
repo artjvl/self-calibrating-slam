@@ -3,6 +3,8 @@ from abc import abstractmethod
 
 import numpy as np
 from numpy.random.mtrand import RandomState
+from src.framework.graph.FactorGraph import SubFactorNode, SubFactorEdge
+from src.framework.graph.Graph import SubGraph
 from src.framework.graph.data import SubData
 from src.framework.graph.data.DataFactory import DataFactory
 from src.framework.graph.types.scslam2d.edges.CalibratingEdge import SubCalibratingEdge
@@ -11,6 +13,7 @@ from src.framework.graph.types.scslam2d.nodes.information.InformationNode import
 from src.framework.graph.types.scslam2d.nodes.parameter.ParameterNode import SubParameterNode
 from src.framework.math.matrix.square import SubSquare, SquareFactory
 from src.framework.math.matrix.vector import SubVector, VectorFactory
+
 if tp.TYPE_CHECKING:
     from src.framework.simulation.Simulation2D import Simulation2D
 
@@ -28,7 +31,6 @@ class Sensor(tp.Generic[T]):
     _info_node: tp.Optional[SubInformationNode]
     _info_edge: tp.Optional[SubInformationEdge]
 
-    _sim: tp.Optional['Simulation2D']
     _is_connected: bool
 
     def __init__(
@@ -49,26 +51,7 @@ class Sensor(tp.Generic[T]):
         self._info_edge = None
 
         # simulation
-        self._sim = None
         self._is_connected = False
-
-    def has_simulation(self) -> bool:
-        return self._sim is not None
-
-    def set_simulation(self, sim: 'Simulation2D') -> None:
-        self._sim = sim
-
-    def register_nodes(self) -> None:
-        assert self.has_simulation()
-        assert self._is_connected
-
-        parameter: SubParameterNode
-        for parameter in self.get_parameters():
-            self._sim.add_node(parameter)
-
-        if self.has_info_node():
-            self._sim.add_node(self._info_node)
-            self._sim.add_edge(self._info_edge)
 
     # measurement-type
     @classmethod
@@ -79,14 +62,19 @@ class Sensor(tp.Generic[T]):
     def get_type(cls) -> tp.Type[SubData]:
         return cls._type
 
+    def set_connected(self):
+        self._is_connected = True
+
+    def is_connected(self) -> bool:
+        return self._is_connected
+
     # parameter
     def add_parameter(
             self,
             parameter: SubParameterNode
     ) -> None:
+        assert not self._is_connected
         self._parameters.append(parameter)
-        if self.has_simulation() and self._is_connected:
-            self._sim.add_node(parameter)
 
     def get_parameters(self) -> tp.List[SubParameterNode]:
         return self._parameters
@@ -94,25 +82,33 @@ class Sensor(tp.Generic[T]):
     # information
     def add_info_node(
             self,
-            node: SubInformationNode,
-            minimal_diagonal: SubVector
+            node: SubInformationNode
     ) -> None:
-        assert self.get_dim() == node.get_dim() == minimal_diagonal.get_dim()
+        assert not self._is_connected
+        assert self.get_dim() == node.get_dim()
         self._info_node = node
-        self._info_edge = InformationEdgeFactory.from_node(node, minimal_diagonal)
-        if self.has_simulation() and self._is_connected:
-            self._sim.add_node(self._info_node)
-            self._sim.add_edge(self._info_edge)
 
     def has_info_node(self) -> bool:
         return self._info_node is not None
+
+    def get_info_node(self) -> SubInformationNode:
+        assert self.has_info_node()
+        return self._info_node
+
+    def get_info_edge(self, node: SubInformationNode) -> SubInformationEdge:
+        assert self.has_info_node()
+        assert node == self._info_node
+        self._info_edge: SubInformationEdge = InformationEdgeFactory.from_dim(node.get_dim())(
+            node.get_info_diagonal(), node
+        )
+        return self._info_edge
 
     def set_info_matrix(self, info_matrix: SubSquare) -> None:
         self._info_matrix = info_matrix
 
     def get_info_matrix(self) -> SubSquare:
         if self.has_info_node():
-            return self._info_node.get_matrix()
+            return self._info_node.get_info_matrix()
         return self._info_matrix
 
     # noise
@@ -148,13 +144,7 @@ class Sensor(tp.Generic[T]):
             self,
             edge: SubCalibratingEdge
     ) -> SubCalibratingEdge:
-        assert self.has_simulation()
         assert edge.get_type() == self.get_type()
-
-        # register nodes (parameters/info) to graph
-        if not self._is_connected:
-            self._is_connected = True
-            self.register_nodes()
 
         # add parameters
         for parameter in self._parameters:

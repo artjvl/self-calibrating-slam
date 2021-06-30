@@ -154,7 +154,7 @@ class InspectorTree(QtWidgets.QTreeWidget):
             if isinstance(node, ParameterNode):
                 self._construct_tree_property(root, 'interpretation', node.get_interpretation())
             elif isinstance(node, InformationNode):
-                self._construct_tree_property_from_value(root, 'matrix', node.get_matrix())
+                self._construct_tree_property_from_value(root, 'matrix', node.get_info_matrix())
 
         # metrics
         if node.has_true():
@@ -201,7 +201,7 @@ class InspectorTree(QtWidgets.QTreeWidget):
 
         # error
         sub_error = self._construct_tree_property(root, 'Error', '', bold=True)
-        self._construct_tree_property_from_value(sub_error, 'error_vector', edge.compute_error_vector())
+        self._construct_tree_property_from_value(sub_error, 'error_vector', edge.error_vector())
         self._construct_tree_property(sub_error, 'error', '{:f}'.format(edge.compute_error()))
         sub_error.setExpanded(True)
 
