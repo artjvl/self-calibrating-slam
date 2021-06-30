@@ -4,8 +4,7 @@ from datetime import datetime
 from typing import TextIO
 
 from src.definitions import get_project_root
-from src.framework.graph.FactorGraph import FactorNode, FactorEdge, SubFactorNode, SubFactorEdge
-from src.framework.graph.Graph import Graph, SubGraph
+from src.framework.graph.Graph import Graph, SubGraph, SubNode, Edge, Node
 from src.framework.graph.types.scslam2d.database import database
 
 
@@ -26,7 +25,7 @@ class GraphParser(object):
 
         writer: TextIO = file.open('w')
 
-        node: SubFactorNode
+        node: SubNode
         for node in graph.get_nodes():
             tag: str = cls._database.from_element(node)
             id_: str = f'{node.get_id()}'
@@ -35,7 +34,7 @@ class GraphParser(object):
             if node.is_fixed():
                 writer.write(f'FIX {id_}\n')
 
-        edge: SubFactorEdge
+        edge: SubEdge
         for edge in graph.get_edges():
             tag: str = cls._database.from_element(edge)
             ids: str = ' '.join([f'{id_}' for id_ in edge.get_node_ids()])
@@ -86,7 +85,7 @@ class GraphParser(object):
 
         reader: TextIO = file.open('r')
         lines: tp.List[str] = reader.readlines()
-        nodes: tp.Dict[int, SubFactorNode] = {}
+        nodes: tp.Dict[int, SubNode] = {}
 
         line: str
         for i, line in enumerate(lines):
@@ -101,18 +100,18 @@ class GraphParser(object):
                 node.fix()
             else:
                 element = cls._database.from_tag(tag)
-                if isinstance(element, FactorNode):
+                if isinstance(element, Node):
                     id_: int = int(words[1])
                     element.set_id(id_)
                     element.read(words[2:])
                     nodes[id_] = element
                     # graph.add_node(element)
-                elif isinstance(element, FactorEdge):
+                elif isinstance(element, Edge):
                     cardinality: int = element.get_cardinality()
                     node_ids: tp.List[int] = [int(id_) for id_ in words[1: 1 + cardinality]]
                     for id_ in node_ids:
                         assert id_ in nodes
-                        node: SubFactorNode = nodes[id_]
+                        node: SubNode = nodes[id_]
                         if not graph.contains_node_id(id_):
                             graph.add_node(node)
                         element.add_node(node)

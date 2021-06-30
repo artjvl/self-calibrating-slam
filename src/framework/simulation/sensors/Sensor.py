@@ -3,8 +3,6 @@ from abc import abstractmethod
 
 import numpy as np
 from numpy.random.mtrand import RandomState
-from src.framework.graph.FactorGraph import SubFactorNode, SubFactorEdge
-from src.framework.graph.Graph import SubGraph
 from src.framework.graph.data import SubData
 from src.framework.graph.data.DataFactory import DataFactory
 from src.framework.graph.types.scslam2d.edges.CalibratingEdge import SubCalibratingEdge
@@ -15,7 +13,7 @@ from src.framework.math.matrix.square import SubSquare, SquareFactory
 from src.framework.math.matrix.vector import SubVector, VectorFactory
 
 if tp.TYPE_CHECKING:
-    from src.framework.simulation.Simulation2D import Simulation2D
+    pass
 
 T = tp.TypeVar('T')
 SubSensor = tp.TypeVar('SubSensor', bound='Sensor')

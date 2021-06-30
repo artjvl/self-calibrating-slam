@@ -1,8 +1,7 @@
 import typing as tp
 
 from PyQt5 import QtCore, QtWidgets, QtGui
-from src.framework.graph.FactorGraph import SubElement, FactorNode, FactorEdge
-from src.framework.graph.Graph import Graph, SubGraph
+from src.framework.graph.Graph import Graph, SubGraph, Node, Edge, SubElement
 from src.framework.graph.protocols.Visualisable import SubVisualisable, Visualisable
 from src.framework.graph.protocols.visualisable.DrawEdge import DrawEdge
 from src.framework.graph.protocols.visualisable.DrawPoint import DrawPoint
@@ -152,9 +151,9 @@ class BrowserTree(QtWidgets.QTreeWidget):
             obj: tp.Union[SubContainer, SubVisualisable] = item.obj
             if isinstance(obj, GraphContainer):
                 self._inspector.display_graph(obj.get_graph())
-            elif isinstance(obj, FactorNode):
+            elif isinstance(obj, Node):
                 self._inspector.display_node(obj)
-            elif isinstance(obj, FactorEdge):
+            elif isinstance(obj, Edge):
                 self._inspector.display_edge(obj)
 
     def _handle_context_menu(self, point):

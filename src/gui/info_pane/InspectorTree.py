@@ -1,12 +1,10 @@
 import enum
-import functools
 import typing as tp
 
 from PyQt5 import QtGui, QtWidgets
 from framework.math.matrix.Matrix import SubMatrix
 from src.framework.graph.BlockMatrix import SubBlockMatrix
-from src.framework.graph.FactorGraph import SubFactorEdge, SubFactorNode, SubElement, FactorNode
-from src.framework.graph.Graph import SubGraph, Graph
+from src.framework.graph.Graph import SubGraph, Graph, SubEdge, SubNode, SubElement, Node
 from src.framework.graph.data.DataFactory import Supported
 from src.framework.graph.types.scslam2d.nodes.information.InformationNode import InformationNode
 from src.framework.graph.types.scslam2d.nodes.parameter.ParameterNode import ParameterNode
@@ -26,7 +24,7 @@ class Indicator(enum.Enum):
 
 class InspectorTree(QtWidgets.QTreeWidget):
 
-    obj: tp.Optional[tp.Union[SubGraph, SubFactorNode, SubFactorEdge]]
+    obj: tp.Optional[tp.Union[SubGraph, SubNode, SubEdge]]
 
     # constructor
     def __init__(self, *args, **kwargs):
@@ -95,7 +93,7 @@ class InspectorTree(QtWidgets.QTreeWidget):
         return root
 
     def _construct_hessian(self, item: QtWidgets.QTreeWidgetItem, graph: SubGraph) -> None:
-        nodes: tp.List[SubFactorNode] = graph.get_nodes()
+        nodes: tp.List[SubNode] = graph.get_nodes()
         hessian: SubBlockMatrix = graph.get_hessian()
         item.setText(1, str(hessian.shape()))
         for i, node_i in enumerate(nodes):
@@ -108,7 +106,7 @@ class InspectorTree(QtWidgets.QTreeWidget):
                     )
 
     def _construct_marginal(self, item: QtWidgets.QTreeWidgetItem, graph: SubGraph) -> None:
-        nodes: tp.List[SubFactorNode] = graph.get_nodes()
+        nodes: tp.List[SubNode] = graph.get_nodes()
         marginals: tp.List[SubMatrix] = graph.get_marginals()
         item.setText(1, f'({len(marginals)})')
         for i, node in enumerate(nodes):
@@ -135,14 +133,14 @@ class InspectorTree(QtWidgets.QTreeWidget):
     # node
     def display_node(
             self,
-            node: SubFactorNode
+            node: SubNode
     ) -> None:
         self.clear()
         self._construct_node_tree(node, self.invisibleRootItem())
 
     def _construct_node_tree(
             self,
-            node: SubFactorNode,
+            node: SubNode,
             root: Item
     ) -> Item:
         self.obj = node
@@ -150,7 +148,7 @@ class InspectorTree(QtWidgets.QTreeWidget):
         # top
         self._construct_tree_property(root, 'id', str(node.get_id()))
         self._construct_tree_property(root, 'is_fixed', str(node.is_fixed()))
-        if isinstance(node, FactorNode):
+        if isinstance(node, Node):
             if isinstance(node, ParameterNode):
                 self._construct_tree_property(root, 'interpretation', node.get_interpretation())
             elif isinstance(node, InformationNode):
@@ -159,7 +157,7 @@ class InspectorTree(QtWidgets.QTreeWidget):
         # metrics
         if node.has_true():
             sub_metrics = self._construct_tree_property(root, 'Metrics', '', bold=True)
-            true: SubFactorNode = node.get_true()
+            true: SubNode = node.get_true()
             sub_true = self._construct_tree_property(sub_metrics, 'true', true.to_unique())
             self._construct_node_tree(true, sub_true)
             ate2: tp.Optional[float] = node.compute_ate2()
@@ -175,14 +173,14 @@ class InspectorTree(QtWidgets.QTreeWidget):
     # edge
     def display_edge(
             self,
-            edge: SubFactorEdge
+            edge: SubEdge
     ) -> None:
         self.clear()
         self._construct_edge_tree(edge, self.invisibleRootItem())
 
     def _construct_edge_tree(
             self,
-            edge: SubFactorEdge,
+            edge: SubEdge,
             root: Item
     ):
         self.obj = edge
@@ -208,7 +206,7 @@ class InspectorTree(QtWidgets.QTreeWidget):
         # metrics
         if edge.has_true():
             sub_metrics = self._construct_tree_property(root, 'Metrics', '', bold=True)
-            true: SubFactorEdge = edge.get_true()
+            true: SubEdge = edge.get_true()
             sub_true = self._construct_tree_property(sub_metrics, 'true', str(true.to_unique()))
             self._construct_edge_tree(true, sub_true)
             self._construct_tree_property_from_value(sub_metrics, 'rpe_translation2', edge.compute_rpe_translation2())

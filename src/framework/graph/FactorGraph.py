@@ -16,107 +16,22 @@ from src.framework.math.matrix.vector import VectorFactory
 SubFactorGraph = tp.TypeVar('SubFactorGraph', bound='FactorGraph')
 SubFactorNode = tp.TypeVar('SubFactorNode', bound='FactorNode')
 SubFactorEdge = tp.TypeVar('SubFactorEdge', bound='FactorEdge')
-SubElement = tp.Union[SubFactorNode, SubFactorEdge]
+SubFactorElement = tp.Union[SubFactorNode, SubFactorEdge]
 
 
 class FactorGraph(BaseGraph):
 
-    _true: tp.Optional[SubFactorGraph]
     _hessian: SubSparseBlockMatrix
     _covariance: tp.Optional[SubBlockMatrix]
 
     def __init__(self):
         super().__init__()
-        self._true = None
         self.init_gradient()
         self._covariance = None
 
     def add_node(self, node: SubFactorNode) -> None:
         super().add_node(node)
         self.init_gradient()
-
-    def is_perturbed(self) -> bool:
-        return not np.isclose(self.compute_error(), 0.)
-
-    def is_metric(self) -> bool:
-        return self.is_perturbed() and self.has_true()
-
-    # true
-    def assign_true(self, graph: SubFactorGraph):
-        # assert self.is_perturbed()
-        assert not graph.is_perturbed()
-
-        nodes: tp.List[SubFactorNode] = self.get_nodes()
-        true_nodes: tp.List[SubFactorNode] = graph.get_nodes()
-        assert len(nodes) == len(true_nodes)
-        for i, node in enumerate(nodes):
-            true_node = true_nodes[i]
-            node.assign_true(true_node)
-
-        edges: tp.List[SubFactorEdge] = self.get_edges()
-        true_edges: tp.List[SubFactorEdge] = graph.get_edges()
-        assert len(edges) == len(true_edges)
-        for i, edge in enumerate(edges):
-            true_edge = true_edges[i]
-            edge.assign_true(true_edge)
-
-        self._true = graph
-
-    def has_true(self) -> bool:
-        return self._true is not None
-
-    def get_true(self) -> SubFactorGraph:
-        assert self.has_true()
-        return self._true
-
-    # error
-    def compute_error(self) -> float:
-        error: float = 0.
-        for edge in self.get_edges():
-            error += edge.compute_error()
-        return error
-
-    def compute_ate(self) -> float:
-        """ Returns the Absolute Trajectory Error (APE). """
-
-        assert self.is_metric()
-        ate: float = 0
-        count: int = 0
-        node: SubFactorNode
-        for node in self.get_nodes():
-            node_ate = node.compute_ate2()
-            if node_ate is not None:
-                ate += node_ate
-                count += 1
-        return np.sqrt(ate/count)
-
-    def compute_rpe_translation(self) -> float:
-        """ Returns the translation portion of the Relative Pose Error (RPE). """
-
-        assert self.is_metric()
-        rpe2: float = 0
-        count: int = 0
-        edge: SubFactorEdge
-        for edge in self.get_edges():
-            edge_rpe2 = edge.compute_rpe_translation2()
-            if edge_rpe2 is not None:
-                rpe2 += edge_rpe2
-                count += 1
-        return np.sqrt(rpe2/count)
-
-    def compute_rpe_rotation(self) -> float:
-        """ Returns the rotation portion of the Relative Pose Error (RPE). """
-
-        assert self.is_metric()
-        rpe: float = 0
-        count: int = 0
-        edge: SubFactorEdge
-        for edge in self.get_edges():
-            edge_rpe2 = edge.compute_rpe_rotation()
-            if edge_rpe2 is not None:
-                rpe += edge_rpe2
-                count += 1
-        return rpe/count
 
     # linearise
     def init_gradient(self) -> None:
@@ -155,16 +70,6 @@ class FactorGraph(BaseGraph):
             marginals.append(covariance[i, i])
         return marginals
 
-    # subgraphs
-    def get_subgraphs(self) -> tp.List[SubFactorGraph]:
-        graphs: tp.List[SubFactorGraph] = super().get_subgraphs()
-        if self.has_true():
-            true_graphs: tp.List[SubFactorGraph] = self.get_true().get_subgraphs()
-            for i, graph in graphs:
-                true_graph: SubFactorGraph = true_graphs[i]
-                graph.assign_true(true_graph)
-        return graphs
-
 
 T = tp.TypeVar('T')
 
@@ -178,9 +83,6 @@ class FactorNode(tp.Generic[T], BaseNode):
     # properties
     _is_fixed: bool
 
-    # reference to true/unperturbed equivalent node
-    _true: tp.Optional[SubFactorNode]
-
     def __init__(
             self,
             id_: tp.Optional[int] = None,
@@ -190,8 +92,6 @@ class FactorNode(tp.Generic[T], BaseNode):
             id_ = 0
         super().__init__(id_)
         self._value = DataFactory.from_type(self.get_type())(value)
-
-        self._true = None
         self._is_fixed = False
 
     # value
@@ -225,22 +125,6 @@ class FactorNode(tp.Generic[T], BaseNode):
     def is_fixed(self) -> bool:
         return self._is_fixed
 
-    # true
-    def assign_true(self, node: SubFactorNode):
-        assert self.get_id() == node.get_id()
-        self._true = node
-
-    def has_true(self) -> bool:
-        return self._true is not None
-
-    def get_true(self) -> SubFactorNode:
-        assert self.has_true()
-        return self._true
-
-    # error
-    def compute_ate2(self) -> tp.Optional[float]:
-        return None
-
     # read/write
     def read(self, words: tp.List[str]) -> None:
         words = self._value.read_rest(words)
@@ -258,9 +142,6 @@ class FactorEdge(tp.Generic[T], BaseEdge):
     _measurement: SubData
     _info_matrix: SubDataSymmetric
 
-    # reference to true/unperturbed equivalent edge
-    _true: tp.Optional[SubFactorEdge]
-
     # gradient
     _jacobian: BlockMatrix
     _hessian: BlockMatrix
@@ -276,8 +157,6 @@ class FactorEdge(tp.Generic[T], BaseEdge):
         if info_matrix is None:
             info_matrix = SquareFactory.from_dim(self.get_dim()).identity()
         self._info_matrix = DataFactory.from_value(info_matrix)
-
-        self._true = None
         self.init_gradient()
 
     def add_node(self, node: SubFactorNode) -> None:
@@ -331,40 +210,6 @@ class FactorEdge(tp.Generic[T], BaseEdge):
         """ Sets the information matrix of this edge by providing the covariance matrix. """
         self._info_matrix.set_value(cov_matrix.inverse())
 
-    # error
-    @abstractmethod
-    def compute_error_vector(self) -> SubVector:
-        pass
-
-    def error_vector(self) -> SubVector:
-        return self.compute_error_vector()
-
-    def compute_error(self) -> float:
-        error_vector: SubVector = self.error_vector()
-        return self.mahalanobis_distance(error_vector, self.get_info_matrix())
-
-    def compute_rpe_translation2(self) -> tp.Optional[float]:
-        return None
-
-    def compute_rpe_rotation(self) -> tp.Optional[float]:
-        return None
-
-    # true
-    def assign_true(self, edge: SubFactorEdge):
-        nodes = self.get_nodes()
-        true_nodes = edge.get_nodes()
-        assert len(nodes) == len(true_nodes)
-        for i, node in enumerate(nodes):
-            true_node = true_nodes[i]
-            assert node.get_id() == true_node.get_id()
-        self._true = edge
-
-    def has_true(self) -> bool:
-        return self._true is not None
-
-    def get_true(self) -> SubFactorEdge:
-        assert self.has_true()
-        return self._true
 
     # helper methods
     @staticmethod

@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 
 import numpy as np
 from src.framework.graph.BaseGraph import SubBaseNode
-from src.framework.graph.FactorGraph import FactorEdge, SubFactorNode, FactorNode
+from src.framework.graph.Graph import Edge, SubNode, Node
 from src.framework.graph.types.scslam2d.nodes.information.InformationNode import InformationNode, SubInformationNode
 from src.framework.graph.types.scslam2d.nodes.parameter.ParameterNode import ParameterNode, SubParameterNode
 from src.framework.math.matrix.square import SquareFactory
@@ -15,12 +15,12 @@ SubCalibratingEdge = tp.TypeVar('SubCalibratingEdge', bound='CalibratingEdge')
 T = tp.TypeVar('T')
 
 
-class CalibratingEdge(tp.Generic[T], FactorEdge[T], ABC):
+class CalibratingEdge(tp.Generic[T], Edge[T], ABC):
 
     _num_topological: int
     _num_additional: int
 
-    _endpoints: tp.List[SubFactorNode]
+    _endpoints: tp.List[SubNode]
     _parameters: tp.List[SubParameterNode]
     _info_node: tp.Optional[SubInformationNode]
 
@@ -28,7 +28,7 @@ class CalibratingEdge(tp.Generic[T], FactorEdge[T], ABC):
             self,
             value: tp.Optional[T] = None,
             info_matrix: tp.Optional[SubSquare] = None,
-            *nodes: SubFactorNode
+            *nodes: SubNode
     ):
         assert len(nodes) in (0, self._num_topological)
 
@@ -61,8 +61,8 @@ class CalibratingEdge(tp.Generic[T], FactorEdge[T], ABC):
             )
         return error_vector
 
-    def add_node(self, node: SubBaseNode) -> None:
-        assert isinstance(node, FactorNode)
+    def add_node(self, node: SubNode) -> None:
+        assert isinstance(node, Node)
 
         if isinstance(node, ParameterNode):
             self.add_parameter(node)
@@ -71,8 +71,8 @@ class CalibratingEdge(tp.Generic[T], FactorEdge[T], ABC):
         else:
             self.add_endpoint(node)
 
-    def get_nodes(self) -> tp.List[SubFactorNode]:
-        nodes: tp.List[SubFactorNode] = []
+    def get_nodes(self) -> tp.List[SubNode]:
+        nodes: tp.List[SubNode] = []
         nodes += self.get_endpoints()
         if self.has_parameters():
             nodes += self.get_parameters()
@@ -81,12 +81,12 @@ class CalibratingEdge(tp.Generic[T], FactorEdge[T], ABC):
         return nodes
 
     # endpoints
-    def add_endpoint(self, node: FactorNode):
+    def add_endpoint(self, node: Node):
         assert len(self._endpoints) < self._num_topological
         self._endpoints.append(node)
         super().add_node(node)
 
-    def get_endpoints(self) -> tp.List[SubFactorNode]:
+    def get_endpoints(self) -> tp.List[SubNode]:
         return self._endpoints
 
     # parameter

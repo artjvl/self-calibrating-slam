@@ -1,8 +1,7 @@
 import typing as tp
-from abc import abstractmethod
 
 import numpy as np
-from src.framework.graph.FactorGraph import FactorEdge
+from src.framework.graph.Graph import Edge
 from src.framework.graph.types.scslam2d.nodes.information.InformationNode import SubInformationNode
 from src.framework.math.matrix.square import SquareFactory
 from src.framework.math.matrix.square import SubSquare
@@ -12,7 +11,7 @@ SubInformationEdge = tp.TypeVar('SubInformationEdge', bound='InformationEdge')
 T = tp.TypeVar('T')
 
 
-class InformationEdge(FactorEdge[SubVector]):
+class InformationEdge(Edge[SubVector]):
 
     _dim: int
     _multiplier: int

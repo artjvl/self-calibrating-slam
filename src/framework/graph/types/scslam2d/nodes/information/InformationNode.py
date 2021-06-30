@@ -1,7 +1,7 @@
 import typing as tp
 
 import numpy as np
-from src.framework.graph.FactorGraph import FactorNode
+from src.framework.graph.Graph import Node
 from src.framework.math.matrix.square import SquareFactory
 from src.framework.math.matrix.square import SubSquare
 from src.framework.math.matrix.vector import VectorFactory, SubVector
@@ -9,7 +9,7 @@ from src.framework.math.matrix.vector import VectorFactory, SubVector
 SubInformationNode = tp.TypeVar('SubInformationNode', bound='InformationNode')
 
 
-class InformationNode(FactorNode[SubVector]):
+class InformationNode(Node[SubVector]):
 
     _dim: int
 

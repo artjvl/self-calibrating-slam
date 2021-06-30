@@ -1,7 +1,6 @@
 import typing as tp
 
-from src.framework.graph.FactorGraph import SubFactorNode, SubFactorEdge
-from src.framework.graph.Graph import SubGraph, Graph
+from src.framework.graph.Graph import SubGraph, Graph, SubNode, SubEdge
 from src.framework.graph.data.DataFactory import Supported
 from src.framework.graph.types.scslam2d.edges import EdgeFactory
 from src.framework.graph.types.scslam2d.edges.CalibratingEdge import SubCalibratingEdge
@@ -27,8 +26,8 @@ class Simulation2D(object):
     # add elements
     def add_node(
             self,
-            node: SubFactorNode
-    ) -> SubFactorNode:
+            node: SubNode
+    ) -> SubNode:
         assert not self._graph.contains_node(node)
         id_: int = self.count_id(increment=True)
         node.set_id(id_)
@@ -38,7 +37,7 @@ class Simulation2D(object):
     def add_node_from_value(
             self,
             value: Supported
-    ) -> SubFactorNode:
+    ) -> SubNode:
         node = NodeFactory.from_value(value)
         return self.add_node(node)
 
@@ -53,8 +52,8 @@ class Simulation2D(object):
 
     def add_edge(
             self,
-            edge: SubFactorEdge
-    ) -> SubFactorEdge:
+            edge: SubEdge
+    ) -> SubEdge:
         self._graph.add_edge(edge)
         return edge
 
@@ -63,8 +62,8 @@ class Simulation2D(object):
             ids: tp.List[int],
             measurement: Supported,
             sensor_id: str
-    ) -> SubFactorEdge:
-        nodes: tp.List[SubFactorNode] = [self._graph.get_node(id_) for id_ in ids]
+    ) -> SubEdge:
+        nodes: tp.List[SubNode] = [self._graph.get_node(id_) for id_ in ids]
         edge: SubCalibratingEdge = EdgeFactory.from_measurement_nodes(measurement, *nodes)
 
         sensor: SubSensor = self.get_sensor(sensor_id)
@@ -77,7 +76,7 @@ class Simulation2D(object):
             self,
             measurement: SE2,
             sensor_id: str
-    ) -> SubFactorEdge:
+    ) -> SubEdge:
         sensor: SubSensor = self.get_sensor(sensor_id)
         transformation: SE2 = sensor.compose(measurement)
 
@@ -122,7 +121,7 @@ class Simulation2D(object):
             self._id_counter += 1
         return self._id_counter
 
-    def get_node(self, id_: int) -> SubFactorNode:
+    def get_node(self, id_: int) -> SubNode:
         return self._graph.get_node(id_)
 
     def get_current(self) -> NodeSE2:

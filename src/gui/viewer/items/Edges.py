@@ -3,13 +3,11 @@ from __future__ import annotations
 import typing as tp
 
 from OpenGL.GL import *
-
-from src.framework.graph.FactorGraph import SubElement
 from src.framework.graph.protocols.Visualisable import Visualisable
 from src.framework.graph.protocols.visualisable.DrawEdge import DrawEdge
 from src.framework.math.matrix.vector import Vector3
-from src.gui.viewer.Rgb import Rgb, RgbTuple
 from src.gui.viewer.Drawer import Drawer
+from src.gui.viewer.Rgb import Rgb, RgbTuple
 from src.gui.viewer.items.GraphicsItem import GraphicsItem
 
 Nodeset = tp.Tuple[Vector3, Vector3]

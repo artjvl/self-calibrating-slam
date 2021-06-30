@@ -4,8 +4,7 @@ import typing as tp
 from abc import abstractmethod
 
 from PyQt5 import QtCore
-from src.framework.graph.FactorGraph import SubElement
-from src.framework.graph.Graph import SubGraph
+from src.framework.graph.Graph import SubGraph, SubElement
 from src.gui.viewer.items import Items
 from src.gui.viewer.items.GraphicsItem import SubGraphicsItem
 
