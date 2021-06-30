@@ -24,7 +24,7 @@ class SE2(SE):
     # operators
     def oplus(self, vector: SubVector) -> SubSE2:
         translation: Vector2 = Vector2(self.translation().array() + vector[:2])
-        rotation: SO2 = self.rotation() + SO2.from_angle(vector[2])
+        rotation: SO2 = self.rotation() * SO2.from_angle(vector[2])
         return type(self)(translation, rotation)
         # increment: SubSE2 = type(self).from_translation_angle_vector(vector)
         # return self + increment

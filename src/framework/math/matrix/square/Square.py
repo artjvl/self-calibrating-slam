@@ -26,7 +26,7 @@ class Square(Matrix, Dimensional):
 
     # manipulations
     def inverse(self) -> SubSquare:
-        return type(self)(linalg.inv(self._matrix))
+        return type(self)(np.linalg.pinv(self._matrix))
 
     def sqrt(self) -> SubSquare:
         return type(self)(linalg.sqrtm(self._matrix))
