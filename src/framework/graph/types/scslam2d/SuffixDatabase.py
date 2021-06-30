@@ -1,7 +1,7 @@
 import typing as tp
 
 from src.framework.graph.Database import Database
-from src.framework.graph.FactorGraph import SubFactorNode, FactorNode
+from src.framework.graph.FactorGraph import SubFactorNode, FactorNode, FactorEdge
 from src.framework.graph.types.scslam2d.edges.CalibratingEdge import CalibratingEdge, SubCalibratingEdge
 from src.framework.graph.types.scslam2d.nodes.information.InformationNode import SubInformationNode
 from src.framework.graph.types.scslam2d.nodes.parameter.ParameterNode import SubParameterNode
@@ -70,26 +70,29 @@ class SuffixDatabase(Database):
         return tag in self._elements
 
     def from_element(self, element: Element) -> str:
+        assert type(element) in self._elements
         tag: str = self._elements[type(element)]
 
         # if element is a node
         if isinstance(element, FactorNode):
-            return f"{tag}"
+            return tag
 
         # if element is an edge
-        elif isinstance(element, CalibratingEdge):
-            suffixes: tp.List[str] = []
-            parameter: SubParameterNode
-            for parameter in element.get_parameters():
-                type_: tp.Type[SubParameterNode] = type(parameter)
-                assert type_ in self._parameters
-                suffixes.append(self._parameters[type_])
-            if element.has_info_node():
-                information: SubInformationNode = element.get_info_node()
-                type_: tp.Type[SubInformationNode] = type(information)
-                assert type_ in self._informations
-                suffixes.append(self._informations[type_])
-            return '_'.join([tag] + suffixes)
+        if isinstance(element, FactorEdge):
+            if isinstance(element, CalibratingEdge):
+                suffixes: tp.List[str] = []
+                parameter: SubParameterNode
+                for parameter in element.get_parameters():
+                    type_: tp.Type[SubParameterNode] = type(parameter)
+                    assert type_ in self._parameters
+                    suffixes.append(self._parameters[type_])
+                if element.has_info_node():
+                    information: SubInformationNode = element.get_info_node()
+                    type_: tp.Type[SubInformationNode] = type(information)
+                    assert type_ in self._informations
+                    suffixes.append(self._informations[type_])
+                return '_'.join([tag] + suffixes)
+            return tag
 
     def contains_element(self, type_: tp.Type[Element]) -> bool:
         return type_ in self._elements

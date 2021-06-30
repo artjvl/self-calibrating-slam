@@ -1,11 +1,15 @@
 import typing as tp
 from abc import ABC, abstractmethod
 
+import numpy as np
 from src.framework.graph.BaseGraph import SubBaseNode
 from src.framework.graph.FactorGraph import FactorEdge, SubFactorNode, FactorNode
 from src.framework.graph.types.scslam2d.nodes.information.InformationNode import InformationNode, SubInformationNode
 from src.framework.graph.types.scslam2d.nodes.parameter.ParameterNode import ParameterNode, SubParameterNode
+from src.framework.math.matrix.square import SquareFactory
 from src.framework.math.matrix.square import SubSquare
+from src.framework.math.matrix.vector import SubVector
+from src.framework.math.matrix.vector import VectorFactory
 
 SubCalibratingEdge = tp.TypeVar('SubCalibratingEdge', bound='CalibratingEdge')
 T = tp.TypeVar('T')
@@ -48,6 +52,15 @@ class CalibratingEdge(tp.Generic[T], FactorEdge[T], ABC):
         pass
 
     # override
+    def error_vector(self) -> SubVector:
+        error_vector: SubVector = self.compute_error_vector()
+        if self.has_info_node():
+            info_diagonal: SubVector = self.get_info_node().get_value()
+            error_vector: SubVector = VectorFactory.from_dim(self.get_dim())(
+                np.multiply(np.sqrt(info_diagonal.array()), error_vector.array())
+            )
+        return error_vector
+
     def add_node(self, node: SubBaseNode) -> None:
         assert isinstance(node, FactorNode)
 
@@ -64,7 +77,7 @@ class CalibratingEdge(tp.Generic[T], FactorEdge[T], ABC):
         if self.has_parameters():
             nodes += self.get_parameters()
         if self.has_info_node():
-            nodes += self.get_info_node()
+            nodes += [self.get_info_node()]
         return nodes
 
     # endpoints
@@ -89,7 +102,8 @@ class CalibratingEdge(tp.Generic[T], FactorEdge[T], ABC):
 
     # information
     def add_info_node(self, node: SubInformationNode):
-        assert self.get_dim() == node.get_dimension()
+        assert self.get_dim() == node.get_dim()
+        self.set_info_matrix(SquareFactory.from_dim(self.get_dim()).identity())
         self._info_node = node
         super().add_node(node)
 
@@ -99,11 +113,6 @@ class CalibratingEdge(tp.Generic[T], FactorEdge[T], ABC):
     def get_info_node(self) -> SubInformationNode:
         assert self.has_info_node(), 'No information-node is present.'
         return self._info_node
-
-    def get_info_matrix(self) -> SubSquare:
-        if self.has_info_node():
-            return self.get_info_node().get_matrix()
-        return super().get_info_matrix()
 
     # read/write
     def read(self, words: tp.List[str]) -> None:

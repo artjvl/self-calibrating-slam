@@ -71,7 +71,7 @@ class FactorGraph(BaseGraph):
 
     # error
     def compute_error(self) -> float:
-        error: float = 0
+        error: float = 0.
         for edge in self.get_edges():
             error += edge.compute_error()
         return error
@@ -183,9 +183,11 @@ class FactorNode(tp.Generic[T], BaseNode):
 
     def __init__(
             self,
-            id_: int = 0,
+            id_: tp.Optional[int] = None,
             value: tp.Optional[T] = None
     ):
+        if id_ is None:
+            id_ = 0
         super().__init__(id_)
         self._value = DataFactory.from_type(self.get_type())(value)
 
@@ -267,15 +269,13 @@ class FactorEdge(tp.Generic[T], BaseEdge):
             self,
             measurement: tp.Optional[T] = None,
             info_matrix: tp.Optional[SubSquare] = None,
-            *nodes: SubFactorNode
+            *nodes: tp.Optional[SubFactorNode]
     ):
-        super().__init__(*nodes)
+        super().__init__(*[node for node in nodes if node is not None])
         self._measurement = DataFactory.from_type(self.get_type())(measurement)
         if info_matrix is None:
-            info_matrix = DataFactory.from_value(
-                SquareFactory.from_dim(self.get_dim()).identity()
-            )
-        self._info_matrix = info_matrix
+            info_matrix = SquareFactory.from_dim(self.get_dim()).identity()
+        self._info_matrix = DataFactory.from_value(info_matrix)
 
         self._true = None
         self.init_gradient()
@@ -319,17 +319,28 @@ class FactorEdge(tp.Generic[T], BaseEdge):
         """ Returns the information matrix of this edge. """
         return self._info_matrix.get_value()
 
+    def get_cov_matrix(self) -> SubSquare:
+        """ Returns the covariance matrix of this edge. """
+        return self._info_matrix.get_value().inverse()
+
     def set_info_matrix(self, info_matrix: SubSquare) -> None:
         """ Sets the information matrix of this edge. """
         self._info_matrix.set_value(info_matrix)
+
+    def set_cov_matrix(self, cov_matrix: SubSquare) -> None:
+        """ Sets the information matrix of this edge by providing the covariance matrix. """
+        self._info_matrix.set_value(cov_matrix.inverse())
 
     # error
     @abstractmethod
     def compute_error_vector(self) -> SubVector:
         pass
 
+    def error_vector(self) -> SubVector:
+        return self.compute_error_vector()
+
     def compute_error(self) -> float:
-        error_vector: SubVector = self.compute_error_vector()
+        error_vector: SubVector = self.error_vector()
         return self.mahalanobis_distance(error_vector, self.get_info_matrix())
 
     def compute_rpe_translation2(self) -> tp.Optional[float]:
@@ -411,15 +422,16 @@ class FactorEdge(tp.Generic[T], BaseEdge):
             unit_vector[i] = delta
             plus: T = mean.oplus(unit_vector)
             node_copy.set_value(plus)
-            plus_error: SubVector = edge_copy.compute_error_vector()
+            plus_error: SubVector = edge_copy.error_vector()
 
             unit_vector[i] = - delta
             minus: T = mean.oplus(unit_vector)
             node_copy.set_value(minus)
-            minus_error: SubVector = edge_copy.compute_error_vector()
+            minus_error: SubVector = edge_copy.error_vector()
+            error = plus_error.array() - minus_error.array()
 
             column: SubVector = VectorFactory.from_dim(self.get_dim())(
-                (plus_error.array() - minus_error.array()) / (2 * delta)
+                error / (2 * delta)
             )
             jacobian.append(column.to_list())
         return Matrix(np.array(jacobian).transpose())

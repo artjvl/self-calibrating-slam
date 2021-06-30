@@ -1,3 +1,4 @@
+import numpy as np
 from src.framework.graph.types.scslam2d.nodes.parameter.ParameterNode import ParameterNode
 from src.framework.math.lie.transformation import SE2
 from src.framework.math.matrix.square import Square3
@@ -31,8 +32,5 @@ class ParameterNodeV3(ParameterNode[Vector3]):
             parameter = Vector3(1 / parameter.array())
         if self._interpretation == self.SCALE:
             return SE2.from_translation_angle_vector(
-                Vector3(
-                    Square3.from_diagonal(parameter.to_list()).array() @
-                    transformation.translation_angle_vector().array()
-                )
+                Vector3(np.multiply(parameter.array(), transformation.translation_angle_vector().array()))
             )

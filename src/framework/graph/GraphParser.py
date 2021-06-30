@@ -113,7 +113,7 @@ class GraphParser(object):
                     for id_ in node_ids:
                         assert id_ in nodes
                         node: SubFactorNode = nodes[id_]
-                        if not graph.contains_id(id_):
+                        if not graph.contains_node_id(id_):
                             graph.add_node(node)
                         element.add_node(node)
                     element.read(words[1 + cardinality:])
