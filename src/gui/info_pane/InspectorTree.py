@@ -64,7 +64,7 @@ class InspectorTree(QtWidgets.QTreeWidget):
         # error
         sub_error = self._construct_tree_property(root, 'Error', '', bold=True)
         self._construct_tree_property(sub_error, 'is_perturbed', str(graph.is_perturbed()))
-        self._construct_tree_property(sub_error, 'error', str(graph.compute_error()))
+        self._construct_tree_property(sub_error, 'error', str(graph.get_error()))
         sub_error.setExpanded(True)
 
         # metrics
@@ -73,9 +73,9 @@ class InspectorTree(QtWidgets.QTreeWidget):
             true: SubGraph = graph.get_true()
             sub_true = self._construct_tree_property(sub_metrics, 'true', true.to_unique())
             self._construct_graph_tree(true, sub_true)
-            self._construct_tree_property(sub_metrics, 'ate', str(graph.compute_ate()))
-            self._construct_tree_property(sub_metrics, 'rpe_translation', str(graph.compute_rpe_translation()))
-            self._construct_tree_property(sub_metrics, 'rpe_rotation', str(graph.compute_rpe_rotation()))
+            self._construct_tree_property(sub_metrics, 'ate', str(graph.get_ate()))
+            self._construct_tree_property(sub_metrics, 'rpe_translation', str(graph.get_rpe_translation()))
+            self._construct_tree_property(sub_metrics, 'rpe_rotation', str(graph.get_rpe_rotation()))
             sub_metrics.setExpanded(True)
 
         # jacobian/hessian

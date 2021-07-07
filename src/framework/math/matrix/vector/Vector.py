@@ -21,7 +21,6 @@ class Vector(Matrix, Dimensional):
         else:
             column = np.reshape(args, (-1, 1))
         vector = column.astype(float)
-        assert vector.shape[0] == self.get_dim()
         super().__init__(vector)
 
     def __add__(self, other: SubVector) -> SubVector:
@@ -52,6 +51,16 @@ class Vector(Matrix, Dimensional):
     # alternative representations
     def to_list(self) -> tp.List[float]:
         return list(self._matrix.flatten())
+
+
+class SizeVector(Vector):
+
+    def __init__(
+            self,
+            *args: tp.Any
+    ):
+        super().__init__(args)
+        assert self.array().shape[0] == self.get_dim()
 
     # alternative creators
     @classmethod

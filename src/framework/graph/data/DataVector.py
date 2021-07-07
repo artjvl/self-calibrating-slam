@@ -17,6 +17,13 @@ class DataVector(Data[SubVector]):
         super().__init__(value)
         self._size = self._type.get_dim()
 
+    def to_vector(self) -> SubVector:
+        return self.get_value()
+
+    def from_vector(self, vector: SubVector) -> None:
+        assert vector.get_dim() == self.get_dim()
+        self.set_value(vector)
+
     def read(self, words: tp.List[str]) -> None:
         floats: tp.List[float] = Parser.words_to_list(words)
         value: SubVector = self._type(floats)

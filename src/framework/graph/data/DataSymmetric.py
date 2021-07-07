@@ -1,5 +1,6 @@
 import typing as tp
 
+from framework.math.matrix.vector import VectorFactory
 from src.framework.graph.data.Data import Data
 from src.framework.graph.data.Parser import Parser
 from src.framework.math.matrix.square import SubSquare, Square3, Square2
@@ -17,6 +18,15 @@ class DataSymmetric(Data[SubSquare]):
     ):
         super().__init__(value)
         self._size = self._type.get_dim()
+
+    def to_vector(self) -> SubVector:
+        return VectorFactory.from_dim(self.get_dim())(
+            Parser.symmetric_to_list(self.get_value())
+        )
+
+    def from_vector(self, vector: SubVector) -> None:
+        assert vector.get_dim() == self.get_dim()
+        self.set_value(Parser.list_to_symmetric(vector.to_list()))
 
     def read(self, words: tp.List[str]) -> None:
         floats: tp.List[float] = Parser.words_to_list(words)

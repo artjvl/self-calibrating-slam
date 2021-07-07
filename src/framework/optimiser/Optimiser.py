@@ -102,7 +102,7 @@ class Optimiser(object):
     def optimise(self) -> Graph:
         root: Path = get_project_root()
         relative_to: str = 'graphs/temp'
-        GraphParser.save_path_folder(self.get_graph(), relative_to, 'before')
+        GraphParser.save_path_folder(self._graph, relative_to, 'before')
 
         path_g2o_bin: Path = (root / 'g2o/bin/g2o_d').resolve()
         path_input: Path = (root / (relative_to + '/before.g2o')).resolve()
@@ -123,4 +123,5 @@ class Optimiser(object):
         process = subprocess.run(commands)
 
         graph: Graph = GraphParser.load(path_output)
+        graph.assign_pre(self._graph)
         return graph

@@ -12,6 +12,7 @@ from src.framework.math.matrix.square import SquareFactory
 from src.framework.math.matrix.square import SubSquare
 from src.framework.math.matrix.vector import SubVector
 from src.framework.math.matrix.vector import VectorFactory
+from src.framework.math.matrix.vector.Vector import Vector
 
 SubFactorGraph = tp.TypeVar('SubFactorGraph', bound='FactorGraph')
 SubFactorNode = tp.TypeVar('SubFactorNode', bound='FactorNode')
@@ -32,6 +33,26 @@ class FactorGraph(BaseGraph):
     def add_node(self, node: SubFactorNode) -> None:
         super().add_node(node)
         self.init_gradient()
+
+    def to_vector(self) -> SubVector:
+        list_: tp.List[float] = []
+        node: SubFactorNode
+        for node in self.get_nodes():
+            list_ += node.to_vector().to_list()
+        return Vector(list_)
+
+    def from_vector(self, vector: SubVector) -> None:
+        assert vector.get_dim() == sum([node.get_dim() for node in self.get_nodes()])
+        list_: tp.List[float] = vector.to_list()
+
+        index: int = 0
+        node: SubFactorNode
+        for node in self.get_nodes():
+            dim = node.get_dim()
+            sub: SubVector = VectorFactory.from_list(list_[index: index + dim])
+            node.from_vector(sub)
+            index += dim
+        assert index == len(list_)
 
     # linearise
     def init_gradient(self) -> None:
@@ -117,6 +138,14 @@ class FactorNode(tp.Generic[T], BaseNode):
     def set_value(self, value: T) -> None:
         """ Sets the value of this node. """
         self._value.set_value(value)
+
+    def to_vector(self) -> SubVector:
+        """ Returns the vector that defines the value of this node. """
+        return self._value.to_vector()
+
+    def from_vector(self, vector: SubVector) -> None:
+        """ Sets the value of this node according to the provided vector. """
+        self._value.from_vector(vector)
 
     # fix
     def fix(self, is_fixed: bool = True) -> None:

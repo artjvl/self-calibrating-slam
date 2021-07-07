@@ -23,6 +23,14 @@ class Data(tp.Generic[T], ReadWrite, ABC):
         if value is not None:
             self.set_value(value)
 
+    @abstractmethod
+    def to_vector(self) -> SubVector:
+        pass
+
+    @abstractmethod
+    def from_vector(self, vector: SubVector) -> None:
+        pass
+
     # value
     def set_value(
             self,

@@ -1,11 +1,14 @@
+import copy
 import pathlib
 import typing as tp
 from abc import ABC, abstractmethod
 from datetime import datetime
+import matplotlib.pyplot as plt
 
 import numpy as np
-from src.framework.math.matrix.vector import SubVector
 from src.framework.graph.FactorGraph import FactorGraph, FactorNode, FactorEdge
+from src.framework.math.matrix.vector import SubVector
+from src.framework.math.matrix.vector.Vector import Vector
 
 SubGraph = tp.TypeVar('SubGraph', bound='Graph')
 SubNode = tp.TypeVar('SubNode', bound='Node')
@@ -16,10 +19,12 @@ SubElement = tp.Union[SubNode, SubEdge]
 class Graph(FactorGraph):
 
     _true: tp.Optional[SubGraph]
+    _pre: tp.Optional[SubGraph]
 
     def __init__(self):
         super().__init__()
         self._true = None
+        self._pre = None
 
         self._date: str = datetime.now().strftime('%Y%m%d-%H%M%S')
         self._path: tp.Optional[pathlib.Path] = None
@@ -29,6 +34,38 @@ class Graph(FactorGraph):
         self._ate: tp.Optional[float] = None
         self._rpe_translation: tp.Optional[float] = None
         self._rpe_rotation: tp.Optional[float] = None
+
+    # pre
+    def has_pre(self) -> bool:
+        return self._pre is not None
+
+    def get_pre(self) -> SubGraph:
+        assert self.has_pre()
+        return self._pre
+
+    def assign_pre(self, graph: SubGraph):
+        assert len(self.get_nodes()) == len(graph.get_nodes())
+        # assert len(self.get_edges()) == len(graph.get_edges())
+        self._pre = graph
+
+    def error_curve(self, steps: int = 50) -> tp.Tuple[tp.List[float], tp.List[float]]:
+        assert self.has_true()
+        assert self.has_pre()
+
+        pre_vector: SubVector = self.get_pre().to_vector()
+        opt_vector: SubVector = self.to_vector()
+        unit: SubVector = Vector(pre_vector.array() - opt_vector.array())
+
+        graph: SubGraph = copy.deepcopy(self)
+        line = list(np.linspace(-2, 2, steps + 1))
+        error = []
+        for x in line:
+            vector = Vector(opt_vector.array() + unit.array() * x)
+            graph.from_vector(vector)
+            error.append(graph.compute_error())
+        plt.plot(line, error)
+        plt.show()
+        return line, error
 
     # true
     def has_true(self) -> bool:
@@ -124,25 +161,25 @@ class Graph(FactorGraph):
         return graphs
 
     # errors
-    # def compute_error(self) -> float:
-    #     if self._error is None:
-    #         self._error = super().compute_error()
-    #     return self._error
-    #
-    # def compute_ate(self) -> float:
-    #     if self._ate is None:
-    #         self._ate = super().compute_ate()
-    #     return self._ate
-    #
-    # def compute_rpe_translation(self) -> float:
-    #     if self._rpe_translation is None:
-    #         self._rpe_translation = super().compute_rpe_translation()
-    #     return self._rpe_translation
-    #
-    # def compute_rpe_rotation(self) -> float:
-    #     if self._rpe_rotation is None:
-    #         self._rpe_rotation = super().compute_rpe_rotation()
-    #     return self._rpe_rotation
+    def get_error(self) -> float:
+        if self._error is None:
+            self._error = self.compute_error()
+        return self._error
+
+    def get_ate(self) -> float:
+        if self._ate is None:
+            self._ate = self.compute_ate()
+        return self._ate
+
+    def get_rpe_translation(self) -> float:
+        if self._rpe_translation is None:
+            self._rpe_translation = self.compute_rpe_translation()
+        return self._rpe_translation
+
+    def get_rpe_rotation(self) -> float:
+        if self._rpe_rotation is None:
+            self._rpe_rotation = self.compute_rpe_rotation()
+        return self._rpe_rotation
 
     # properties
     def set_path(self, path: pathlib.Path) -> None:

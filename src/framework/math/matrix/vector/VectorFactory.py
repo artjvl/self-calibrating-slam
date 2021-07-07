@@ -1,16 +1,16 @@
 import typing as tp
 
-from src.framework.math.matrix.vector.Vector import Vector, SubVector
+from src.framework.math.matrix.vector.Vector import SizeVector, SubVector
 
 
-class Vector1(Vector):
+class Vector1(SizeVector):
     _dim = 1
 
     def x(self) -> float:
         return self[0]
 
 
-class Vector2(Vector):
+class Vector2(SizeVector):
     _dim = 2
 
     def x(self) -> float:
@@ -23,7 +23,7 @@ class Vector2(Vector):
         return Vector3(*(self.to_list()), 0)
 
 
-class Vector3(Vector):
+class Vector3(SizeVector):
     _dim = 3
 
     def x(self) -> float:
@@ -39,7 +39,7 @@ class Vector3(Vector):
         return Vector2(self[:2]), self[2]
 
 
-class Vector4(Vector):
+class Vector4(SizeVector):
     _dim = 4
 
     def x(self) -> float:
@@ -55,7 +55,7 @@ class Vector4(Vector):
         return self[3]
 
 
-class Vector6(Vector):
+class Vector6(SizeVector):
     _dim = 6
 
     def x(self) -> float:
