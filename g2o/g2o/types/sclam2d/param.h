@@ -11,16 +11,10 @@
 namespace g2o {
     class Param {
     public:
-        virtual std::string getInterpretation() const {
-            return _interpretation;
-        }
-        virtual void setInterpretation(std::string const& interpretation) = 0;
         virtual SE2 composeTransformation(const SE2& transformation, const bool inverse) const = 0;
         virtual SE2 composeTransformation(const SE2& transformation) const {
             return composeTransformation(transformation, false);
         }
-    protected:
-        std::string _interpretation;
     };
 }
 

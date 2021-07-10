@@ -2,7 +2,7 @@ import typing as tp
 
 import numpy as np
 from src.framework.graph.Graph import Edge
-from src.framework.graph.types.scslam2d.nodes.information.InformationNode import SubInformationNode
+from src.framework.graph.types.scslam2d.nodes.InformationNode import SubInformationNode
 from src.framework.math.matrix.square import SquareFactory
 from src.framework.math.matrix.square import SubSquare
 from src.framework.math.matrix.vector import SubVector, VectorFactory

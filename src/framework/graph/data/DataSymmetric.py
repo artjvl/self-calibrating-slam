@@ -1,10 +1,10 @@
 import typing as tp
 
-from framework.math.matrix.vector import VectorFactory
 from src.framework.graph.data.Data import Data
 from src.framework.graph.data.Parser import Parser
 from src.framework.math.matrix.square import SubSquare, Square3, Square2
 from src.framework.math.matrix.vector import SubVector
+from src.framework.math.matrix.vector import VectorFactory
 
 SubDataSymmetric = tp.TypeVar('SubDataSymmetric', bound='DataSquare', covariant=True)
 

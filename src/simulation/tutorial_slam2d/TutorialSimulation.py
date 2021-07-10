@@ -2,7 +2,6 @@ import pathlib
 from copy import deepcopy
 
 import numpy as np
-from src.framework.graph.types.scslam2d.nodes.parameter import ParameterNodeSE2
 from src.framework.math.lie.transformation import SE2
 from src.framework.math.matrix.square import Square3
 from src.framework.simulation.BiSimulation2D import BiSimulation2D
@@ -36,12 +35,9 @@ class TutorialSimulation(BiSimulation2D):
         info_matrix3 = Square3.from_diagonal(
             [1/translation_noise_x, 1/translation_noise_y, np.pi/(180. * rotation_noise_deg)]
         )
-        par = ParameterNodeSE2()
-        par.set_value(SE2.from_translation_angle_elements(0.2, 0.3, 0.02))
-        par.set_as_bias()
         true = SensorSE2()
         true.set_info_matrix(info_matrix3)
-        true.add_parameter(par)
+        true.add_bias('bias', SE2.from_translation_angle_elements(0.2, 0.3, 0.02))
         self.add_sensor('lidar', true, deepcopy(true))
 
         num: int = 5

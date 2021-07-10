@@ -9,8 +9,8 @@ from src.simulation.tutorial_slam2d.TutorialSimulation import TutorialSimulation
 
 
 class Simulation(Enum):
+    MANHATTAN: BiSimulation2D = ManhattanSim()
     SQUARE_TRIP: BiSimulation2D = SquarePriorTripSim()
     SINGLE_TRIP: BiSimulation2D = SingleTripSim()
     RETURN_TRIP: BiSimulation2D = ReturnTripSim()
-    MANHATTAN: BiSimulation2D = ManhattanSim()
     TUTORIAL_SLAM2D: BiSimulation2D = TutorialSimulation()

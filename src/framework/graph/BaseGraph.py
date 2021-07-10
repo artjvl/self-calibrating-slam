@@ -19,23 +19,17 @@ class NodeContainer(object):
 
     def add_node(self, node: SubBaseNode) -> None:
         id_: int = node.get_id()
-        assert id_ not in self._nodes
+        assert not self.contains_node_id(id_)
         self._nodes[id_] = node
 
     def has_nodes(self) -> bool:
         return bool(self._nodes)
 
-    def contains_node(self, node: tp.Union[SubBaseNode, int]) -> bool:
-        if isinstance(node, BaseNode):
-            node = node.get_id()
-        assert isinstance(node, int)
-        return self.contains_node_id(node)
+    def contains_node(self, node: SubBaseNode) -> bool:
+        return node in self.get_nodes()
 
     def contains_node_id(self, id_: int) -> bool:
-        if id_ in self._nodes:
-            assert self._nodes[id_].get_id() == id_
-            return True
-        return False
+        return id_ in self._nodes
 
     def get_node(self, id_: int) -> SubBaseNode:
         assert self.contains_node_id(id_)

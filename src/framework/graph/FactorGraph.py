@@ -4,9 +4,9 @@ from abc import abstractmethod
 
 import numpy as np
 from src.framework.graph.BaseGraph import BaseGraph, BaseNode, BaseEdge
-from src.framework.graph.BlockMatrix import SparseBlockMatrix, BlockMatrix, SubSparseBlockMatrix, SubBlockMatrix
 from src.framework.graph.data import SubData, DataFactory
 from src.framework.graph.data import SubDataSymmetric
+from src.framework.math.matrix.BlockMatrix import SparseBlockMatrix, BlockMatrix, SubSparseBlockMatrix, SubBlockMatrix
 from src.framework.math.matrix.Matrix import SubMatrix, List2D, Matrix
 from src.framework.math.matrix.square import SquareFactory
 from src.framework.math.matrix.square import SubSquare

@@ -2,10 +2,9 @@ import typing as tp
 from abc import ABC, abstractmethod
 
 import numpy as np
-from src.framework.graph.BaseGraph import SubBaseNode
 from src.framework.graph.Graph import Edge, SubNode, Node
-from src.framework.graph.types.scslam2d.nodes.information.InformationNode import InformationNode, SubInformationNode
-from src.framework.graph.types.scslam2d.nodes.parameter.ParameterNode import ParameterNode, SubParameterNode
+from src.framework.graph.types.scslam2d.nodes.InformationNode import InformationNode, SubInformationNode
+from src.framework.graph.types.scslam2d.nodes.ParameterNode import ParameterNode, SubParameterNode
 from src.framework.math.matrix.square import SquareFactory
 from src.framework.math.matrix.square import SubSquare
 from src.framework.math.matrix.vector import SubVector

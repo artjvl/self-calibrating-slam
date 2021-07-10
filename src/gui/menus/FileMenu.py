@@ -1,11 +1,8 @@
-from functools import partial
-
 from PyQt5 import QtWidgets
-from framework.graph.Graph import SubGraph
-from src.gui.modules.PopUp import PopUp
-
+from src.framework.graph.Graph import SubGraph
 from src.gui.menus.Menu import Menu
 from src.gui.modules.Container import TopContainer
+from src.gui.modules.PopUp import PopUp
 
 
 class FileMenu(Menu):

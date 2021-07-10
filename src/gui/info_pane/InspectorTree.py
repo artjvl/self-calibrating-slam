@@ -2,17 +2,17 @@ import enum
 import typing as tp
 
 from PyQt5 import QtGui, QtWidgets
-from framework.math.matrix.Matrix import SubMatrix
-from src.framework.graph.BlockMatrix import SubBlockMatrix
 from src.framework.graph.Graph import SubGraph, Graph, SubEdge, SubNode, SubElement, Node
 from src.framework.graph.data.DataFactory import Supported
-from src.framework.graph.types.scslam2d.nodes.information.InformationNode import InformationNode
-from src.framework.graph.types.scslam2d.nodes.parameter.ParameterNode import ParameterNode
+from src.framework.graph.types.scslam2d.nodes.InformationNode import InformationNode
+from src.framework.graph.types.scslam2d.nodes.ParameterNode import ParameterNode
 from src.framework.math.Dimensional import Dimensional
 from src.framework.math.lie.Lie import Lie
 from src.framework.math.lie.rotation.SO import SO
 from src.framework.math.lie.transformation import SE2
 from src.framework.math.lie.transformation.SE import SE
+from src.framework.math.matrix.BlockMatrix import SubBlockMatrix
+from src.framework.math.matrix.Matrix import SubMatrix
 
 Item = tp.Union[QtWidgets.QTreeWidget, QtWidgets.QTreeWidgetItem]
 
@@ -149,9 +149,7 @@ class InspectorTree(QtWidgets.QTreeWidget):
         self._construct_tree_property(root, 'id', str(node.get_id()))
         self._construct_tree_property(root, 'is_fixed', str(node.is_fixed()))
         if isinstance(node, Node):
-            if isinstance(node, ParameterNode):
-                self._construct_tree_property(root, 'interpretation', node.get_interpretation())
-            elif isinstance(node, InformationNode):
+            if isinstance(node, InformationNode):
                 self._construct_tree_property_from_value(root, 'matrix', node.get_info_matrix())
 
         # metrics

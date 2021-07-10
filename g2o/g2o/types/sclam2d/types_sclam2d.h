@@ -33,14 +33,18 @@
 
 #include "node_se2.h"
 #include "node_v3.h"
-#include "param_se2.h"
-#include "param_v3.h"
+#include "param_bias.h"
+#include "param_offset.h"
+#include "param_scale.h"
+
+#include "constraint_pose2d_v2.h"
+#include "constraint_poses2d_se2.h"
+#include "constraint_poses2d_se2_bias.h"
+#include "constraint_poses2d_se2_offset.h"
+#include "constraint_poses2d_se2_scale.h"
+
 #include "info3.h"
 #include "constraint_info3.h"
-#include "constraint_poses2d_se2.h"
 #include "constraint_poses2d_se2_i.h"
-#include "constraint_poses2d_se2_pse2.h"
-#include "constraint_poses2d_se2_pv3.h"
-#include "constraint_pose2d_v2.h"
 
 #endif

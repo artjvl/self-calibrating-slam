@@ -1,5 +1,4 @@
 import numpy as np
-from src.framework.graph.types.scslam2d.nodes.parameter import ParameterNodeSE2
 from src.framework.math.lie.transformation import SE2
 from src.framework.math.matrix.square import Square2
 from src.framework.math.matrix.square import Square3
@@ -17,19 +16,12 @@ class SquarePriorTripSim(BiSimulation2D):
     # public methods
     def _simulate(self):
 
-        info_matrix3 = Square3([[800., 0., 0.], [0., 600., 0.], [0., 0., 400.]])
-        true_odo_par = ParameterNodeSE2()
-        true_odo_par.set_value(SE2.from_translation_angle_elements(0.0, 0.2, 0.))
-        true_odo_par.set_as_bias()
+        info_matrix3 = Square3([[8000., 0., 0.], [0., 6000., 0.], [0., 0., 4000.]])
         true_odo = SensorSE2()
-        true_odo.add_parameter(true_odo_par)
+        true_odo.add_bias('bias', SE2.from_translation_angle_elements(0., 0.2, 0.))
         true_odo.set_info_matrix(info_matrix3)
-        perturbed_odo_par = ParameterNodeSE2()
-        # perturbed_odo_par.fix()
-        perturbed_odo_par.set_value(SE2.from_translation_angle_elements(0., 0., 0.))
-        perturbed_odo_par.set_as_bias()
         perturbed_odo = SensorSE2()
-        perturbed_odo.add_parameter(perturbed_odo_par)
+        perturbed_odo.add_bias('bias', SE2.from_translation_angle_elements(0., 0., 0.))
         perturbed_odo.set_info_matrix(info_matrix3)
         self.add_sensor('lidar', true_odo, perturbed_odo)
 

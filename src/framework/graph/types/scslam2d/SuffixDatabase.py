@@ -3,8 +3,8 @@ import typing as tp
 from src.framework.graph.Database import Database
 from src.framework.graph.Graph import SubNode, Edge, Node
 from src.framework.graph.types.scslam2d.edges.CalibratingEdge import CalibratingEdge, SubCalibratingEdge
-from src.framework.graph.types.scslam2d.nodes.information.InformationNode import SubInformationNode
-from src.framework.graph.types.scslam2d.nodes.parameter.ParameterNode import SubParameterNode
+from src.framework.graph.types.scslam2d.nodes.InformationNode import SubInformationNode
+from src.framework.graph.types.scslam2d.nodes.ParameterNode import SubParameterNode
 from src.utils.TwoWayDict import TwoWayDict
 
 Element = tp.Union[SubNode, SubCalibratingEdge]
@@ -41,17 +41,17 @@ class SuffixDatabase(Database):
 
     # tag to element
     def from_tag(self, tag: str) -> Element:
+        element: tp.Optional[Element] = None
+        suffixes: tp.Optional[tp.List[str]] = None
+
         words: tp.List[str] = tag.split('_')
-        suffixes: tp.List[str] = []
-        for word in words[::-1]:
-            if word in self._parameters or word in self._informations:
-                suffixes.append(word)
-            else:
-                tag = '_'.join(words[: 1 + words.index(word)])
+        for i in range(len(words)):
+            subtag: str = '_'.join(words[: i + 1])
+            if subtag in self._elements:
+                element = self._elements[subtag]()
+                suffixes = words[i + 1:]
                 break
-        assert tag in self._elements, f"Tag '{tag}' not found in database."
-        suffixes = suffixes[::-1]
-        element: Element = self._elements[tag]()
+        assert element is not None, f"Tag '{tag}' not found in database."
 
         # if element is a node
         if isinstance(element, Node):

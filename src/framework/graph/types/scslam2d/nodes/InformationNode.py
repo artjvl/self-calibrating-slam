@@ -65,6 +65,11 @@ class InformationNodeFactory(object):
     }
 
     @classmethod
-    def from_dim(cls, dim: int) -> SubInformationNode:
+    def from_dim(cls, dim: int) -> tp.Type[SubInformationNode]:
         assert dim in cls._map
         return cls._map[dim]
+
+    @classmethod
+    def from_value(cls, value: SubSquare) -> SubInformationNode:
+        dim: int = value.get_dim()
+        return cls.from_dim(dim)(value)

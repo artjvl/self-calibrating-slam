@@ -2,15 +2,17 @@ import typing as tp
 from abc import abstractmethod
 
 import numpy as np
-from numpy.random.mtrand import RandomState
+from src.framework.graph.Graph import SubGraph
+from src.framework.graph.GraphManager import SubGraphManager
 from src.framework.graph.data import SubData
 from src.framework.graph.data.DataFactory import DataFactory
 from src.framework.graph.types.scslam2d.edges.CalibratingEdge import SubCalibratingEdge
-from src.framework.graph.types.scslam2d.edges.InformationEdge import SubInformationEdge, InformationEdgeFactory
-from src.framework.graph.types.scslam2d.nodes.information.InformationNode import SubInformationNode
-from src.framework.graph.types.scslam2d.nodes.parameter.ParameterNode import SubParameterNode
+from src.framework.graph.types.scslam2d.nodes.ParameterNode import SubParameterNode, BiasParameterNode, \
+    OffsetParameterNode, ScaleParameterNode
+from src.framework.math.lie.transformation import SE2
 from src.framework.math.matrix.square import SubSquare, SquareFactory
 from src.framework.math.matrix.vector import SubVector, VectorFactory
+from src.framework.math.matrix.vector import Vector3
 
 if tp.TYPE_CHECKING:
     pass
@@ -21,15 +23,13 @@ SubSensor = tp.TypeVar('SubSensor', bound='Sensor')
 
 class Sensor(tp.Generic[T]):
 
-    _rng: np.random.RandomState
     _type: tp.Type[T]
+    _rng: np.random.RandomState
 
     _info_matrix: SubSquare
-    _parameters: tp.List[SubParameterNode]
-    _info_node: tp.Optional[SubInformationNode]
-    _info_edge: tp.Optional[SubInformationEdge]
+    _parameters: tp.Dict[str, SubParameterNode]
 
-    _is_connected: bool
+    _manager: tp.Optional[SubGraphManager]
 
     def __init__(
             self,
@@ -44,12 +44,12 @@ class Sensor(tp.Generic[T]):
         self._info_matrix = info_matrix
 
         # parameter
-        self._parameters = []
+        self._parameters = {}
         self._info_node = None
         self._info_edge = None
 
         # simulation
-        self._is_connected = False
+        self._manager = None
 
     # measurement-type
     @classmethod
@@ -60,53 +60,66 @@ class Sensor(tp.Generic[T]):
     def get_type(cls) -> tp.Type[SubData]:
         return cls._type
 
-    def set_connected(self):
-        self._is_connected = True
+    # simulation
+    def has_graph(self) -> bool:
+        return self._manager is not None
 
-    def is_connected(self) -> bool:
-        return self._is_connected
+    def set_graph(self, manager: SubGraphManager) -> None:
+        self._manager = manager
 
     # parameter
-    def add_parameter(
+    def add_bias(
             self,
-            parameter: SubParameterNode
-    ) -> None:
-        assert not self._is_connected
-        self._parameters.append(parameter)
+            name: str,
+            value: SE2
+    ) -> SubParameterNode:
+        assert name not in self._parameters
+        parameter: SubParameterNode = BiasParameterNode(value=value)
+        self._parameters[name] = parameter
+        return parameter
+
+    def add_offset(
+            self,
+            name: str,
+            value: SE2
+    ) -> SubParameterNode:
+        assert name not in self._parameters
+        parameter: SubParameterNode = OffsetParameterNode(value=value)
+        self._parameters[name] = parameter
+        return parameter
+
+    def add_scale(
+            self,
+            name: str,
+            value: Vector3
+    ) -> SubParameterNode:
+        assert name not in self._parameters
+        parameter: SubParameterNode = ScaleParameterNode(value=value)
+        self._parameters[name] = parameter
+        return parameter
+
+    def get_parameter(self, name: str) -> SubParameterNode:
+        assert name in self._parameters
+        return self._parameters[name]
 
     def get_parameters(self) -> tp.List[SubParameterNode]:
-        return self._parameters
+        return list(self._parameters.values())
 
-    # information
-    def add_info_node(
+    def update_parameter(
             self,
-            node: SubInformationNode
+            name: str,
+            value: tp.Union[Vector3, SE2]
     ) -> None:
-        assert not self._is_connected
-        assert self.get_dim() == node.get_dim()
-        self._info_node = node
+        parameter: SubParameterNode = self.get_parameter(name)
+        new: SubParameterNode = type(parameter)(value=value)
+        self._parameters[name] = new
+        return new
 
-    def has_info_node(self) -> bool:
-        return self._info_node is not None
-
-    def get_info_node(self) -> SubInformationNode:
-        assert self.has_info_node()
-        return self._info_node
-
-    def get_info_edge(self, node: SubInformationNode) -> SubInformationEdge:
-        assert self.has_info_node()
-        assert node == self._info_node
-        self._info_edge: SubInformationEdge = InformationEdgeFactory.from_dim(node.get_dim())(
-            node.get_info_diagonal(), node
-        )
-        return self._info_edge
-
+    # info
     def set_info_matrix(self, info_matrix: SubSquare) -> None:
         self._info_matrix = info_matrix
 
     def get_info_matrix(self) -> SubSquare:
-        if self.has_info_node():
-            return self._info_node.get_info_matrix()
         return self._info_matrix
 
     # noise
@@ -143,15 +156,16 @@ class Sensor(tp.Generic[T]):
             edge: SubCalibratingEdge
     ) -> SubCalibratingEdge:
         assert edge.get_type() == self.get_type()
+        assert self.has_graph()
 
         # add parameters
-        for parameter in self._parameters:
-            edge.add_parameter(parameter)
+        for parameter in self.get_parameters():
+            graph: SubGraph = self._manager.get_graph()
+            if not graph.contains_node(parameter):
+                self._manager.add_node(parameter)
+            if not edge.contains_node(parameter):
+                edge.add_parameter(parameter)
 
         # add information
         edge.set_info_matrix(self._info_matrix)
-        if self.has_info_node():
-            edge.add_info_node(self._info_node)
-            self._info_edge.increment_multiplier()
-
         return edge
