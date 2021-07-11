@@ -115,13 +115,13 @@ class CalibratingEdge(tp.Generic[T], Edge[T], ABC):
 
     # read/write
     def read(self, words: tp.List[str]) -> None:
-        words = self._measurement.read_rest(words)
+        words = self.get_data().read_rest(words)
         if not self.has_info_node():
             words = self._info_matrix.read_rest(words)
         assert not words, f"Words '{words}' are left unread."
 
     def write(self) -> tp.List[str]:
-        words: tp.List[str] = self._measurement.write()
+        words: tp.List[str] = self.get_data().write()
         if not self.has_info_node():
             words += self._info_matrix.write()
         return words

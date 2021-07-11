@@ -11,10 +11,11 @@ SubBaseElement = tp.Union[SubBaseNode, SubBaseEdge]
 
 
 class NodeContainer(object):
+
     _nodes: tp.Dict[int, SubBaseNode]
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
         self._nodes = {}
 
     def add_node(self, node: SubBaseNode) -> None:
@@ -38,12 +39,9 @@ class NodeContainer(object):
     def get_nodes(self) -> tp.List[SubBaseNode]:
         return list(self._nodes.values())
 
-    def get_node_index(self, node: tp.Union[SubBaseNode, int]) -> int:
-        if isinstance(node, BaseNode):
-            node = node.get_id()
-        assert isinstance(node, int)
-        assert self.contains_node_id(node)
-        return list(self._nodes.keys()).index(node)
+    def get_node_index(self, id_: int) -> int:
+        assert self.contains_node_id(id_)
+        return list(self._nodes.keys()).index(id_)
 
     def get_node_ids(self) -> tp.List[int]:
         return [node.get_id() for node in self.get_nodes()]
@@ -59,10 +57,9 @@ class BaseGraph(NodeContainer, Printable):
         self._edges = []
         self._sorted = TypeDict[SubBaseElement]()
 
-    # nodes
+    # NodeContainer
     def add_node(self, node: SubBaseNode) -> None:
-        assert not self.contains_node(node), f'Node {node.to_unique()} already present in {self.to_unique()}.'
-        self._nodes[node.get_id()] = node
+        super().add_node(node)
         self._sorted.add(node)
 
     def get_nodes(self) -> tp.List[SubBaseNode]:
@@ -71,14 +68,11 @@ class BaseGraph(NodeContainer, Printable):
     # edges
     def add_edge(
             self,
-            edge: SubBaseEdge,
-            add_nodes: bool = False
+            edge: SubBaseEdge
     ) -> None:
-        assert edge not in self.get_edges(), f'{edge.to_unique()} already present in {self.to_unique()}.'
+        assert edge not in self.get_edges()
         for node in edge.get_nodes():
-            if add_nodes and not self.contains_node(node):
-                self.add_node(node)
-            assert self.contains_node(node), f'{node.to_unique()} is not present in {self.to_unique()}.'
+            assert self.contains_node(node)
         self._edges.append(edge)
         self._sorted.add(edge)
 
@@ -96,8 +90,9 @@ class BaseGraph(NodeContainer, Printable):
     def to_id(self) -> str:
         return f'{len(self._nodes)};{len(self._edges)}'
 
+    # subgraphs
     def get_subgraphs(self) -> tp.List[SubBaseGraph]:
-        graph = type(self)()
+        graph: SubBaseGraph = type(self)()
         graphs: tp.List[SubBaseGraph] = []
         for edge in self._edges:
             for node in edge.get_nodes():
@@ -110,20 +105,26 @@ class BaseGraph(NodeContainer, Printable):
 
 class BaseNode(Printable):
 
-    _id: int
+    _id: tp.Optional[int]
 
     def __init__(
             self,
-            id_: int = 0
+            id_: tp.Optional[int] = None,
+            **kwargs
     ):
-        super().__init__()
+        super().__init__(**kwargs)
         self._id = id_
 
     # id
+    def has_id(self) -> bool:
+        return self._id is not None
+
     def set_id(self, id_: int) -> None:
+        assert not self.has_id()
         self._id = id_
 
     def get_id(self) -> int:
+        assert self.has_id()
         return self._id
 
     # Printable
@@ -135,9 +136,10 @@ class BaseEdge(NodeContainer, Printable):
 
     def __init__(
             self,
-            *nodes: SubBaseNode
+            *nodes: SubBaseNode,
+            **kwargs
     ):
-        super().__init__()
+        super().__init__(**kwargs)
         for node in nodes:
             self.add_node(node)
 

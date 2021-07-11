@@ -71,11 +71,11 @@ class FactorGraph(BaseGraph):
             nodes: tp.List[FactorNode] = edge.get_nodes()
             for node_i in nodes:
                 for node_j in nodes:
-                    i: int = self.get_node_index(node_i)
-                    j: int = self.get_node_index(node_j)
+                    i: int = self.get_node_index(node_i.get_id())
+                    j: int = self.get_node_index(node_j.get_id())
                     # print(f'{i}-{j}')
                     self._hessian[i, j] = self._hessian[i, j] + \
-                        edge.get_hessian()[edge.get_node_index(node_i), edge.get_node_index(node_j)]
+                        edge.get_hessian()[edge.get_node_index(node_i.get_id()), edge.get_node_index(node_j.get_id())]
 
     def get_covariance(self) -> SubBlockMatrix:
         if self._covariance is None:
@@ -95,11 +95,67 @@ class FactorGraph(BaseGraph):
 T = tp.TypeVar('T')
 
 
-class FactorNode(tp.Generic[T], BaseNode):
+class DataContainer(tp.Generic[T]):
 
-    # value variables
     _type: tp.Type[T]
-    _value: SubData
+    _data: SubData
+
+    def __init__(
+            self,
+            value: tp.Optional[T] = None,
+            **kwargs
+    ):
+        super().__init__(**kwargs)
+        self._data = DataFactory.from_type(self.get_type())(value)
+
+    # type
+    @classmethod
+    def get_type(cls) -> tp.Type[T]:
+        """ Returns the value-type of this container. """
+        return cls._type
+
+    @classmethod
+    def get_dim(cls) -> int:
+        """ Returns the dimensions (minimum number of constraints) for the value-type of this container. """
+        return DataFactory.from_type(cls.get_type()).get_dim()
+
+    def get_data(self) -> SubData:
+        return self._data
+
+    # value
+    def has_value(self) -> bool:
+        """ Returns whether a value has already been assigned to this container. """
+        return self._data.has_value()
+
+    def get_value(self) -> T:
+        """ Returns the value encoded in this container. """
+        assert self.has_value()
+        return self._data.get_value()
+
+    def set_value(self, value: T) -> None:
+        """ Sets the value of this container. """
+        self._data.set_value(value)
+
+    # vector
+    def to_vector(self) -> SubVector:
+        """ Returns the vector that defines the value of this container. """
+        return self._data.to_vector()
+
+    def from_vector(self, vector: SubVector) -> None:
+        """ Sets the value of this container according to the provided vector. """
+        self._data.from_vector(vector)
+
+    # read/write
+    def read(self, words: tp.List[str]) -> None:
+        words = self._data.read_rest(words)
+        assert not words, f"Words '{words} are left unread."
+
+    def write(self) -> tp.List[str]:
+        words: tp.List[str] = self._data.write()
+        return words
+
+
+class FactorNode(BaseNode, tp.Generic[T], DataContainer[T]):
 
     # properties
     _is_fixed: bool
@@ -109,43 +165,8 @@ class FactorNode(tp.Generic[T], BaseNode):
             id_: tp.Optional[int] = None,
             value: tp.Optional[T] = None
     ):
-        if id_ is None:
-            id_ = 0
-        super().__init__(id_)
-        self._value = DataFactory.from_type(self.get_type())(value)
+        super().__init__(id_=id_, value=value)
         self._is_fixed = False
-
-    # value
-    @classmethod
-    def get_type(cls) -> tp.Type[T]:
-        """ Returns the value-type of this node. """
-        return cls._type
-
-    @classmethod
-    def get_dim(cls) -> int:
-        """ Returns the dimensions (minimum number of constraints) for the value-type of this node. """
-        return DataFactory.from_type(cls.get_type()).get_dim()
-
-    def has_value(self) -> bool:
-        """ Returns whether a value has already been assigned to this node. """
-        return self._value.has_value()
-
-    def get_value(self) -> T:
-        """ Returns the value encoded in this node. """
-        assert self.has_value()
-        return self._value.get_value()
-
-    def set_value(self, value: T) -> None:
-        """ Sets the value of this node. """
-        self._value.set_value(value)
-
-    def to_vector(self) -> SubVector:
-        """ Returns the vector that defines the value of this node. """
-        return self._value.to_vector()
-
-    def from_vector(self, vector: SubVector) -> None:
-        """ Sets the value of this node according to the provided vector. """
-        self._value.from_vector(vector)
 
     # fix
     def fix(self, is_fixed: bool = True) -> None:
@@ -154,21 +175,10 @@ class FactorNode(tp.Generic[T], BaseNode):
     def is_fixed(self) -> bool:
         return self._is_fixed
 
-    # read/write
-    def read(self, words: tp.List[str]) -> None:
-        words = self._value.read_rest(words)
-        assert not words, f"Words '{words} are left unread."
 
-    def write(self) -> tp.List[str]:
-        words: tp.List[str] = self._value.write()
-        return words
-
-
-class FactorEdge(tp.Generic[T], BaseEdge):
+class FactorEdge(BaseEdge, tp.Generic[T], DataContainer[T]):
 
     # measurement variables
-    _type: tp.Type[T]
-    _measurement: SubData
     _info_matrix: SubDataSymmetric
 
     # gradient
@@ -181,40 +191,32 @@ class FactorEdge(tp.Generic[T], BaseEdge):
             info_matrix: tp.Optional[SubSquare] = None,
             *nodes: tp.Optional[SubFactorNode]
     ):
-        super().__init__(*[node for node in nodes if node is not None])
-        self._measurement = DataFactory.from_type(self.get_type())(measurement)
+        super().__init__(
+            *filter(lambda node: node is not None, nodes),
+            value=measurement
+        )
         if info_matrix is None:
             info_matrix = SquareFactory.from_dim(self.get_dim()).identity()
         self._info_matrix = DataFactory.from_value(info_matrix)
         self.init_gradient()
 
+    # BaseEdge
     def add_node(self, node: SubFactorNode) -> None:
         super().add_node(node)
         self.init_gradient()
 
-    # measurement
-    @classmethod
-    def get_type(cls) -> tp.Type[T]:
-        """ Returns the measurement-type of this edge. """
-        return cls._type
-
-    @classmethod
-    def get_dim(cls) -> int:
-        """ Returns the dimensions (minimum number of constraints) for the measurement-type of this edge. """
-        return DataFactory.from_type(cls.get_type()).get_dim()
-
+    # DataContainer
     def has_measurement(self) -> bool:
         """ Returns whether a measurement has already been assigned to this edge. """
-        return self._measurement.has_value()
+        return super().has_value()
 
     def get_measurement(self) -> T:
         """ Returns the measurement encoded in this edge. """
-        assert self.has_measurement()
-        return self._measurement.get_value()
+        return super().get_value()
 
     def set_measurement(self, measurement: T) -> None:
         """ Sets the measurement of this edge. """
-        self._measurement.set_value(measurement)
+        return super().set_value(measurement)
 
     # estimate
     @abstractmethod
@@ -238,7 +240,6 @@ class FactorEdge(tp.Generic[T], BaseEdge):
     def set_cov_matrix(self, cov_matrix: SubSquare) -> None:
         """ Sets the information matrix of this edge by providing the covariance matrix. """
         self._info_matrix.set_value(cov_matrix.inverse())
-
 
     # helper methods
     @staticmethod
@@ -270,7 +271,7 @@ class FactorEdge(tp.Generic[T], BaseEdge):
         node: SubFactorNode
         nodes: tp.List[SubFactorNode] = self.get_nodes()
         for node in nodes:
-            self._jacobian[0, self.get_node_index(node)] = self.central_difference(node)
+            self._jacobian[0, self.get_node_index(node.get_id())] = self.central_difference(node)
 
         for i, node_i in enumerate(nodes):
             for j, node_j in enumerate(nodes):
@@ -290,7 +291,7 @@ class FactorEdge(tp.Generic[T], BaseEdge):
             edge_copy: SubFactorEdge = copy.deepcopy(self)
             node_copy: SubFactorNode = edge_copy.get_node(id_)
 
-            mean: SubData = copy.deepcopy(node_copy._value)
+            mean: SubData = copy.deepcopy(node_copy._data)
             unit_vector: SubVector = VectorFactory.from_dim(self.get_dim()).zeros()
 
             unit_vector[i] = delta
@@ -316,10 +317,10 @@ class FactorEdge(tp.Generic[T], BaseEdge):
 
     # read/write
     def read(self, words: tp.List[str]) -> None:
-        words = self._measurement.read_rest(words)
+        words = self.get_data().read_rest(words)
         words = self._info_matrix.read_rest(words)
         assert not words, f"Words '{words} are left unread."
 
     def write(self) -> tp.List[str]:
-        words: tp.List[str] = self._measurement.write() + self._info_matrix.write()
+        words: tp.List[str] = self.get_data().write() + self._info_matrix.write()
         return words

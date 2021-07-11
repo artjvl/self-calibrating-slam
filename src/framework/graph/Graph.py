@@ -30,6 +30,7 @@ class Graph(FactorGraph):
         self._path: tp.Optional[pathlib.Path] = None
         self._suffix: tp.Optional[str] = None
 
+        self._is_perturbed: tp.Optional[bool] = None
         self._error: tp.Optional[float] = None
         self._ate: tp.Optional[float] = None
         self._rpe_translation: tp.Optional[float] = None
@@ -48,7 +49,7 @@ class Graph(FactorGraph):
         # assert len(self.get_edges()) == len(graph.get_edges())
         self._pre = graph
 
-    def error_curve(self, steps: int = 50) -> tp.Tuple[tp.List[float], tp.List[float]]:
+    def plot_error_slice(self, steps: int = 50) -> tp.Tuple[tp.List[float], tp.List[float]]:
         assert self.has_true()
         assert self.has_pre()
 
@@ -57,15 +58,27 @@ class Graph(FactorGraph):
         unit: SubVector = Vector(pre_vector.array() - opt_vector.array())
 
         graph: SubGraph = copy.deepcopy(self)
-        line = list(np.linspace(-2, 2, steps + 1))
-        error = []
+        line: tp.List[float] = list(np.linspace(-2, 2, steps + 1))
+        error: tp.List[float] = []
         for x in line:
-            vector = Vector(opt_vector.array() + unit.array() * x)
+            vector: SubVector = Vector(opt_vector.array() + unit.array() * x)
             graph.from_vector(vector)
             error.append(graph.compute_error())
         plt.plot(line, error)
         plt.show()
         return line, error
+
+    def plot_metrics(self) -> None:
+        assert self.has_true()
+
+        edge_count: tp.List[int] = []
+        ate: tp.List[float] = []
+        subgraphs: tp.List[SubGraph] = self.get_subgraphs()
+        for i, subgraph in enumerate(subgraphs):
+            ate.append(subgraph.compute_ate())
+            edge_count.append(i)
+        plt.plot(edge_count, ate)
+        plt.show()
 
     # true
     def has_true(self) -> bool:
@@ -76,7 +89,9 @@ class Graph(FactorGraph):
         return self._true
 
     def is_perturbed(self) -> bool:
-        return not np.isclose(self.compute_error(), 0.)
+        if self._is_perturbed is None:
+            self.get_error()
+        return self._is_perturbed
 
     def is_metric(self) -> bool:
         return self.is_perturbed() and self.has_true()
@@ -106,6 +121,7 @@ class Graph(FactorGraph):
         error: float = 0.
         for edge in self.get_edges():
             error += edge.compute_error()
+        self._is_perturbed = not np.isclose(error, 0.)
         return error
 
     def compute_ate(self) -> float:

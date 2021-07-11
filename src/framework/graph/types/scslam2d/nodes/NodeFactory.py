@@ -29,7 +29,7 @@ class NodeFactory(object):
     def from_value(
             cls,
             value: Supported,
-            id_: int = 0
+            id_: tp.Optional[int] = None
     ) -> SubNode:
         node_type: tp.Type[SubNode] = cls.from_value_type(type(value))
         node: SubNode = node_type(id_, value)
