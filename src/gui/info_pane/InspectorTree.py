@@ -5,7 +5,6 @@ from PyQt5 import QtGui, QtWidgets
 from src.framework.graph.Graph import SubGraph, Graph, SubEdge, SubNode, SubElement, Node
 from src.framework.graph.data.DataFactory import Supported
 from src.framework.graph.types.scslam2d.nodes.InformationNode import InformationNode
-from src.framework.graph.types.scslam2d.nodes.ParameterNode import ParameterNode
 from src.framework.math.Dimensional import Dimensional
 from src.framework.math.lie.Lie import Lie
 from src.framework.math.lie.rotation.SO import SO
@@ -20,6 +19,7 @@ Item = tp.Union[QtWidgets.QTreeWidget, QtWidgets.QTreeWidgetItem]
 class Indicator(enum.Enum):
     HESSIAN: int = 0
     MARGINAL: int = 1
+    TRUE: int = 2
 
 
 class InspectorTree(QtWidgets.QTreeWidget):
@@ -43,6 +43,7 @@ class InspectorTree(QtWidgets.QTreeWidget):
             graph: SubGraph
     ):
         self.clear()
+        self.obj = graph
         self._construct_graph_tree(graph, self.invisibleRootItem())
 
     def _construct_graph_tree(
@@ -50,8 +51,6 @@ class InspectorTree(QtWidgets.QTreeWidget):
             graph: SubGraph,
             root: Item
     ) -> Item:
-        self.obj = graph
-
         # sub-elements
         sub_elements = self._construct_tree_property(root, 'Elements', '', bold=True)
         element_type: tp.Type[SubElement]
@@ -68,11 +67,11 @@ class InspectorTree(QtWidgets.QTreeWidget):
         sub_error.setExpanded(True)
 
         # metrics
-        if graph.is_metric():
+        if graph.has_metrics():
             sub_metrics = self._construct_tree_property(root, 'Metrics', '', bold=True)
             true: SubGraph = graph.get_true()
             sub_true = self._construct_tree_property(sub_metrics, 'true', true.to_unique())
-            self._construct_graph_tree(true, sub_true)
+            sub_true.obj = Indicator.TRUE
             self._construct_tree_property(sub_metrics, 'ate', str(graph.get_ate()))
             self._construct_tree_property(sub_metrics, 'rpe_translation', str(graph.get_rpe_translation()))
             self._construct_tree_property(sub_metrics, 'rpe_rotation', str(graph.get_rpe_rotation()))
@@ -129,6 +128,8 @@ class InspectorTree(QtWidgets.QTreeWidget):
                 elif obj == Indicator.MARGINAL:
                     self._construct_marginal(item, self.obj)
                     delattr(item, 'obj')
+                elif obj == Indicator.TRUE:
+                    self.display_graph(self.obj.get_true())
 
     # node
     def display_node(

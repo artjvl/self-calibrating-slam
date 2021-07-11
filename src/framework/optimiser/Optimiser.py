@@ -52,16 +52,8 @@ class Optimiser(object):
 
     # constructor
     def __init__(self):
-        self._graph: tp.Optional[Graph] = None
         self._library = Library.CHOLMOD
         self._solver = Solver.GN
-
-    # graph
-    def set_graph(self, graph: tp.Optional[Graph]):
-        self._graph = graph
-
-    def get_graph(self) -> tp.Optional[Graph]:
-        return self._graph
 
     # solver
     def set(
@@ -99,10 +91,10 @@ class Optimiser(object):
     def get_solver_string(self) -> str:
         return self.solvers[self._library][self._solver]
 
-    def optimise(self) -> Graph:
+    def optimise(self, graph) -> Graph:
         root: Path = get_project_root()
         relative_to: str = 'graphs/temp'
-        GraphParser.save_path_folder(self._graph, relative_to, 'before')
+        GraphParser.save_path_folder(graph, relative_to, 'before')
 
         path_g2o_bin: Path = (root / 'g2o/bin/g2o_d').resolve()
         path_input: Path = (root / (relative_to + '/before.g2o')).resolve()
@@ -122,6 +114,6 @@ class Optimiser(object):
         print(f"framework/Optimiser: Issuing command '{' '.join(commands)}'")
         process = subprocess.run(commands)
 
-        graph: Graph = GraphParser.load(path_output)
-        graph.assign_pre(self._graph)
-        return graph
+        optimised: Graph = GraphParser.load(path_output)
+        optimised.assign_pre(graph)
+        return optimised

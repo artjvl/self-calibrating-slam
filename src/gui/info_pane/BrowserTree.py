@@ -2,6 +2,7 @@ import typing as tp
 
 from PyQt5 import QtCore, QtWidgets, QtGui
 from src.framework.graph.Graph import Graph, SubGraph, Node, Edge, SubElement
+from src.framework.graph.GraphAnalyser import GraphAnalyser
 from src.framework.graph.protocols.Visualisable import SubVisualisable, Visualisable
 from src.framework.graph.protocols.visualisable.DrawEdge import DrawEdge
 from src.framework.graph.protocols.visualisable.DrawPoint import DrawPoint
@@ -190,8 +191,6 @@ class BrowserTree(QtWidgets.QTreeWidget):
                     graph_container: GraphContainer = obj
                     graph: Graph = graph_container.get_graph()
                     trajectory_container: TrajectoryContainer = graph_container.get_parent()
-                    is_not_true: bool = not trajectory_container.has_true() and not graph.is_perturbed() and not graph.has_true()
-                    has_curve: bool = graph.has_true() and graph.has_pre()
 
                     # create menu
                     menu = QtWidgets.QMenu()
@@ -199,12 +198,23 @@ class BrowserTree(QtWidgets.QTreeWidget):
                     menu.addAction(action_delete)
                     action_save = QtWidgets.QAction('&Save as', self)
                     menu.addAction(action_save)
+
                     action_true = QtWidgets.QAction('Set as true', self)
-                    action_curve = QtWidgets.QAction('Plot error-curve', self)
-                    if is_not_true:
-                        menu.addAction(action_true)
-                    if has_curve:
-                        menu.addAction(action_curve)
+                    menu.addAction(action_true)
+                    can_be_true: bool = not trajectory_container.has_true() and not graph.is_perturbed() and not graph.has_true()
+                    if not can_be_true:
+                        action_true.setEnabled(False)
+
+                    action_slice = QtWidgets.QAction('Plot error-curve', self)
+                    menu.addAction(action_slice)
+                    can_be_sliced: bool = graph.has_true() and graph.has_pre()
+                    if not can_be_sliced:
+                        action_slice.setEnabled(False)
+
+                    action_metrics = QtWidgets.QAction('Plot metrics', self)
+                    menu.addAction(action_metrics)
+                    if not graph.has_metrics():
+                        action_metrics.setEnabled(False)
 
                     # select action
                     action = menu.exec_(self.mapToGlobal(point))
@@ -214,8 +224,10 @@ class BrowserTree(QtWidgets.QTreeWidget):
                         print('save')
                     elif action == action_true:
                         trajectory_container.set_as_true(graph)
-                    elif action == action_curve:
-                        graph.error_curve()
+                    elif action == action_slice:
+                        GraphAnalyser.plot_error_slice(graph)
+                    elif action == action_metrics:
+                        GraphAnalyser.plot_metrics(graph)
 
                 # if topological node
                 elif isinstance(obj, Visualisable):

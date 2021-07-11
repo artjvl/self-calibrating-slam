@@ -46,6 +46,12 @@ class NodeContainer(object):
     def get_node_ids(self) -> tp.List[int]:
         return [node.get_id() for node in self.get_nodes()]
 
+    # copy
+    def __copy__(self):
+        new = type(self)()
+        new._nodes = copy.copy(self._nodes)
+        return new
+
 
 class BaseGraph(NodeContainer, Printable):
 
@@ -79,6 +85,9 @@ class BaseGraph(NodeContainer, Printable):
     def get_edges(self) -> tp.List[SubBaseEdge]:
         return self._edges
 
+    def get_edge(self, i: int) -> SubBaseEdge:
+        return self._edges[i]
+
     # types
     def get_types(self) -> tp.List[tp.Type[SubBaseElement]]:
         return self._sorted.get_types()
@@ -101,6 +110,13 @@ class BaseGraph(NodeContainer, Printable):
             graph.add_edge(edge)
             graphs.append(copy.copy(graph))
         return graphs
+
+    # copy
+    def __copy__(self):
+        new = super().__copy__()
+        new._edges = copy.copy(self._edges)
+        new._sorted = copy.copy(self._sorted)
+        return new
 
 
 class BaseNode(Printable):

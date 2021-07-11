@@ -91,6 +91,12 @@ class FactorGraph(BaseGraph):
             marginals.append(covariance[i, i])
         return marginals
 
+    # copy
+    def __copy__(self):
+        new = super().__copy__()
+        new.init_gradient()
+        return new
+
 
 T = tp.TypeVar('T')
 
@@ -178,7 +184,6 @@ class FactorNode(BaseNode, tp.Generic[T], DataContainer[T]):
 
 class FactorEdge(BaseEdge, tp.Generic[T], DataContainer[T]):
 
-    # measurement variables
     _info_matrix: SubDataSymmetric
 
     # gradient
@@ -198,6 +203,8 @@ class FactorEdge(BaseEdge, tp.Generic[T], DataContainer[T]):
         if info_matrix is None:
             info_matrix = SquareFactory.from_dim(self.get_dim()).identity()
         self._info_matrix = DataFactory.from_value(info_matrix)
+
+        # gradient
         self.init_gradient()
 
     # BaseEdge

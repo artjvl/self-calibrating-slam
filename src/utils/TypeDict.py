@@ -1,3 +1,4 @@
+import copy
 import typing as tp
 
 T = tp.TypeVar('T')
@@ -22,3 +23,8 @@ class TypeDict(tp.Generic[T]):
     def __getitem__(self, type_: tp.Type[T]) -> tp.List[T]:
         assert type_ in self
         return self._dict[type_]
+
+    def __copy__(self):
+        new = type(self)()
+        new._dict = {key: copy.copy(value) for key, value in self._dict.items()}
+        return new
