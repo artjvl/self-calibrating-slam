@@ -1,7 +1,6 @@
 import pathlib
 import typing as tp
 from datetime import datetime
-from typing import TextIO
 
 from src.definitions import get_project_root
 from src.framework.graph.Graph import Graph, SubGraph, SubNode, Edge, Node
@@ -23,7 +22,7 @@ class GraphParser(object):
         )
         graph.set_path(file)
 
-        writer: TextIO = file.open('w')
+        writer: tp.TextIO = file.open('w')
 
         node: SubNode
         for node in graph.get_nodes():
@@ -83,7 +82,7 @@ class GraphParser(object):
 
         graph.set_path(file)
 
-        reader: TextIO = file.open('r')
+        reader: tp.TextIO = file.open('r')
         lines: tp.List[str] = reader.readlines()
         nodes: tp.Dict[int, SubNode] = {}
 

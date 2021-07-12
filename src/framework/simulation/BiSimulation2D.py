@@ -18,22 +18,36 @@ from src.utils import GeoHash2D
 
 class BiSimulation2D(object):
 
+    # rng
+    _seed: tp.Optional[int]
     _rng = np.random.RandomState
+
+    # data
+    _geo: GeoHash2D[int]
+    _true: Simulation2D
+    _perturbed: Simulation2D
+    _timestamp: float
+
+    # parameters
+    _parameters: tp.Optional[ParameterSet]
 
     def __init__(
             self,
             seed: tp.Optional[int] = None
     ):
-        self._seed: tp.Optional[int] = seed
+        # rng
+        self._seed = seed
         self.set_seed(self._seed)
-        self._geo = GeoHash2D[int]()
 
+        # data
+        self._geo = GeoHash2D[int]()
         self._true = Simulation2D()
         self._perturbed = Simulation2D()
         translation: Vector2 = self._true.get_current_pose().translation()
         self._geo.add(translation[0], translation[1], self.get_current_id())
 
-        self._parameters: tp.Optional[ParameterSet] = None
+        # parameters
+        self._parameters = None
 
     # sensors
     def add_sensor(
@@ -42,12 +56,16 @@ class BiSimulation2D(object):
             sensor_true: SubSensor,
             sensor_perturbed: SubSensor
     ) -> None:
+        """ Adds a sensor with <sensor_id>. """
+
         sensor_true.set_seed(self._seed)
         self._true.add_sensor(sensor_id, sensor_true)
         sensor_perturbed.set_seed(self._seed)
         self._perturbed.add_sensor(sensor_id, sensor_perturbed)
 
     def align_ids(self) -> None:
+        """ Aligns the current-pose-id of each simulation. """
+
         id_ = max([self._true.get_count(), self._perturbed.get_count()])
         self._true.set_counter(id_)
         self._perturbed.set_counter(id_)
@@ -59,13 +77,18 @@ class BiSimulation2D(object):
             value: Supported,
             sensor_id: str
     ) -> None:
+        """ Adds a new edge between <ids> with <value>, as measured by <sensor_id>. """
+
+        # add new 'true' edge
         true_sensor: SubSensor = self._true.get_sensor(sensor_id)
         true_measurement: Supported = true_sensor.decompose(value)
         self._true.add_edge_from_value(sensor_id, ids, true_measurement)
 
+        # add new 'perturbed' edge
         perturbed_measurement: Supported = true_sensor.measure(true_measurement)
         self._perturbed.add_edge_from_value(sensor_id, ids, perturbed_measurement)
 
+        # align ids because of potential edge parameters
         self.align_ids()
 
     def add_poses_edge(
@@ -74,6 +97,8 @@ class BiSimulation2D(object):
             from_id: int,
             to_id: int
     ) -> None:
+        """ Adds an edge between <from_id> and <to_id> with the 'true' transformation, as measured by <sensor_id>. """
+
         transformation: SE2 = self._true.get_node(to_id).get_value() - self._true.get_node(from_id).get_value()
         self.add_edge([from_id, to_id], transformation, sensor_id)
 
@@ -83,16 +108,22 @@ class BiSimulation2D(object):
             sensor_id: str,
             transformation: SE2
     ) -> None:
+        """ Adds a new pose-node and edge with <transformation>, as measured by <sensor_id>. """
+
+        # add new 'true' pose and edge
         true_sensor: SubSensor = self._true.get_sensor(sensor_id)
         true_measurement: SE2 = true_sensor.decompose(transformation)
         self._true.add_odometry(sensor_id, true_measurement)
 
+        # store new 'true' pose in geo-hashmap
         translation: Vector2 = self._true.get_current_pose().translation()
         self._geo.add(translation[0], translation[1], self._true.get_current_id())
 
+        # add new 'perturbed' pose and edge
         perturbed_measurement: SE2 = true_sensor.measure(true_measurement)
         self._perturbed.add_odometry(sensor_id, perturbed_measurement)
 
+        # align ids because of potential edge parameters
         self.align_ids()
 
     # gps
@@ -101,6 +132,8 @@ class BiSimulation2D(object):
             sensor_id: str,
             translation: tp.Optional[Vector2] = None
     ) -> None:
+        """ Adds a GPS measurement (i.e., location prior) at <translation>, as measured by <sensor_id>. """
+
         if translation is None:
             translation = self._true.get_current_pose().translation()
         current_id: int = self.get_current_id()
@@ -114,6 +147,8 @@ class BiSimulation2D(object):
             separation: int = 10,
             threshold: float = 0.
     ) -> None:
+        """ Creates a loop-closure constraint with probability <threshold>. """
+
         if self._rng.uniform(0, 1) >= threshold:
             self.try_closure(sensor_id, distance, separation)
 
@@ -123,6 +158,11 @@ class BiSimulation2D(object):
             distance: float,
             separation: int = 10
     ) -> None:
+        """
+        Creates a loop-closure constraint IF POSSIBLE with the oldest node within <distance> and separated by
+        <separation> ids, with the 'true' transformation, as measurement by <sensor_id>.
+        """
+
         pose_ids: tp.List[int] = self._true.get_pose_ids()
         if len(pose_ids) > separation:
             current: NodeSE2 = self._true.get_current()
@@ -147,6 +187,8 @@ class BiSimulation2D(object):
             steps: int,
             threshold: float = 0.
     ) -> None:
+        """ Creates a proximity constraint with probability <threshold>. """
+
         if self._rng.uniform(0, 1) >= threshold:
             self.try_proximity(sensor_id, steps)
 
@@ -155,6 +197,11 @@ class BiSimulation2D(object):
             sensor_id: str,
             steps: int
     ) -> None:
+        """
+        Creates a proximity constraint IF POSSIBLE with the node separated by <steps>, with the 'true' transformation,
+        as measurement by <sensor_id>.
+        """
+
         pose_ids: tp.List[int] = self._true.get_pose_ids()
         if len(pose_ids) > steps:
             current_id: int = self._true.get_current_id()
@@ -162,11 +209,27 @@ class BiSimulation2D(object):
             self.add_poses_edge(sensor_id, proximity_id, current_id)
 
     # logistics
+    def set_timestamp(self, timestamp: float):
+        """ Sets the timestamp of both simulations. """
+
+        self._true.set_timestamp(timestamp)
+        self._perturbed.set_timestamp(timestamp)
+
+    def increment_timestamp(self, delta: float):
+        """ Increments the timestamp of both simulations by <delta>. """
+
+        self._true.increment_timestamp(delta)
+        self._perturbed.increment_timestamp(delta)
+
     def fix(self):
+        """ Fixes the current pose-node. """
+
         self._true.get_current().fix()
         self._perturbed.get_current().fix()
 
     def reset(self):
+        """ Resets the simulations. """
+
         self._true = Simulation2D()
         self._perturbed = Simulation2D()
 
@@ -185,15 +248,23 @@ class BiSimulation2D(object):
 
     # graphs
     def get_graphs(self) -> tp.Tuple[SubGraph, SubGraph]:
+        """ Returns the 'true' and 'perturbed' graphs. """
+
         return self.get_true(), self.get_perturbed()
 
     def get_true(self) -> SubGraph:
+        """ Returns the 'true' graph. """
+
         return self._true.get_graph()
 
     def get_perturbed(self) -> SubGraph:
+        """ Returns the 'perturbed' graph. """
+
         return self._perturbed.get_graph()
 
     def get_current_id(self) -> int:
+        """ Returns the synchronised id of the current pose-node. """
+
         assert self._true.get_current_id() == self._perturbed.get_current_id()
         return self._true.get_current_id()
 

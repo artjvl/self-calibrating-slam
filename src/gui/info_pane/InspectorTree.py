@@ -148,6 +148,7 @@ class InspectorTree(QtWidgets.QTreeWidget):
 
         # top
         self._construct_tree_property(root, 'id', str(node.get_id()))
+        self._construct_tree_property(root, 'timestamp', str(node.get_timestamp()))
         self._construct_tree_property(root, 'is_fixed', str(node.is_fixed()))
         if isinstance(node, Node):
             if isinstance(node, InformationNode):
@@ -185,6 +186,7 @@ class InspectorTree(QtWidgets.QTreeWidget):
         self.obj = edge
 
         # top
+        self._construct_tree_property(root, 'timestamp', str(edge.get_timestamp()))
         self._construct_tree_property(root, 'cardinality', str(edge.get_cardinality()))
         self._construct_tree_property_from_value(root, 'information', edge.get_info_matrix())
 

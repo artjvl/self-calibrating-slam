@@ -6,6 +6,7 @@ from datetime import datetime
 
 import numpy as np
 from src.framework.graph.FactorGraph import FactorGraph, FactorNode, FactorEdge
+from src.framework.math.matrix.square import SubSquare
 from src.framework.math.matrix.vector import SubVector
 
 SubGraph = tp.TypeVar('SubGraph', bound='Graph')
@@ -72,10 +73,10 @@ class Graph(FactorGraph):
         return not np.isclose(self.get_error(), 0.)
 
     def has_metrics(self) -> bool:
-        return self.is_perturbed() and self.has_true()
+        return self.has_true()
 
     def assign_true(self, graph: SubGraph):
-        assert self.is_perturbed()
+        # assert self.is_perturbed()
         assert not graph.is_perturbed()
 
         nodes: tp.List[SubNode] = self.get_nodes()
@@ -178,6 +179,34 @@ class Graph(FactorGraph):
     def get_pathname(self) -> str:
         return self._path.name
 
+    # subgraphs
+    def get_subgraphs(self) -> tp.List[SubGraph]:
+        graph: SubGraph = type(self)()
+        true_graph: tp.Optional[SubGraph] = None
+        if self.has_true():
+            true_graph = type(self)()
+
+        graphs: tp.List[SubGraph] = []
+        edge: SubEdge
+        for edge in self._edges:
+            node: SubNode
+            for node in edge.get_nodes():
+                if not graph.contains_node_id(node.get_id()):
+                    graph.add_node(node)
+                    if self.has_true() and node.has_true():
+                        true_graph.add_node(node.get_true())
+            graph.add_edge(edge)
+            if self.has_true() and edge.has_true():
+                true_graph.add_edge(edge.get_true())
+
+            graph_copy: SubGraph = copy.copy(graph)
+            if self.has_true():
+                graph_copy._true = copy.copy(true_graph)
+
+            graphs.append(graph_copy)
+        return graphs
+
+    # copy
     def __copy__(self):
         new = super().__copy__()
         new._true = copy.copy(self._true)
@@ -196,9 +225,16 @@ class Node(tp.Generic[T], FactorNode[T]):
 
     # reference to true/unperturbed equivalent node
     _true: tp.Optional[SubNode]
+    _timestamp: tp.Optional[float]
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(
+            self,
+            id_: tp.Optional[int] = None,
+            value: tp.Optional[T] = None,
+            timestamp: tp.Optional[float] = None
+    ):
+        super().__init__(id_, value)
+        self._timestamp = timestamp
         self._true = None
 
     # true
@@ -213,6 +249,18 @@ class Node(tp.Generic[T], FactorNode[T]):
         assert self.has_true()
         return self._true
 
+    # timestamp
+    def set_timestamp(self, timestamp: float) -> None:
+        assert not self.has_timestamp()
+        self._timestamp = timestamp
+
+    def has_timestamp(self) -> bool:
+        return self._timestamp is not None
+
+    def get_timestamp(self) -> float:
+        assert self.has_timestamp()
+        return self._timestamp
+
     # error
     def compute_ate2(self) -> tp.Optional[float]:
         return None
@@ -223,8 +271,13 @@ class Edge(tp.Generic[T], FactorEdge[T], ABC):
     # reference to true/unperturbed equivalent edge
     _true: tp.Optional[SubEdge]
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(
+            self,
+            measurement: tp.Optional[T] = None,
+            info_matrix: tp.Optional[SubSquare] = None,
+            *nodes: tp.Optional[SubNode]
+    ):
+        super().__init__(measurement, info_matrix, *nodes)
         self._true = None
 
     # error
@@ -264,3 +317,7 @@ class Edge(tp.Generic[T], FactorEdge[T], ABC):
     def get_true(self) -> SubEdge:
         assert self.has_true()
         return self._true
+
+    # timestamp
+    def get_timestamp(self) -> float:
+        return max(node.get_timestamp() for node in self.get_nodes())

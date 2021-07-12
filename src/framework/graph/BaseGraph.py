@@ -103,7 +103,10 @@ class BaseGraph(NodeContainer, Printable):
     def get_subgraphs(self) -> tp.List[SubBaseGraph]:
         graph: SubBaseGraph = type(self)()
         graphs: tp.List[SubBaseGraph] = []
+
+        edge: SubBaseEdge
         for edge in self._edges:
+            node: SubBaseNode
             for node in edge.get_nodes():
                 if not graph.contains_node_id(node.get_id()):
                     graph.add_node(node)

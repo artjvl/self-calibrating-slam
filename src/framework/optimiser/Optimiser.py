@@ -4,7 +4,7 @@ from enum import Enum
 from pathlib import Path
 
 from src.definitions import get_project_root
-from src.framework.graph.Graph import Graph
+from src.framework.graph.Graph import Graph, SubGraph
 from src.framework.graph.GraphParser import GraphParser
 
 
@@ -91,7 +91,12 @@ class Optimiser(object):
     def get_solver_string(self) -> str:
         return self.solvers[self._library][self._solver]
 
-    def optimise(self, graph) -> Graph:
+    def optimise(
+            self,
+            graph,
+            verbose: bool = True,
+            compute_marginals: bool = False
+    ) -> tp.Optional[SubGraph]:
         root: Path = get_project_root()
         relative_to: str = 'graphs/temp'
         GraphParser.save_path_folder(graph, relative_to, 'before')
@@ -100,20 +105,27 @@ class Optimiser(object):
         path_input: Path = (root / (relative_to + '/before.g2o')).resolve()
         path_output: Path = (root / (relative_to + '/after.g2o')).resolve()
         path_summary: Path = (root / (relative_to + '/summary.g2o')).resolve()
+        path_output.unlink(missing_ok=True)
 
         solver_string: str = self.get_solver_string()
         commands: tp.List[str] = [
             str(path_g2o_bin),
             '-solver', solver_string,
-            '-o', str(path_output),
-            '-v',
-            # '-summary', str(path_summary),
-            '-computeMarginals',
-            str(path_input)
+            '-o', str(path_output)
         ]
+        if verbose:
+            commands.append('-v')
+        if compute_marginals:
+            commands.append('-computeMarginals')
+        commands.append(str(path_input))
+
         print(f"framework/Optimiser: Issuing command '{' '.join(commands)}'")
         process = subprocess.run(commands)
 
-        optimised: Graph = GraphParser.load(path_output)
-        optimised.assign_pre(graph)
-        return optimised
+        if path_output.exists():
+            optimised: Graph = GraphParser.load(path_output)
+            optimised.assign_pre(graph)
+            if graph.has_true():
+                optimised.assign_true(graph.get_true())
+            return optimised
+        return None

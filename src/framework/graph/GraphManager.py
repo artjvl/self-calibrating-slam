@@ -8,10 +8,12 @@ class GraphManager(object):
 
     _graph: SubGraph
     _counter: int
+    _timestamp: float
 
     def __init__(self, graph: SubGraph):
         self._graph = graph
         self._counter = 0
+        self._timestamp = 0.
 
     # graph
     def get_graph(self) -> SubGraph:
@@ -20,6 +22,7 @@ class GraphManager(object):
     # elements
     def add_node(self, node: SubNode) -> None:
         node.set_id(self.get_count(increment=True))
+        node.set_timestamp(self._timestamp)
         self._graph.add_node(node)
 
     def add_edge(self, edge: SubEdge) -> None:
@@ -35,3 +38,11 @@ class GraphManager(object):
     def set_count(self, count: int) -> None:
         assert count >= self._counter
         self._counter = count
+
+    # timestamp
+    def set_timestamp(self, timestamp: float) -> None:
+        assert timestamp > self._timestamp
+        self._timestamp = timestamp
+
+    def increment_timestamp(self, delta: float) -> None:
+        self._timestamp += delta
