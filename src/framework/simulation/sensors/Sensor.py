@@ -112,6 +112,7 @@ class Sensor(tp.Generic[T]):
     ) -> None:
         parameter: SubParameterNode = self.get_parameter(name)
         new: SubParameterNode = type(parameter)(value=value)
+        parameter.set_next(new)
         self._parameters[name] = new
         return new
 

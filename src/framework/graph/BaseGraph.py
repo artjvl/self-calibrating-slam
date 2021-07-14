@@ -41,10 +41,20 @@ class NodeContainer(object):
 
     def get_node_index(self, id_: int) -> int:
         assert self.contains_node_id(id_)
-        return list(self._nodes.keys()).index(id_)
+        return self.get_node_ids().index(id_)
 
     def get_node_ids(self) -> tp.List[int]:
         return [node.get_id() for node in self.get_nodes()]
+
+    def get_active_nodes(self) -> tp.List[SubBaseNode]:
+        return list(filter(lambda node: not node.is_fixed(), self.get_nodes()))
+
+    def get_active_node_ids(self) -> tp.List[int]:
+        return [node.get_id() for node in self.get_active_nodes()]
+
+    def get_active_node_index(self, id_: int) -> int:
+        assert self.contains_node_id(id_)
+        return self.get_active_node_ids().index(id_)
 
     # copy
     def __copy__(self):

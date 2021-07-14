@@ -52,3 +52,11 @@ class Rgb(object):
         assert 0 <= pastel <= 1
         return tuple(c + (1 - c) * pastel for c in reference)
         # return tuple((reference + pastel)/(1 + pastel))
+
+    @staticmethod
+    def to_hex(rgb: RgbTuple):
+        return '#{0:02x}{1:02x}{2:02x}'.format(*[255*c for c in rgb])
+
+    @staticmethod
+    def invert(rgb: RgbTuple):
+        return 1 - rgb[0], 1 - rgb[1], 1 - rgb[2]

@@ -77,6 +77,13 @@ class BlockMatrix(object):
                         array[row_index + ii, column_index + jj] = block[ii, jj]
         return array
 
+    def diagonal(self) -> SubBlockMatrix:
+        new: SubBlockMatrix = type(self)(self.get_row_sizes())
+        min_size: int = min(self.shape())
+        for i in range(min_size):
+            new[i, i] = self[i, i]
+        return new
+
     def matrix(self) -> SubMatrix:
         return Matrix(self.array())
 

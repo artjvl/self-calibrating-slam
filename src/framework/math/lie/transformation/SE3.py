@@ -1,9 +1,12 @@
 from __future__ import annotations
+import typing as tp
 
 from src.framework.math.lie.rotation.SO3 import SO3
 from src.framework.math.lie.transformation.SE import SE
 from src.framework.math.matrix.square import SubSquare, Square4
 from src.framework.math.matrix.vector import SubVector, Vector3, Vector6
+if tp.TYPE_CHECKING:
+    from src.framework.math.lie.transformation.SE2 import SE2
 
 
 class SE3(SE):
@@ -17,6 +20,12 @@ class SE3(SE):
             rotation: SO3
     ):
         super().__init__(translation, rotation)
+
+    def to_se2(self) -> 'SE2':
+        from src.framework.math.lie.transformation.SE2 import SE2
+        translation: Vector3 = self.translation()
+        rotation: SO3 = self.rotation()
+        return SE2.from_translation_angle_elements(translation[0], translation[1], rotation.to_so2().angle())
 
     # helper-methods
     @staticmethod

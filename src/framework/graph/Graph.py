@@ -179,6 +179,9 @@ class Graph(FactorGraph):
     def get_pathname(self) -> str:
         return self._path.name
 
+    def get_timestamp(self) -> tp.Optional[float]:
+        return self.get_nodes()[-1].get_timestamp()
+
     # subgraphs
     def get_subgraphs(self) -> tp.List[SubGraph]:
         graph: SubGraph = type(self)()
@@ -257,8 +260,7 @@ class Node(tp.Generic[T], FactorNode[T]):
     def has_timestamp(self) -> bool:
         return self._timestamp is not None
 
-    def get_timestamp(self) -> float:
-        assert self.has_timestamp()
+    def get_timestamp(self) -> tp.Optional[float]:
         return self._timestamp
 
     # error
@@ -319,5 +321,8 @@ class Edge(tp.Generic[T], FactorEdge[T], ABC):
         return self._true
 
     # timestamp
-    def get_timestamp(self) -> float:
-        return max(node.get_timestamp() for node in self.get_nodes())
+    def get_timestamp(self) -> tp.Optional[float]:
+        timestamps = [node.get_timestamp() for node in self.get_nodes()]
+        if None in timestamps:
+            return None
+        return max(timestamps)

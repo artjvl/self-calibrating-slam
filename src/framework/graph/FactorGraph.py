@@ -22,17 +22,13 @@ SubFactorElement = tp.Union[SubFactorNode, SubFactorEdge]
 
 class FactorGraph(BaseGraph):
 
-    _hessian: SubSparseBlockMatrix
-    _covariance: tp.Optional[SubBlockMatrix]
+    _hessian: tp.Optional[SubSparseBlockMatrix]
+    _covariance: tp.Optional[SubSparseBlockMatrix]
 
     def __init__(self):
         super().__init__()
-        self.init_gradient()
+        self._hessian = None
         self._covariance = None
-
-    def add_node(self, node: SubFactorNode) -> None:
-        super().add_node(node)
-        self.init_gradient()
 
     def to_vector(self) -> SubVector:
         list_: tp.List[float] = []
@@ -55,37 +51,35 @@ class FactorGraph(BaseGraph):
         assert index == len(list_)
 
     # linearise
-    def init_gradient(self) -> None:
-        node_dims: tp.List[int] = [node.get_dim() for node in self.get_nodes()]
-        self._hessian = SparseBlockMatrix(node_dims)
-
     def get_hessian(self) -> SubSparseBlockMatrix:
-        if not self._hessian:
+        if self._hessian is None:
             print(f'Linearising {self.to_unique()}..')
             self.linearise()
         return self._hessian
 
     def linearise(self) -> None:
+        self._hessian = SparseBlockMatrix([node.get_dim() for node in self.get_active_nodes()])
         edges: tp.List[FactorEdge] = self.get_edges()
         for edge in edges:
-            nodes: tp.List[FactorNode] = edge.get_nodes()
+            nodes: tp.List[FactorNode] = edge.get_active_nodes()
             for node_i in nodes:
                 for node_j in nodes:
-                    i: int = self.get_node_index(node_i.get_id())
-                    j: int = self.get_node_index(node_j.get_id())
+                    i: int = self.get_active_node_index(node_i.get_id())
+                    j: int = self.get_active_node_index(node_j.get_id())
                     # print(f'{i}-{j}')
                     self._hessian[i, j] = self._hessian[i, j] + \
-                        edge.get_hessian()[edge.get_node_index(node_i.get_id()), edge.get_node_index(node_j.get_id())]
+                        edge.get_hessian()[edge.get_active_node_index(node_i.get_id()), edge.get_active_node_index(node_j.get_id())]
 
-    def get_covariance(self) -> SubBlockMatrix:
+    def get_covariance(self) -> SubSparseBlockMatrix:
         if self._covariance is None:
-            hessian: SubSparseBlockMatrix = self.get_hessian()
+            hessian: SubSparseBlockMatrix = self.get_hessian().diagonal()
+            # chol = np.linalg.cholesky(hessian.array())
             matrix: np.ndarray = hessian.inverse()
-            self._covariance = BlockMatrix.from_array(matrix, hessian.get_row_sizes())
+            self._covariance = SparseBlockMatrix.from_array(matrix, hessian.get_row_sizes())
         return self._covariance
 
     def get_marginals(self) -> tp.List[SubMatrix]:
-        covariance: SubBlockMatrix = self.get_covariance()
+        covariance: SubSparseBlockMatrix = self.get_covariance()
         marginals: tp.List[SubMatrix] = []
         for i, _ in enumerate(covariance.get_row_sizes()):
             marginals.append(covariance[i, i])
@@ -187,8 +181,8 @@ class FactorEdge(BaseEdge, tp.Generic[T], DataContainer[T]):
     _info_matrix: SubDataSymmetric
 
     # gradient
-    _jacobian: BlockMatrix
-    _hessian: BlockMatrix
+    _jacobian: tp.Optional[SubBlockMatrix]
+    _hessian: tp.Optional[SubBlockMatrix]
 
     def __init__(
             self,
@@ -203,14 +197,6 @@ class FactorEdge(BaseEdge, tp.Generic[T], DataContainer[T]):
         if info_matrix is None:
             info_matrix = SquareFactory.from_dim(self.get_dim()).identity()
         self._info_matrix = DataFactory.from_value(info_matrix)
-
-        # gradient
-        self.init_gradient()
-
-    # BaseEdge
-    def add_node(self, node: SubFactorNode) -> None:
-        super().add_node(node)
-        self.init_gradient()
 
     # DataContainer
     def has_measurement(self) -> bool:
@@ -258,11 +244,6 @@ class FactorEdge(BaseEdge, tp.Generic[T], DataContainer[T]):
         return float(vector.array().transpose() @ information.array() @ vector.array())
 
     # linearisation
-    def init_gradient(self) -> None:
-        node_dims: tp.List[int] = [node.get_dim() for node in self.get_nodes()]
-        self._jacobian = BlockMatrix([self.get_dim()], node_dims)
-        self._hessian = BlockMatrix(node_dims, node_dims)
-
     def get_jacobian(self) -> SubBlockMatrix:
         if not self._jacobian:
             self.linearise()
@@ -274,12 +255,17 @@ class FactorEdge(BaseEdge, tp.Generic[T], DataContainer[T]):
         return self._hessian
 
     def linearise(self) -> None:
-        id_: int
-        node: SubFactorNode
-        nodes: tp.List[SubFactorNode] = self.get_nodes()
-        for node in nodes:
-            self._jacobian[0, self.get_node_index(node.get_id())] = self.central_difference(node)
+        nodes: tp.List[SubFactorNode] = self.get_active_nodes()
+        node_dims: tp.List[int] = [node.get_dim() for node in nodes]
+        self._jacobian = BlockMatrix([self.get_dim()], node_dims)
 
+        node: SubFactorNode
+        for node in nodes:
+            self._jacobian[0, self.get_active_node_index(node.get_id())] = self.central_difference(node)
+
+        self._hessian = BlockMatrix(node_dims)
+        node_i: SubFactorNode
+        node_j: SubFactorNode
         for i, node_i in enumerate(nodes):
             for j, node_j in enumerate(nodes):
                 jacobian_i: SubMatrix = self._jacobian[0, i]

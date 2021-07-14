@@ -70,6 +70,9 @@ class BiSimulation2D(object):
         self._true.set_counter(id_)
         self._perturbed.set_counter(id_)
 
+    def get_sensors(self, sensor_id: str) -> tp.Tuple[SubSensor, SubSensor]:
+        return self._true.get_sensor(sensor_id), self._perturbed.get_sensor(sensor_id)
+
     # edges
     def add_edge(
             self,

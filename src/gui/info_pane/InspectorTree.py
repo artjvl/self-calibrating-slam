@@ -92,11 +92,11 @@ class InspectorTree(QtWidgets.QTreeWidget):
         return root
 
     def _construct_hessian(self, item: QtWidgets.QTreeWidgetItem, graph: SubGraph) -> None:
-        nodes: tp.List[SubNode] = graph.get_nodes()
+        active_nodes: tp.List[SubNode] = graph.get_active_nodes()
         hessian: SubBlockMatrix = graph.get_hessian()
         item.setText(1, str(hessian.shape()))
-        for i, node_i in enumerate(nodes):
-            for j, node_j in enumerate(nodes):
+        for i, node_i in enumerate(active_nodes):
+            for j, node_j in enumerate(active_nodes):
                 if j <= i and not hessian[i, j].is_zero():
                     self._construct_tree_property_from_value(
                         item,
@@ -105,7 +105,7 @@ class InspectorTree(QtWidgets.QTreeWidget):
                     )
 
     def _construct_marginal(self, item: QtWidgets.QTreeWidgetItem, graph: SubGraph) -> None:
-        nodes: tp.List[SubNode] = graph.get_nodes()
+        nodes: tp.List[SubNode] = graph.get_active_nodes()
         marginals: tp.List[SubMatrix] = graph.get_marginals()
         item.setText(1, f'({len(marginals)})')
         for i, node in enumerate(nodes):
@@ -226,14 +226,15 @@ class InspectorTree(QtWidgets.QTreeWidget):
         sub_linearisation = self._construct_tree_property(root, 'Linearisation', '', bold=True)
         jacobian: SubBlockMatrix = edge.get_jacobian()
         sub_jacobian = self._construct_tree_property(sub_linearisation, 'Jacobian', str(jacobian.shape()))
-        for i, node in enumerate(nodes):
+        active_nodes = edge.get_active_nodes()
+        for i, node in enumerate(active_nodes):
             self._construct_tree_property_from_value(sub_jacobian, str(node.get_id()), jacobian[0, i])
         sub_jacobian.setExpanded(True)
 
         hessian: SubBlockMatrix = edge.get_hessian()
         sub_hessian = self._construct_tree_property(sub_linearisation, 'Hessian', str(hessian.shape()))
-        for i, node_i in enumerate(nodes):
-            for j, node_j in enumerate(nodes):
+        for i, node_i in enumerate(active_nodes):
+            for j, node_j in enumerate(active_nodes):
                 if j <= i:
                     self._construct_tree_property_from_value(
                         sub_hessian,

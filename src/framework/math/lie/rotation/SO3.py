@@ -1,10 +1,12 @@
 from __future__ import annotations
+import typing as tp
 
 import numpy as np
-
 from src.framework.math.lie.rotation.SO import SO
 from src.framework.math.matrix.square import Square3
 from src.framework.math.matrix.vector import Vector3
+if tp.TYPE_CHECKING:
+    from src.framework.math.lie.rotation.SO2 import SO2
 
 
 class SO3(SO):
@@ -14,6 +16,12 @@ class SO3(SO):
     def __init__(self, matrix: Square3):
         super().__init__(matrix)
 
+    # conversion
+    def to_so2(self) -> 'SO2':
+        from src.framework.math.lie.rotation.SO2 import SO2
+        return SO2.from_angle(self.vector()[2])
+
+    # properties
     def angle(self) -> float:
         return self.vector().magnitude()
 
