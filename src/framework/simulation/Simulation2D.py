@@ -4,9 +4,9 @@ from src.framework.graph.CalibratingGraph import SubCalibratingEdge, Calibrating
 from src.framework.graph.Graph import SubGraph, SubNode, SubEdge
 from src.framework.graph.GraphManager import GraphManager
 from src.framework.graph.data.DataFactory import Supported
-from src.framework.graph.types.scslam2d.edges import EdgeFactory
-from src.framework.graph.types.scslam2d.nodes.NodeFactory import NodeFactory
-from src.framework.graph.types.scslam2d.nodes.NodeSE2 import NodeSE2
+from src.framework.graph.types.edges.EdgeFactory import EdgeFactory
+from src.framework.graph.types.nodes.NodeFactory import NodeFactory
+from src.framework.graph.types.nodes.NodeSE2 import NodeSE2
 from src.framework.math.lie.transformation import SE2
 from src.framework.simulation.sensors import SubSensor
 

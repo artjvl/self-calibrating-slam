@@ -7,7 +7,7 @@ from src.framework.graph.Graph import SubGraph
 from src.framework.graph.GraphManager import SubGraphManager
 from src.framework.graph.data import SubData
 from src.framework.graph.data.DataFactory import DataFactory
-from src.framework.graph.types.scslam2d.nodes.ParameterNode import SubParameterNode, BiasParameterNode, \
+from src.framework.graph.types.nodes.ParameterNode import SubParameterNode, BiasParameterNode, \
     OffsetParameterNode, ScaleParameterNode
 from src.framework.math.lie.transformation import SE2
 from src.framework.math.matrix.square import SubSquare, SquareFactory

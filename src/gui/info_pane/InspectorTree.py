@@ -4,7 +4,7 @@ import typing as tp
 from PyQt5 import QtGui, QtWidgets
 from src.framework.graph.Graph import SubGraph, Graph, SubEdge, SubNode, SubElement, Node
 from src.framework.graph.data.DataFactory import Supported
-from src.framework.graph.types.scslam2d.nodes.InformationNode import InformationNode
+from src.framework.graph.types.nodes.InformationNode import InformationNode
 from src.framework.math.Dimensional import Dimensional
 from src.framework.math.lie.Lie import Lie
 from src.framework.math.lie.rotation.SO import SO

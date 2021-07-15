@@ -1,8 +1,8 @@
 import typing as tp
 
 from src.framework.graph.protocols.visualisable.DrawEdge import DrawEdge
-from src.framework.graph.types.scslam2d.edges.CalibratingEdgeSE2 import CalibratingEdgeSE2
-from src.framework.graph.types.scslam2d.nodes.NodeSE2 import NodeSE2
+from src.framework.graph.types.edges.CalibratingEdgeSE2 import CalibratingEdgeSE2
+from src.framework.graph.types.nodes.NodeSE2 import NodeSE2
 from src.framework.math.lie.rotation import SO2
 from src.framework.math.lie.transformation import SE2
 from src.framework.math.matrix.square import Square3

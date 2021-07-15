@@ -3,11 +3,11 @@ import typing as tp
 from src.framework.graph.CalibratingGraph import SubCalibratingEdge
 from src.framework.graph.Graph import SubNode
 from src.framework.graph.data.DataFactory import Supported
-from src.framework.graph.types.scslam2d.edges.EdgePose2DV2 import EdgePose2DV2
-from src.framework.graph.types.scslam2d.edges.EdgePosePoint2DV2 import EdgePosePoint2DV2
-from src.framework.graph.types.scslam2d.edges.EdgePoses2DSE2 import EdgePoses2DSE2
-from src.framework.graph.types.scslam2d.nodes.NodeSE2 import NodeSE2
-from src.framework.graph.types.scslam2d.nodes.NodeV2 import NodeV2
+from src.framework.graph.types.edges.EdgePose2DV2 import EdgePose2DV2
+from src.framework.graph.types.edges.EdgePosePoint2DV2 import EdgePosePoint2DV2
+from src.framework.graph.types.edges.EdgePoses2DSE2 import EdgePoses2DSE2
+from src.framework.graph.types.nodes.NodeSE2 import NodeSE2
+from src.framework.graph.types.nodes.NodeV2 import NodeV2
 from src.framework.math.lie.transformation import SE2
 from src.framework.math.matrix.vector import Vector2
 

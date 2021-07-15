@@ -1,12 +1,12 @@
-from src.framework.graph.types.scslam2d.SuffixDatabase import SuffixDatabase
-from src.framework.graph.types.scslam2d.edges.EdgePose2DV2 import EdgePose2DV2
-from src.framework.graph.types.scslam2d.edges.EdgePosePoint2DV2 import EdgePosePoint2DV2
-from src.framework.graph.types.scslam2d.edges.EdgePoses2DSE2 import EdgePoses2DSE2
-from src.framework.graph.types.scslam2d.edges.InformationEdge import InformationEdge2, InformationEdge3
-from src.framework.graph.types.scslam2d.nodes.InformationNode import InformationNode2, InformationNode3
-from src.framework.graph.types.scslam2d.nodes.NodeSE2 import NodeSE2
-from src.framework.graph.types.scslam2d.nodes.NodeV2 import NodeV2
-from src.framework.graph.types.scslam2d.nodes.ParameterNode import BiasParameterNode, OffsetParameterNode, \
+from src.framework.graph.types.SuffixDatabase import SuffixDatabase
+from src.framework.graph.types.edges.EdgePose2DV2 import EdgePose2DV2
+from src.framework.graph.types.edges.EdgePosePoint2DV2 import EdgePosePoint2DV2
+from src.framework.graph.types.edges.EdgePoses2DSE2 import EdgePoses2DSE2
+from src.framework.graph.types.edges.InformationEdge import InformationEdge2, InformationEdge3
+from src.framework.graph.types.nodes.InformationNode import InformationNode2, InformationNode3
+from src.framework.graph.types.nodes.NodeSE2 import NodeSE2
+from src.framework.graph.types.nodes.NodeV2 import NodeV2
+from src.framework.graph.types.nodes.ParameterNode import BiasParameterNode, OffsetParameterNode, \
     ScaleParameterNode
 
 database = SuffixDatabase()

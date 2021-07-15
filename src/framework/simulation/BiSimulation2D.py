@@ -7,7 +7,7 @@ import numpy as np
 from src.framework.graph.Graph import SubGraph
 from src.framework.graph.GraphParser import GraphParser
 from src.framework.graph.data.DataFactory import Supported
-from src.framework.graph.types.scslam2d.nodes.NodeSE2 import NodeSE2
+from src.framework.graph.types.nodes.NodeSE2 import NodeSE2
 from src.framework.math.lie.transformation import SE2
 from src.framework.math.matrix.vector import Vector2
 from src.framework.simulation.ParameterSet import ParameterSet
