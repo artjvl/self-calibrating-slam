@@ -2,7 +2,7 @@ import typing as tp
 from abc import ABC, abstractmethod
 
 import numpy as np
-from src.framework.graph.Graph import Edge, SubNode, Node
+from src.framework.graph.Graph import Edge, SubNode, Node, Graph
 from src.framework.graph.types.scslam2d.nodes.InformationNode import InformationNode, SubInformationNode
 from src.framework.graph.types.scslam2d.nodes.ParameterNode import ParameterNode, SubParameterNode
 from src.framework.math.matrix.square import SquareFactory
@@ -10,7 +10,47 @@ from src.framework.math.matrix.square import SubSquare
 from src.framework.math.matrix.vector import SubVector
 from src.framework.math.matrix.vector import VectorFactory
 
+SubCalibratingGraph = tp.TypeVar('SubCalibratingGraph', bound='CalibratingGraph')
 SubCalibratingEdge = tp.TypeVar('SubCalibratingEdge', bound='CalibratingEdge')
+
+
+class CalibratingGraph(Graph):
+
+    _parameters: tp.Dict[str, tp.List[SubParameterNode]]
+
+    def __init__(self):
+        super().__init__()
+        self._parameters = {}
+
+    def add_node(self, node: SubNode) -> None:
+        if isinstance(node, ParameterNode):
+            name: str = node.get_name()
+            if name not in self._parameters:
+                self._parameters[name] = []
+            self._parameters[name].append(node)
+        super().add_node(node)
+
+    def get_parameter_names(self) -> tp.List[str]:
+        return list(self._parameters.keys())
+
+    def get_parameters(self, name: str) -> tp.List[SubParameterNode]:
+        assert name in self._parameters
+        return self._parameters[name]
+
+    def copy_properties(self, graph: SubCalibratingGraph) -> SubCalibratingGraph:
+        super().copy_properties(graph)
+        parameters: tp.Dict[str, tp.List[SubParameterNode]] = {}
+        for name, nodes in self._parameters.items():
+            for node in nodes:
+                new_node: SubParameterNode = graph.get_node(node.get_id())
+                new_node.set_name(node.get_name())
+                if name not in parameters:
+                    parameters[name] = []
+                parameters[name].append(new_node)
+        graph._parameters = parameters
+        return graph
+
+
 T = tp.TypeVar('T')
 
 
@@ -35,7 +75,7 @@ class CalibratingEdge(tp.Generic[T], Edge[T], ABC):
         self._endpoints = []
         self._parameters = []
         self._info_node = None
-        super().__init__(value, info_matrix, *[node for node in nodes if node is not None])
+        super().__init__(value, info_matrix, *nodes)
 
     # attributes
     def get_cardinality(self) -> int:

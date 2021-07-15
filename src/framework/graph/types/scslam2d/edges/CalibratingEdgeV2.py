@@ -1,6 +1,6 @@
 from abc import ABC
 
-from src.framework.graph.types.scslam2d.edges.CalibratingEdge import CalibratingEdge
+from src.framework.graph.CalibratingGraph import CalibratingEdge
 from src.framework.math.matrix.vector import Vector2
 
 

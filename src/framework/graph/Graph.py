@@ -210,6 +210,16 @@ class Graph(FactorGraph):
         return graphs
 
     # copy
+    def copy_properties(self, graph: SubGraph) -> SubGraph:
+        graph._true = self._true
+        graph._pre = self._pre
+        graph._date = self._date
+        if self.has_true():
+            graph.assign_true(self.get_true())
+        for i, node in enumerate(self.get_nodes()):
+            graph.get_node(node.get_id()).set_timestamp(node.get_timestamp())
+        return graph
+
     def __copy__(self):
         new = super().__copy__()
         new._true = copy.copy(self._true)

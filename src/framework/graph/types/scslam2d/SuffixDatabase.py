@@ -1,8 +1,8 @@
 import typing as tp
 
+from src.framework.graph.CalibratingGraph import CalibratingEdge, SubCalibratingEdge
 from src.framework.graph.Database import Database
 from src.framework.graph.Graph import SubNode, Edge, Node
-from src.framework.graph.types.scslam2d.edges.CalibratingEdge import CalibratingEdge, SubCalibratingEdge
 from src.framework.graph.types.scslam2d.nodes.InformationNode import SubInformationNode
 from src.framework.graph.types.scslam2d.nodes.ParameterNode import SubParameterNode
 from src.utils.TwoWayDict import TwoWayDict

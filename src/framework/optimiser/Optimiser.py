@@ -4,9 +4,9 @@ from enum import Enum
 from pathlib import Path
 
 from src.definitions import get_project_root
-from src.framework.graph.Graph import Graph, SubGraph
+from src.framework.graph.CalibratingGraph import SubCalibratingGraph
+from src.framework.graph.Graph import SubGraph
 from src.framework.graph.GraphParser import GraphParser
-from src.framework.graph.types.scslam2d.nodes.ParameterNode import ParameterNode
 
 
 class Library(Enum):
@@ -124,14 +124,8 @@ class Optimiser(object):
         process = subprocess.run(commands)
 
         if path_output.exists():
-            optimised: Graph = GraphParser.load(path_output)
+            optimised: SubCalibratingGraph = GraphParser.load(path_output)
+            graph.copy_properties(optimised)
             optimised.assign_pre(graph)
-            for i, node in enumerate(graph.get_nodes()):
-                opt_node = optimised.get_node(i)
-                opt_node.set_timestamp(node.get_timestamp())
-                if isinstance(node, ParameterNode) and node.has_next():
-                    opt_node.set_next(node.get_next())
-            if graph.has_true():
-                optimised.assign_true(graph.get_true())
             return optimised
         return None

@@ -1,7 +1,8 @@
 import typing as tp
 
 from PyQt5 import QtCore, QtWidgets, QtGui
-from src.framework.graph.Graph import Graph, SubGraph, Node, Edge, SubElement
+from src.framework.graph.CalibratingGraph import SubCalibratingGraph
+from src.framework.graph.Graph import SubGraph, Node, Edge, SubElement
 from src.framework.graph.GraphAnalyser import GraphAnalyser
 from src.framework.graph.protocols.Visualisable import SubVisualisable, Visualisable
 from src.framework.graph.protocols.visualisable.DrawEdge import DrawEdge
@@ -189,7 +190,7 @@ class BrowserTree(QtWidgets.QTreeWidget):
 
                 elif isinstance(obj, GraphContainer):
                     graph_container: GraphContainer = obj
-                    graph: Graph = graph_container.get_graph()
+                    graph: SubCalibratingGraph = graph_container.get_graph()
                     trajectory_container: TrajectoryContainer = graph_container.get_parent()
 
                     # create menu

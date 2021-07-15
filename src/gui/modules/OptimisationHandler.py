@@ -1,10 +1,10 @@
 import typing as tp
 
 from PyQt5 import QtCore
-
-from src.framework.graph.Graph import Graph, SubGraph
-from src.framework.optimiser.Optimiser import Optimiser, Library, Solver
-from src.gui.modules.Container import TopContainer, GraphContainer, TrajectoryContainer
+from src.framework.graph.CalibratingGraph import SubCalibratingGraph
+from src.framework.graph.Graph import SubGraph
+from src.framework.optimiser.Optimiser import Optimiser
+from src.gui.modules.Container import GraphContainer, TrajectoryContainer
 
 
 class OptimisationHandler(QtCore.QObject):
@@ -43,6 +43,6 @@ class OptimisationHandler(QtCore.QObject):
         assert self._graph_container is not None
         graph: SubGraph = self._graph_container.get_graph()
         print(f"gui/OptimisationHandler: Optimising '{graph.to_unique()}'...")
-        graph: Graph = self._optimiser.optimise(graph, compute_marginals=True)
+        optimised: SubGraph = self._optimiser.optimise(graph, compute_marginals=False)
         trajectory_container: TrajectoryContainer = self._graph_container.get_parent()
-        trajectory_container.add_graphs(None, graph)
+        trajectory_container.add_graphs(None, optimised)

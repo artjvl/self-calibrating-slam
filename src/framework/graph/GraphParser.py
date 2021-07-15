@@ -3,7 +3,8 @@ import typing as tp
 from datetime import datetime
 
 from src.definitions import get_project_root
-from src.framework.graph.Graph import Graph, SubGraph, SubNode, Edge, Node
+from src.framework.graph.CalibratingGraph import CalibratingGraph
+from src.framework.graph.Graph import SubGraph, SubNode, Edge, Node
 from src.framework.graph.types.scslam2d.database import database
 
 
@@ -74,7 +75,7 @@ class GraphParser(object):
             cls,
             file: pathlib.Path
     ) -> SubGraph:
-        graph = Graph()
+        graph = CalibratingGraph()
 
         print(
             f"framework/GraphParser: Loading '{graph.to_unique()}' from:\n    '{file}'"

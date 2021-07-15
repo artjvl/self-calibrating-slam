@@ -19,7 +19,8 @@ class EdgePose2DV2(CalibratingEdgeV2, DrawEdge):
             info_matrix: tp.Optional[Square2] = None,
             node: tp.Optional[NodeSE2] = None
     ):
-        super().__init__(value, info_matrix, node)
+        nodes = list(filter(lambda n: n is not None, [node]))
+        super().__init__(value, info_matrix, *nodes)
 
     def get_value(self) -> Vector2:
         node: NodeSE2

@@ -1,10 +1,10 @@
 import typing as tp
 
-from src.framework.graph.Graph import SubGraph, Graph, SubNode, SubEdge
+from src.framework.graph.CalibratingGraph import SubCalibratingEdge, CalibratingGraph
+from src.framework.graph.Graph import SubGraph, SubNode, SubEdge
 from src.framework.graph.GraphManager import GraphManager
 from src.framework.graph.data.DataFactory import Supported
 from src.framework.graph.types.scslam2d.edges import EdgeFactory
-from src.framework.graph.types.scslam2d.edges.CalibratingEdge import SubCalibratingEdge
 from src.framework.graph.types.scslam2d.nodes.NodeFactory import NodeFactory
 from src.framework.graph.types.scslam2d.nodes.NodeSE2 import NodeSE2
 from src.framework.math.lie.transformation import SE2
@@ -22,7 +22,7 @@ class Simulation2D(object):
     _current: NodeSE2
 
     def __init__(self):
-        self._manager = GraphManager(Graph())
+        self._manager = GraphManager(CalibratingGraph())
         self._sensors = {}
 
         self._pose_ids = []

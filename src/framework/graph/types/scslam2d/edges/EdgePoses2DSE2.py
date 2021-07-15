@@ -21,7 +21,8 @@ class EdgePoses2DSE2(CalibratingEdgeSE2, DrawEdge):
             node_a: tp.Optional[NodeSE2] = None,
             node_b: tp.Optional[NodeSE2] = None
     ):
-        super().__init__(value, info_matrix, node_a, node_b)
+        nodes = list(filter(lambda n: n is not None, [node_a, node_b]))
+        super().__init__(value, info_matrix, *nodes)
 
     def get_value(self) -> SE2:
         a: NodeSE2

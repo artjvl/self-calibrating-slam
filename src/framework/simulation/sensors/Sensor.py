@@ -2,11 +2,11 @@ import typing as tp
 from abc import abstractmethod
 
 import numpy as np
+from src.framework.graph.CalibratingGraph import SubCalibratingEdge
 from src.framework.graph.Graph import SubGraph
 from src.framework.graph.GraphManager import SubGraphManager
 from src.framework.graph.data import SubData
 from src.framework.graph.data.DataFactory import DataFactory
-from src.framework.graph.types.scslam2d.edges.CalibratingEdge import SubCalibratingEdge
 from src.framework.graph.types.scslam2d.nodes.ParameterNode import SubParameterNode, BiasParameterNode, \
     OffsetParameterNode, ScaleParameterNode
 from src.framework.math.lie.transformation import SE2
@@ -74,7 +74,7 @@ class Sensor(tp.Generic[T]):
             value: SE2
     ) -> SubParameterNode:
         assert name not in self._parameters
-        parameter: SubParameterNode = BiasParameterNode(value=value)
+        parameter: SubParameterNode = BiasParameterNode(name=name, value=value)
         self._parameters[name] = parameter
         return parameter
 
@@ -84,7 +84,7 @@ class Sensor(tp.Generic[T]):
             value: SE2
     ) -> SubParameterNode:
         assert name not in self._parameters
-        parameter: SubParameterNode = OffsetParameterNode(value=value)
+        parameter: SubParameterNode = OffsetParameterNode(name=name, value=value)
         self._parameters[name] = parameter
         return parameter
 
@@ -94,7 +94,7 @@ class Sensor(tp.Generic[T]):
             value: Vector3
     ) -> SubParameterNode:
         assert name not in self._parameters
-        parameter: SubParameterNode = ScaleParameterNode(value=value)
+        parameter: SubParameterNode = ScaleParameterNode(name=name, value=value)
         self._parameters[name] = parameter
         return parameter
 
@@ -111,8 +111,7 @@ class Sensor(tp.Generic[T]):
             value: tp.Union[Vector3, SE2]
     ) -> None:
         parameter: SubParameterNode = self.get_parameter(name)
-        new: SubParameterNode = type(parameter)(value=value)
-        parameter.set_next(new)
+        new: SubParameterNode = type(parameter)(value=value, name=parameter.get_name())
         self._parameters[name] = new
         return new
 

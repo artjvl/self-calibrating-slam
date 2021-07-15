@@ -14,28 +14,25 @@ T = tp.TypeVar('T')
 class ParameterNode(tp.Generic[T], Node[T]):
 
     _next: tp.Optional[SubParameterNode]
+    _name: str
 
     def __init__(
             self,
             id_: tp.Optional[int] = None,
             value: tp.Optional[T] = None,
             timestamp: tp.Optional[float] = None,
-            next_: tp.Optional[SubParameterNode] = None
+            name: tp.Optional[str] = None
     ):
         super().__init__(id_, value, timestamp)
-        self._next = next_
+        self._name = ''
+        if name is not None:
+            self._name = name
 
-    def get_next(self) -> SubParameterNode:
-        assert self.has_next()
-        return self._next
+    def get_name(self) -> str:
+        return self._name
 
-    def has_next(self) -> bool:
-        return self._next is not None
-
-    def set_next(self, next_: SubParameterNode):
-        assert not self.has_next()
-        assert type(next_) == type(self)
-        self._next = next_
+    def set_name(self, name: str):
+        self._name = name
 
     # composition
     @abstractmethod
