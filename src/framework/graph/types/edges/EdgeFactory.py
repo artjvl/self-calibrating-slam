@@ -6,8 +6,8 @@ from src.framework.graph.data.DataFactory import Supported
 from src.framework.graph.types.edges.EdgePose2DV2 import EdgePose2DV2
 from src.framework.graph.types.edges.EdgePosePoint2DV2 import EdgePosePoint2DV2
 from src.framework.graph.types.edges.EdgePoses2DSE2 import EdgePoses2DSE2
-from src.framework.graph.types.nodes.NodeSE2 import NodeSE2
-from src.framework.graph.types.nodes.NodeV2 import NodeV2
+from src.framework.graph.types.nodes.SpatialNode import NodeSE2
+from src.framework.graph.types.nodes.SpatialNode import NodeV2
 from src.framework.math.lie.transformation import SE2
 from src.framework.math.matrix.vector import Vector2
 

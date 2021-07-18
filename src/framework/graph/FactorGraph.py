@@ -146,9 +146,8 @@ class DataContainer(tp.Generic[T]):
         self._data.from_vector(vector)
 
     # read/write
-    def read(self, words: tp.List[str]) -> None:
-        words = self._data.read_rest(words)
-        assert not words, f"Words '{words} are left unread."
+    def read(self, words: tp.List[str]) -> tp.List[str]:
+        return self._data.read_rest(words)
 
     def write(self) -> tp.List[str]:
         words: tp.List[str] = self._data.write()
@@ -197,6 +196,8 @@ class FactorEdge(BaseEdge, tp.Generic[T], DataContainer[T]):
         if info_matrix is None:
             info_matrix = SquareFactory.from_dim(self.get_dim()).identity()
         self._info_matrix = DataFactory.from_value(info_matrix)
+        self._jacobian = None
+        self._hessian = None
 
     # DataContainer
     def has_measurement(self) -> bool:
@@ -216,6 +217,17 @@ class FactorEdge(BaseEdge, tp.Generic[T], DataContainer[T]):
     def get_estimate(self) -> T:
         """ Returns an estimate of the measurement. """
         pass
+
+    @abstractmethod
+    def compute_error_vector(self) -> SubVector:
+        pass
+
+    def error_vector(self) -> SubVector:
+        return self.compute_error_vector()
+
+    def compute_error(self) -> float:
+        error_vector: SubVector = self.error_vector()
+        return self.mahalanobis_distance(error_vector, self.get_info_matrix())
 
     # information
     def get_info_matrix(self) -> SubSquare:
@@ -285,7 +297,7 @@ class FactorEdge(BaseEdge, tp.Generic[T], DataContainer[T]):
             node_copy: SubFactorNode = edge_copy.get_node(id_)
 
             mean: SubData = copy.deepcopy(node_copy._data)
-            unit_vector: SubVector = VectorFactory.from_dim(self.get_dim()).zeros()
+            unit_vector: SubVector = VectorFactory.from_dim(node_copy.get_dim()).zeros()
 
             unit_vector[i] = delta
             plus: T = mean.oplus(unit_vector)
@@ -309,10 +321,9 @@ class FactorEdge(BaseEdge, tp.Generic[T], DataContainer[T]):
         pass
 
     # read/write
-    def read(self, words: tp.List[str]) -> None:
+    def read(self, words: tp.List[str]) -> tp.List[str]:
         words = self.get_data().read_rest(words)
-        words = self._info_matrix.read_rest(words)
-        assert not words, f"Words '{words} are left unread."
+        return self._info_matrix.read_rest(words)
 
     def write(self) -> tp.List[str]:
         words: tp.List[str] = self.get_data().write() + self._info_matrix.write()

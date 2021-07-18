@@ -13,5 +13,4 @@ namespace g2o {
     };
 }
 
-
 #endif //G2O_NODE_V3_H

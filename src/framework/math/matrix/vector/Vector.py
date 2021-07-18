@@ -23,6 +23,9 @@ class Vector(Matrix, Dimensional):
         vector = column.astype(float)
         super().__init__(vector)
 
+    def __neg__(self) -> SubVector:
+        return type(self)(- self.array())
+
     def __add__(self, other: SubVector) -> SubVector:
         assert type(other) == type(self)
         return type(self)(self.array() + other.array())

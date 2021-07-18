@@ -7,8 +7,9 @@ from src.framework.graph.Graph import SubGraph
 from src.framework.graph.GraphManager import SubGraphManager
 from src.framework.graph.data import SubData
 from src.framework.graph.data.DataFactory import DataFactory
-from src.framework.graph.types.nodes.ParameterNode import SubParameterNode, BiasParameterNode, \
-    OffsetParameterNode, ScaleParameterNode
+from src.framework.graph.types.ParameterComposer import ParameterType
+from src.framework.graph.types.nodes.ParameterNode import SubParameterNode, ParameterData, ParameterNodeFactory, \
+    ParameterV1
 from src.framework.math.lie.transformation import SE2
 from src.framework.math.matrix.square import SubSquare, SquareFactory
 from src.framework.math.matrix.vector import SubVector, VectorFactory
@@ -71,30 +72,51 @@ class Sensor(tp.Generic[T]):
     def add_bias(
             self,
             name: str,
-            value: SE2
+            value: ParameterData,
+            index: int = 0
     ) -> SubParameterNode:
         assert name not in self._parameters
-        parameter: SubParameterNode = BiasParameterNode(name=name, value=value)
+        parameter: SubParameterNode = ParameterNodeFactory.from_value(
+            value,
+            interpretation=ParameterType.BIAS,
+            name=name
+        )
+        if isinstance(parameter, ParameterV1):
+            parameter.set_index(index)
         self._parameters[name] = parameter
         return parameter
 
     def add_offset(
             self,
             name: str,
-            value: SE2
+            value: ParameterData,
+            index: int = 0
     ) -> SubParameterNode:
         assert name not in self._parameters
-        parameter: SubParameterNode = OffsetParameterNode(name=name, value=value)
+        parameter: SubParameterNode = ParameterNodeFactory.from_value(
+            value,
+            interpretation=ParameterType.OFFSET,
+            name=name
+        )
+        if isinstance(parameter, ParameterV1):
+            parameter.set_index(index)
         self._parameters[name] = parameter
         return parameter
 
     def add_scale(
             self,
             name: str,
-            value: Vector3
+            value: ParameterData,
+            index: int = 0
     ) -> SubParameterNode:
         assert name not in self._parameters
-        parameter: SubParameterNode = ScaleParameterNode(name=name, value=value)
+        parameter: SubParameterNode = ParameterNodeFactory.from_value(
+            value,
+            interpretation=ParameterType.SCALE,
+            name=name
+        )
+        if isinstance(parameter, ParameterV1):
+            parameter.set_index(index)
         self._parameters[name] = parameter
         return parameter
 
@@ -108,10 +130,14 @@ class Sensor(tp.Generic[T]):
     def update_parameter(
             self,
             name: str,
-            value: tp.Union[Vector3, SE2]
+            value: ParameterData
     ) -> None:
         parameter: SubParameterNode = self.get_parameter(name)
-        new: SubParameterNode = type(parameter)(value=value, name=parameter.get_name())
+        new: SubParameterNode = type(parameter)(
+            value=value,
+            interpretation=parameter.get_interpretation(),
+            name=parameter.get_name()
+        )
         self._parameters[name] = new
         return new
 

@@ -7,7 +7,7 @@ import numpy as np
 from src.framework.graph.Graph import SubGraph
 from src.framework.graph.GraphParser import GraphParser
 from src.framework.graph.data.DataFactory import Supported
-from src.framework.graph.types.nodes.NodeSE2 import NodeSE2
+from src.framework.graph.types.nodes.SpatialNode import NodeSE2
 from src.framework.math.lie.transformation import SE2
 from src.framework.math.matrix.vector import Vector2
 from src.framework.simulation.ParameterSet import ParameterSet
@@ -252,24 +252,25 @@ class BiSimulation2D(object):
     # graphs
     def get_graphs(self) -> tp.Tuple[SubGraph, SubGraph]:
         """ Returns the 'true' and 'perturbed' graphs. """
-
         return self.get_true(), self.get_perturbed()
 
     def get_true(self) -> SubGraph:
         """ Returns the 'true' graph. """
-
         return self._true.get_graph()
 
     def get_perturbed(self) -> SubGraph:
         """ Returns the 'perturbed' graph. """
-
         return self._perturbed.get_graph()
 
     def get_current_id(self) -> int:
         """ Returns the synchronised id of the current pose-node. """
-
-        assert self._true.get_current_id() == self._perturbed.get_current_id()
         return self._true.get_current_id()
+
+    def get_current(self) -> NodeSE2:
+        return self._true.get_current()
+
+    def get_current_pose(self) -> SE2:
+        return self._true.get_current_pose()
 
     # parameters
     def set_parameters(self, parameters: ParameterSet) -> None:

@@ -5,8 +5,7 @@ from src.framework.graph.Graph import SubGraph, SubNode, SubEdge
 from src.framework.graph.GraphManager import GraphManager
 from src.framework.graph.data.DataFactory import Supported
 from src.framework.graph.types.edges.EdgeFactory import EdgeFactory
-from src.framework.graph.types.nodes.NodeFactory import NodeFactory
-from src.framework.graph.types.nodes.NodeSE2 import NodeSE2
+from src.framework.graph.types.nodes.SpatialNode import NodeSE2, SpatialNodeFactory
 from src.framework.math.lie.transformation import SE2
 from src.framework.simulation.sensors import SubSensor
 
@@ -45,7 +44,7 @@ class Simulation2D(object):
     ) -> SubNode:
         """ Adds a new node with <value>. """
 
-        node = NodeFactory.from_value(value)
+        node = SpatialNodeFactory.from_value(value)
         return self.add_node(node)
 
     def add_pose(

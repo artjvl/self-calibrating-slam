@@ -8,6 +8,7 @@ import numpy as np
 from src.framework.graph.FactorGraph import FactorGraph, FactorNode, FactorEdge
 from src.framework.math.matrix.square import SubSquare
 from src.framework.math.matrix.vector import SubVector
+from src.framework.math.matrix.vector import Vector2
 
 SubGraph = tp.TypeVar('SubGraph', bound='Graph')
 SubNode = tp.TypeVar('SubNode', bound='Node')
@@ -293,17 +294,6 @@ class Edge(tp.Generic[T], FactorEdge[T], ABC):
         self._true = None
 
     # error
-    @abstractmethod
-    def compute_error_vector(self) -> SubVector:
-        pass
-
-    def error_vector(self) -> SubVector:
-        return self.compute_error_vector()
-
-    def compute_error(self) -> float:
-        error_vector: SubVector = self.error_vector()
-        return self.mahalanobis_distance(error_vector, self.get_info_matrix())
-
     def compute_rpe_translation2(self) -> tp.Optional[float]:
         return None
 

@@ -1,6 +1,7 @@
 from abc import ABC
 
 from src.framework.graph.CalibratingGraph import CalibratingEdge
+from src.framework.graph.types.ParameterComposer import ParameterComposer
 from src.framework.math.matrix.vector import Vector2
 
 
@@ -11,7 +12,7 @@ class CalibratingEdgeV2(CalibratingEdge[Vector2], ABC):
     def get_estimate(self) -> Vector2:
         estimate: Vector2 = self.get_value()
         for parameter in self.get_parameters():
-            estimate = parameter.compose_translation(estimate)
+            estimate = ParameterComposer.translate_with_parameter(parameter, estimate, inverse=True)
         return estimate
 
     def compute_error_vector(self) -> Vector2:

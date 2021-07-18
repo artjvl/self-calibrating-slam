@@ -1,26 +1,33 @@
 add_library(types_sclam2d ${G2O_LIB_TYPE}
-        edge_se2_sensor_calib.cpp edge_se2_sensor_calib.h
-        vertex_odom_differential_params.cpp vertex_odom_differential_params.h
-        edge_se2_odom_differential_calib.cpp edge_se2_odom_differential_calib.h
-        odometry_measurement.cpp odometry_measurement.h
+        edge_se2_sensor_calib.h edge_se2_sensor_calib.cpp
+        vertex_odom_differential_params.h vertex_odom_differential_params.cpp
+        edge_se2_odom_differential_calib.h edge_se2_odom_differential_calib.cpp
+        odometry_measurement.h odometry_measurement.cpp
 
         node_se2.h
+        node_v1.h node_v1.cpp
+        node_v2.h
         node_v3.h
-        param_offset.h param_offset.cpp
-        param_bias.h param_bias.cpp
-        param_scale.h param_scale.cpp
+
+        parameter_util.h
+        parameter.h parameter.cpp
+        parameter_se2.h parameter_se2.cpp
+        parameter_v1.h parameter_v1.cpp
+        parameter_v2.h parameter_v2.cpp
+        parameter_v3.h parameter_v3.cpp
 
         constraint_pose2d_v2.h
         constraint_poses2d_se2.h
-        constraint_poses2d_se2_offset.h constraint_poses2d_se2_offset.cpp
-        constraint_poses2d_se2_bias.h constraint_poses2d_se2_bias.cpp
-        constraint_poses2d_se2_scale.h constraint_poses2d_se2_scale.cpp
+        constraint_poses2d_se2_se2.h constraint_poses2d_se2_se2.cpp
+        constraint_poses2d_se2_v1.h constraint_poses2d_se2_v1.cpp
+        constraint_poses2d_se2_v2.h constraint_poses2d_se2_v2.cpp
+        constraint_poses2d_se2_v3.h constraint_poses2d_se2_v3.cpp
 
         info3.h
         constraint_info3.h constraint_info3.cpp
         constraint_poses2d_se2_i.h constraint_poses2d_se2_i.cpp
 
-        types_sclam2d.cpp types_sclam2d.h
+        types_sclam2d.h types_sclam2d.cpp
         g2o_types_sclam2d_api.h
         )
 

@@ -32,16 +32,21 @@
 #include "edge_se2_odom_differential_calib.h"
 
 #include "node_se2.h"
-#include "node_v3.h"
-#include "param_bias.h"
-#include "param_offset.h"
-#include "param_scale.h"
+//#include "node_v1.h"
+#include "node_v2.h"
+//#include "node_v3.h"
+
+#include "parameter_se2.h"
+#include "parameter_v1.h"
+#include "parameter_v2.h"
+#include "parameter_v3.h"
 
 #include "constraint_pose2d_v2.h"
 #include "constraint_poses2d_se2.h"
-#include "constraint_poses2d_se2_bias.h"
-#include "constraint_poses2d_se2_offset.h"
-#include "constraint_poses2d_se2_scale.h"
+#include "constraint_poses2d_se2_se2.h"
+#include "constraint_poses2d_se2_v1.h"
+#include "constraint_poses2d_se2_v2.h"
+#include "constraint_poses2d_se2_v3.h"
 
 #include "info3.h"
 #include "constraint_info3.h"

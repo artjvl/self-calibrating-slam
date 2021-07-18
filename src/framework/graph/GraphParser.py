@@ -103,7 +103,7 @@ class GraphParser(object):
                 if isinstance(element, Node):
                     id_: int = int(words[1])
                     element.set_id(id_)
-                    element.read(words[2:])
+                    assert not element.read(words[2:])
                     nodes[id_] = element
                     # graph.add_node(element)
                 elif isinstance(element, Edge):
@@ -115,6 +115,6 @@ class GraphParser(object):
                         if not graph.contains_node_id(id_):
                             graph.add_node(node)
                         element.add_node(node)
-                    element.read(words[1 + cardinality:])
+                    assert not element.read(words[1 + cardinality:])
                     graph.add_edge(element)
         return graph

@@ -5,6 +5,7 @@ import numpy as np
 from src.framework.graph.Graph import Edge, SubNode, Node, Graph
 from src.framework.graph.types.nodes.InformationNode import InformationNode, SubInformationNode
 from src.framework.graph.types.nodes.ParameterNode import ParameterNode, SubParameterNode
+from src.framework.graph.types.nodes.SpatialNode import SubSpatialNode, SpatialNode
 from src.framework.math.matrix.square import SquareFactory
 from src.framework.math.matrix.square import SubSquare
 from src.framework.math.matrix.vector import SubVector
@@ -59,7 +60,7 @@ class CalibratingEdge(tp.Generic[T], Edge[T], ABC):
     _num_topological: int
     _num_additional: int
 
-    _endpoints: tp.List[SubNode]
+    _endpoints: tp.List[SubSpatialNode]
     _parameters: tp.List[SubParameterNode]
     _info_node: tp.Optional[SubInformationNode]
 
@@ -101,14 +102,13 @@ class CalibratingEdge(tp.Generic[T], Edge[T], ABC):
         return error_vector
 
     def add_node(self, node: SubNode) -> None:
-        assert isinstance(node, Node)
-
-        if isinstance(node, ParameterNode):
-            self.add_parameter(node)
-        elif isinstance(node, InformationNode):
-            self.add_info_node(node)
-        else:
+        assert isinstance(node, (SpatialNode, ParameterNode, InformationNode))
+        if isinstance(node, SpatialNode):
             self.add_endpoint(node)
+        elif isinstance(node, ParameterNode):
+            self.add_parameter(node)
+        else:
+            self.add_info_node(node)
 
     def get_nodes(self) -> tp.List[SubNode]:
         nodes: tp.List[SubNode] = []
@@ -134,7 +134,7 @@ class CalibratingEdge(tp.Generic[T], Edge[T], ABC):
         super().add_node(node)
 
     def has_parameters(self) -> bool:
-        return len(self._parameters) != 0
+        return len(self._parameters) > 0
 
     def get_parameters(self) -> tp.List[SubParameterNode]:
         return self._parameters
@@ -154,11 +154,11 @@ class CalibratingEdge(tp.Generic[T], Edge[T], ABC):
         return self._info_node
 
     # read/write
-    def read(self, words: tp.List[str]) -> None:
+    def read(self, words: tp.List[str]) -> tp.List[str]:
         words = self.get_data().read_rest(words)
         if not self.has_info_node():
             words = self._info_matrix.read_rest(words)
-        assert not words, f"Words '{words}' are left unread."
+        return words
 
     def write(self) -> tp.List[str]:
         words: tp.List[str] = self.get_data().write()

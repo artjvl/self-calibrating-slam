@@ -2,7 +2,7 @@ import typing as tp
 
 from src.framework.graph.data.Data import Data
 from src.framework.graph.data.Parser import Parser
-from src.framework.math.matrix.vector import SubVector, Vector2, Vector3, Vector6
+from src.framework.math.matrix.vector import SubVector, Vector1, Vector2, Vector3, Vector6
 
 SubDataVector = tp.TypeVar('SubDataVector', bound='DataVector', covariant=True)
 
@@ -41,6 +41,10 @@ class DataVector(Data[SubVector]):
     @classmethod
     def get_dim(cls) -> int:
         return cls._type.get_dim()
+
+
+class DataV1(DataVector):
+    _type = Vector1
 
 
 class DataV2(DataVector):
