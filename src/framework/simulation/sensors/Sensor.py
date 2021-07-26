@@ -130,7 +130,8 @@ class Sensor(tp.Generic[T]):
     def update_parameter(
             self,
             name: str,
-            value: ParameterData
+            value: ParameterData,
+            index: int = 0
     ) -> None:
         parameter: SubParameterNode = self.get_parameter(name)
         new: SubParameterNode = type(parameter)(
@@ -138,6 +139,8 @@ class Sensor(tp.Generic[T]):
             interpretation=parameter.get_interpretation(),
             name=parameter.get_name()
         )
+        if isinstance(new, ParameterV1):
+            new.set_index(index)
         self._parameters[name] = new
         return new
 

@@ -43,6 +43,6 @@ class OptimisationHandler(QtCore.QObject):
         assert self._graph_container is not None
         graph: SubGraph = self._graph_container.get_graph()
         print(f"gui/OptimisationHandler: Optimising '{graph.to_unique()}'...")
-        optimised: SubGraph = self._optimiser.optimise(graph, compute_marginals=False)
+        optimised: SubGraph = self._optimiser.instance_optimise(graph, compute_marginals=False)
         trajectory_container: TrajectoryContainer = self._graph_container.get_parent()
         trajectory_container.add_graphs(None, optimised)

@@ -42,7 +42,7 @@ class Simulation2D(object):
             self,
             value: Supported
     ) -> SubNode:
-        """ Adds a new node with <value>. """
+        """ Creates and adds a new node with <value>. """
 
         node = SpatialNodeFactory.from_value(value)
         return self.add_node(node)
@@ -51,7 +51,7 @@ class Simulation2D(object):
             self,
             pose: SE2
     ) -> NodeSE2:
-        """ Adds a new pose-node (i.e., NodeSE2) with <value>. """
+        """ Creates and adds a new pose-node (i.e., NodeSE2) with <value>. """
 
         node: NodeSE2 = self.add_node_from_value(pose)
         self._pose_ids.append(node.get_id())
@@ -73,7 +73,7 @@ class Simulation2D(object):
             ids: tp.List[int],
             measurement: Supported
     ) -> SubEdge:
-        """ Adds a new edge between <ids> with <measurement>, as measurement by <sensor_id>. """
+        """ Creates and adds a new edge between <ids> with <measurement>, as measurement by <sensor_id>. """
 
         graph: SubGraph = self._manager.get_graph()
         nodes: tp.List[SubNode] = [graph.get_node(id_) for id_ in ids]
@@ -88,7 +88,7 @@ class Simulation2D(object):
             sensor_id: str,
             measurement: SE2
     ) -> SubEdge:
-        """ Adds a new pose and edge with <measurement>, as measured by <sensor_id>. """
+        """ Creates and adds a new pose and edge with <measurement>, as measured by <sensor_id>. """
 
         sensor: SubSensor = self.get_sensor(sensor_id)
         transformation: SE2 = sensor.compose(measurement)
@@ -108,7 +108,7 @@ class Simulation2D(object):
             id_: str,
             sensor: SubSensor
     ) -> None:
-        """ Adds a sensor with <sensor_id>. """
+        """ Adds sensor with <sensor_id>. """
 
         sensor.set_graph(self._manager)
         self._sensors[id_] = sensor

@@ -52,9 +52,13 @@ class Optimiser(object):
     }
 
     # constructor
-    def __init__(self):
-        self._library = Library.CHOLMOD
-        self._solver = Solver.GN
+    def __init__(
+            self,
+            library: Library = Library.CHOLMOD,
+            solver: Solver = Solver.GN
+    ):
+        self._library = library
+        self._solver = solver
 
     # solver
     def set(
@@ -78,23 +82,45 @@ class Optimiser(object):
     def get_solver(self) -> Solver:
         return self._solver
 
-    def get_libraries(self) -> tp.List[Library]:
-        return list(self.solvers.keys())
+    @classmethod
+    def get_libraries(cls) -> tp.List[Library]:
+        return list(cls.solvers.keys())
 
+    @classmethod
     def get_solvers(
-            self,
-            library: tp.Optional[Library] = None
+            cls,
+            library: Library
     ) -> tp.List[Solver]:
-        if library is None:
-            library = self._library
-        return list(self.solvers[library].keys())
+        return list(cls.solvers[library].keys())
 
-    def get_solver_string(self) -> str:
-        return self.solvers[self._library][self._solver]
+    @classmethod
+    def get_solver_string(
+            cls,
+            library: Library,
+            solver: Solver
+    ) -> str:
+        return cls.solvers[library][solver]
 
-    def optimise(
+    def instance_optimise(
             self,
             graph,
+            verbose: bool = True,
+            compute_marginals: bool = False
+    ) -> tp.Optional[SubGraph]:
+        return self.optimise(
+            graph,
+            self._library,
+            self._solver,
+            verbose=verbose,
+            compute_marginals=compute_marginals
+        )
+
+    @classmethod
+    def optimise(
+            cls,
+            graph: SubGraph,
+            library: Library = Library.CHOLMOD,
+            solver: Solver = Solver.GN,
             verbose: bool = True,
             compute_marginals: bool = False
     ) -> tp.Optional[SubGraph]:
@@ -108,7 +134,7 @@ class Optimiser(object):
         path_summary: Path = (root / (relative_to + '/summary.g2o')).resolve()
         path_output.unlink(missing_ok=True)
 
-        solver_string: str = self.get_solver_string()
+        solver_string: str = cls.get_solver_string(library, solver)
         commands: tp.List[str] = [
             str(path_g2o_bin),
             '-solver', solver_string,

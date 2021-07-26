@@ -59,7 +59,7 @@ class Graph(FactorGraph):
 
     def assign_pre(self, graph: SubGraph):
         assert len(self.get_nodes()) == len(graph.get_nodes())
-        # assert len(self.get_edges()) == len(graph.get_edges())
+        assert len(self.get_edges()) == len(graph.get_edges())
         self._pre = graph
 
     # true
@@ -73,27 +73,31 @@ class Graph(FactorGraph):
     def is_perturbed(self) -> bool:
         return not np.isclose(self.get_error(), 0.)
 
-    def has_metrics(self) -> bool:
-        return self.has_true()
-
     def assign_true(self, graph: SubGraph):
         # assert self.is_perturbed()
         assert not graph.is_perturbed()
 
-        nodes: tp.List[SubNode] = self.get_nodes()
-        true_nodes: tp.List[SubNode] = graph.get_nodes()
-        assert len(nodes) == len(true_nodes)
-        for i, node in enumerate(nodes):
-            true_node = true_nodes[i]
-            node.assign_true(true_node)
+        # nodes
+        id_: int
+        node: SubNode
+        true_node: SubNode
+        for id_ in graph.get_node_ids():
+            if self.contains_node_id(id_):
+                node = self.get_node(id_)
+                true_node = graph.get_node(id_)
+                node.assign_true(true_node)
 
-        edges: tp.List[SubEdge] = self.get_edges()
-        true_edges: tp.List[SubEdge] = graph.get_edges()
-        assert len(edges) == len(true_edges)
-        for i, edge in enumerate(edges):
-            true_edge = true_edges[i]
+        # edges
+        true_edge: SubEdge
+        edge_iter: iter = iter(self.get_edges())
+        edge: tp.Optional[SubEdge] = None
+        for i, true_edge in enumerate(graph.get_edges()):
+            is_eligible: bool = False
+            while not is_eligible:
+                edge = next(edge_iter, None)
+                assert edge is not None
+                is_eligible = edge.is_eligible_for_true(true_edge)
             edge.assign_true(true_edge)
-
         self._true = graph
 
     # error
@@ -107,7 +111,7 @@ class Graph(FactorGraph):
     def compute_ate(self) -> float:
         """ Returns the Absolute Trajectory Error (APE). """
 
-        assert self.has_metrics()
+        assert self.has_true()
         te2: float = 0
         count: int = 0
         node: SubNode
@@ -122,7 +126,7 @@ class Graph(FactorGraph):
     def compute_rpe_translation(self) -> float:
         """ Returns the translation portion of the Relative Pose Error (RPE). """
 
-        assert self.has_metrics()
+        assert self.has_true()
         rpe2: float = 0
         count: int = 0
         edge: SubEdge
@@ -137,7 +141,7 @@ class Graph(FactorGraph):
     def compute_rpe_rotation(self) -> float:
         """ Returns the rotation portion of the Relative Pose Error (RPE). """
 
-        assert self.has_metrics()
+        assert self.has_true()
         rpe: float = 0
         count: int = 0
         edge: SubEdge
@@ -253,7 +257,8 @@ class Node(tp.Generic[T], FactorNode[T]):
 
     # true
     def assign_true(self, node: SubNode):
-        assert self.get_id() == node.get_id()
+        assert node.get_id() == self.get_id()
+        assert node.get_timestamp() == self.get_timestamp()
         self._true = node
 
     def has_true(self) -> bool:
@@ -301,16 +306,14 @@ class Edge(tp.Generic[T], FactorEdge[T], ABC):
         return None
 
     # true
-    def assign_true(self, edge: SubEdge):
-        nodes = self.get_nodes()
-        true_nodes = edge.get_nodes()
-        assert len(nodes) == len(true_nodes)
+    def is_eligible_for_true(self, edge: SubEdge):
+        """ Returns whether the provided edge is connected to all this edge's nodes that have a 'true' reference. """
 
-        node: SubNode
-        for i, node in enumerate(nodes):
-            true_node = true_nodes[i]
-            assert node.get_id() == true_node.get_id()
-            assert node.has_true()
+        true_ids: tp.List[int] = [node.get_id() for node in self.get_nodes() if node.has_true()]
+        return edge.get_timestamp() == self.get_timestamp() and set(true_ids) <= set(edge.get_node_ids())
+
+    def assign_true(self, edge: SubEdge):
+        assert self.is_eligible_for_true(edge)
         self._true = edge
 
     def has_true(self) -> bool:

@@ -274,11 +274,11 @@ class TrajectoryContainer(Container, Toggle, QtCore.QObject):
             graph: SubGraph,
             suppress: bool = False
     ) -> GraphContainer:
-        if not self.is_empty():
-            first: SubGraph = self.get_children()[0].get_graph()
-            assert len(graph.get_types()) == len(first.get_types())
-            assert len(graph.get_nodes()) == len(first.get_nodes())
-            assert len(graph.get_edges()) == len(first.get_edges())
+        # if not self.is_empty():
+        #     first: SubGraph = self.get_children()[0].get_graph()
+        #     assert len(graph.get_types()) == len(first.get_types())
+        #     assert len(graph.get_nodes()) == len(first.get_nodes())
+        #     assert len(graph.get_edges()) == len(first.get_edges())
         if self.has_true():
             graph.assign_true(self.get_true())
         id_: int = self.count_id(increment=True)

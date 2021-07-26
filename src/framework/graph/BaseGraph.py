@@ -98,6 +98,13 @@ class BaseGraph(NodeContainer, Printable):
     def get_edge(self, i: int) -> SubBaseEdge:
         return self._edges[i]
 
+    def get_connected_edges(self, id_: int):
+        edges: tp.List[SubBaseEdge] = []
+        for edge in self.get_edges():
+            if edge.contains_node_id(id_):
+                edges.append(edge)
+        return edges
+
     # types
     def get_types(self) -> tp.List[tp.Type[SubBaseElement]]:
         return self._sorted.get_types()
@@ -135,7 +142,6 @@ class BaseGraph(NodeContainer, Printable):
 class BaseNode(Printable):
 
     _id: tp.Optional[int]
-    _edges: tp.List[SubBaseEdge]
 
     def __init__(
             self,
@@ -144,7 +150,6 @@ class BaseNode(Printable):
     ):
         super().__init__(**kwargs)
         self._id = id_
-        self._edges = []
 
     # id
     def has_id(self) -> bool:
@@ -157,13 +162,6 @@ class BaseNode(Printable):
     def get_id(self) -> int:
         assert self.has_id()
         return self._id
-
-    # edges
-    def add_edge(self, edge: SubBaseEdge) -> None:
-        self._edges.append(edge)
-
-    def get_edges(self) -> tp.List[SubBaseEdge]:
-        return self._edges
 
     # Printable
     def to_id(self) -> str:
@@ -180,10 +178,6 @@ class BaseEdge(NodeContainer, Printable):
         super().__init__(**kwargs)
         for node in nodes:
             self.add_node(node)
-
-    # def add_node(self, node: SubBaseNode) -> None:
-    #     super().add_node(node)
-    #     node.add_edge(self)
 
     # Printable
     def to_id(self) -> str:

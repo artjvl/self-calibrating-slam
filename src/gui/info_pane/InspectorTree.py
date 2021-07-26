@@ -67,7 +67,7 @@ class InspectorTree(QtWidgets.QTreeWidget):
         sub_error.setExpanded(True)
 
         # metrics
-        if graph.has_metrics():
+        if graph.has_true():
             sub_metrics = self._construct_tree_property(root, 'Metrics', '', bold=True)
             true: SubGraph = graph.get_true()
             sub_true = self._construct_tree_property(sub_metrics, 'true', true.to_unique())

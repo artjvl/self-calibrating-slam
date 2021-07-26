@@ -214,7 +214,7 @@ class BrowserTree(QtWidgets.QTreeWidget):
 
                     action_metrics = QtWidgets.QAction('Plot metrics', self)
                     menu.addAction(action_metrics)
-                    if not graph.has_metrics():
+                    if not graph.has_true():
                         action_metrics.setEnabled(False)
 
                     # select action
