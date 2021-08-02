@@ -1,13 +1,16 @@
 import typing as tp
 
 from PyQt5 import QtCore
-from src.framework.graph.CalibratingGraph import SubCalibratingGraph
 from src.framework.graph.Graph import SubGraph, Graph
 from src.framework.optimiser.Optimiser import Optimiser
 from src.gui.modules.TreeNode import GraphTreeNode, TrajectoryTreeNode
 
 
 class OptimisationHandler(QtCore.QObject):
+
+    _optimiser: Optimiser
+    _graph_node: tp.Optional[GraphTreeNode]
+    _include_history: bool
 
     signal_update = QtCore.pyqtSignal(int)
 
@@ -18,7 +21,8 @@ class OptimisationHandler(QtCore.QObject):
     ):
         super().__init__(*args, **kwargs)
         self._optimiser = Optimiser()
-        self._graph_node: tp.Optional[GraphTreeNode] = None
+        self._graph_node = None
+        self._include_history = False
 
     def set_graph(
             self,
@@ -39,13 +43,18 @@ class OptimisationHandler(QtCore.QObject):
     def get_optimiser(self) -> Optimiser:
         return self._optimiser
 
+    def set_include_history(self, include_history: bool = True) -> None:
+        self._include_history = include_history
+
+    def get_include_history(self) -> bool:
+        return self._include_history
+
     def optimise(self) -> None:
-        include_subgraphs = True
         assert self._graph_node is not None
         graph: SubGraph = self._graph_node.get_graph()
 
         graphs: tp.List[SubGraph] = [graph]
-        if include_subgraphs:
+        if self._include_history:
             graphs = graph.get_subgraphs()
 
         solutions: tp.List[SubGraph] = []

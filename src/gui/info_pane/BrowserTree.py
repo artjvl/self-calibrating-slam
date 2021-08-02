@@ -7,9 +7,9 @@ from src.framework.graph.protocols.visualisable.DrawEdge import DrawEdge
 from src.framework.graph.protocols.visualisable.DrawPoint import DrawPoint
 from src.gui.info_pane.InspectorTree import InspectorTree
 from src.gui.info_pane.TimestampBox import TimestampBox
-from src.gui.modules.PopUp import PopUp
 from src.gui.modules.TreeNode import TopTreeNode, GraphTreeNode, ElementTreeNode, SubTreeNode, TrajectoryTreeNode, \
     SubToggle, Toggle
+from src.gui.utils.PopUp import PopUp
 from src.gui.viewer.Viewer import Viewer
 
 
@@ -23,14 +23,14 @@ class BrowserTree(QtWidgets.QTreeWidget):
     # constructor
     def __init__(
             self,
-            container: TopTreeNode,
+            tree: TopTreeNode,
             inspector: InspectorTree,
             timestamp_box: TimestampBox,
             viewer: Viewer,
             *args, **kwargs
     ):
         super().__init__(*args, **kwargs)
-        self._tree = container
+        self._tree = tree
         self._inspector = inspector
         self._timestamp_box = timestamp_box
         self._viewer = viewer

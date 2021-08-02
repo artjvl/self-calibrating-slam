@@ -2,24 +2,26 @@ from PyQt5 import QtCore, QtWidgets
 from src.framework.graph.Graph import SubGraph
 from src.gui.info_pane.BrowserTree import BrowserTree
 from src.gui.info_pane.InspectorTree import InspectorTree
-from src.gui.info_pane.LabelPane import LabelPane
 from src.gui.info_pane.TimestampBox import TimestampBox
-from src.gui.modules.PopUp import PopUp
 from src.gui.modules.TreeNode import TopTreeNode
+from src.gui.utils.LabelPane import LabelPane
+from src.gui.utils.PopUp import PopUp
 from src.gui.viewer.Viewer import Viewer
 
 
 class InfoPane(QtWidgets.QWidget):
 
+    _tree: TopTreeNode
+
     # constructor
     def __init__(
             self,
-            container: TopTreeNode,
+            tree: TopTreeNode,
             viewer: Viewer,
             *args, **kwargs
     ):
         super().__init__(*args, **kwargs)
-        self._container = container
+        self._tree = tree
 
         # self.setOrientation(QtCore.Qt.Vertical)
         # self.setContentsMargins(10, 10, 10, 10)
@@ -38,7 +40,7 @@ class InfoPane(QtWidgets.QWidget):
         button_clear = QtWidgets.QPushButton(self)
         button_clear.setText('Clear')
         # button_clear.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Preferred))
-        button_clear.clicked.connect(self._container.clear)
+        button_clear.clicked.connect(self._tree.clear)
 
         # button layout
         button_layout = QtWidgets.QHBoxLayout()
@@ -57,7 +59,7 @@ class InfoPane(QtWidgets.QWidget):
 
         inspector = InspectorTree(self)
         timestamp_box = TimestampBox()
-        browser = BrowserTree(self._container, inspector, timestamp_box, viewer, self)
+        browser = BrowserTree(self._tree, inspector, timestamp_box, viewer, self)
 
         panels.addWidget(LabelPane(browser, 'Graph browser'))
         panels.addWidget(LabelPane(timestamp_box, 'Select timestamp'))
@@ -65,11 +67,11 @@ class InfoPane(QtWidgets.QWidget):
         layout.addWidget(panels)
 
         # self.setLayout(layout)
-        panels.setStretchFactor(0, 2)
-        panels.setStretchFactor(1, 2)
+        panels.setSizes([400, 10, 400])
+        # panels.setStretchFactor(1, 2)
         # print(self.sizes())
 
     def handle_load_graph(self) -> None:
         graph: SubGraph = PopUp.load_from_file()
         if graph is not None:
-            self._container.add_graph(graph)
+            self._tree.add_graph(graph)

@@ -1,41 +1,41 @@
 from PyQt5 import QtWidgets
 from src.gui.action_pane.GraphBox import GraphBox
+from src.gui.action_pane.HistoryCheckbox import HistoryCheckbox
 from src.gui.action_pane.SolverBox import SolverBox
-from src.gui.modules.TreeNode import TopTreeNode
 from src.gui.modules.OptimisationHandler import OptimisationHandler
+from src.gui.modules.TreeNode import TopTreeNode
+from src.gui.utils.LabelPane import LabelPane
 
 
 class OptimisationPane(QtWidgets.QWidget):
 
+    _tree: TopTreeNode
+    _optimisation_handler: OptimisationHandler
+
     # constructor
     def __init__(
             self,
-            container: TopTreeNode,
+            tree: TopTreeNode,
             *args, **kwargs
     ):
         super().__init__(*args, **kwargs)
-        self._container = container,
-        self._optimisation_handler = OptimisationHandler(container)
+        self._tree = tree
+        self._optimisation_handler = OptimisationHandler(tree)
 
         layout = QtWidgets.QVBoxLayout()
-
         self.setLayout(layout)
 
-        # graph optimisation
-        graph_box = GraphBox(container, self._optimisation_handler, self)
-        graph_box_label = QtWidgets.QLabel(graph_box)
-        graph_box_label.setText('Choose a graph:')
+        # graph-selection box
+        graph_box = GraphBox(tree, self._optimisation_handler, self)
+        history_checkbox = HistoryCheckbox(self._optimisation_handler)
+        layout.addWidget(LabelPane(graph_box, 'Choose a graph:'))
+        layout.addWidget(history_checkbox)
 
-        layout.addWidget(graph_box_label)
-        layout.addWidget(graph_box)
-
+        # solver box
         solver_box = SolverBox(self._optimisation_handler.get_optimiser(), self)
-        solver_box_label = QtWidgets.QLabel(graph_box)
-        solver_box_label.setText('Choose a Library/Solver:')
+        layout.addWidget(LabelPane(solver_box, 'Choose a Library/Solver:'))
 
-        layout.addWidget(solver_box_label)
-        layout.addWidget(solver_box)
-
+        # optimise button
         self._button_optimise = QtWidgets.QPushButton(self)
         self._button_optimise.setText('Optimise graph')
         self._button_optimise.clicked.connect(self._optimisation_handler.optimise)

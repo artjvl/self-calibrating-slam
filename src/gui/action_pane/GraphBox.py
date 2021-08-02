@@ -2,9 +2,9 @@ import typing as tp
 
 from PyQt5 import QtCore
 from src.framework.graph.Graph import SubGraph
-from src.gui.action_pane.GroupComboBox import GroupItem, GroupComboBox
-from src.gui.modules.TreeNode import TopTreeNode, TrajectoryTreeNode, GraphTreeNode
 from src.gui.modules.OptimisationHandler import OptimisationHandler
+from src.gui.modules.TreeNode import TopTreeNode, TrajectoryTreeNode, GraphTreeNode
+from src.gui.utils.GroupComboBox import GroupItem, GroupComboBox
 
 
 class GraphBox(GroupComboBox):

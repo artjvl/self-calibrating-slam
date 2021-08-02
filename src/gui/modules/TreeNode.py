@@ -205,6 +205,9 @@ class GraphicsTreeNode(TreeNode, Toggle):
         super().remove()
         if should_broadcast:
             self.broadcast(self._signal_remove)
+            
+    def get_key(self) -> str:
+        return ''
 
 
 class ElementTreeNode(GraphicsTreeNode):

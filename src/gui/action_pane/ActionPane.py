@@ -18,3 +18,4 @@ class ActionPane(QtWidgets.QSplitter):
         self.setOrientation(Qt.Vertical)
         self.addWidget(SimulationPane(container, self))
         self.addWidget(OptimisationPane(container, self))
+        self.setSizes([800, 200])

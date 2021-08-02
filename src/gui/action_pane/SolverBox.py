@@ -1,7 +1,7 @@
 import typing as tp
 
 from src.framework.optimiser.Optimiser import Optimiser, Library, Solver
-from src.gui.action_pane.GroupComboBox import GroupComboBox, GroupItem
+from src.gui.utils.GroupComboBox import GroupComboBox, GroupItem
 
 
 class SolverBox(GroupComboBox):

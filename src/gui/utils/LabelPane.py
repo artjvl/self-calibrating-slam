@@ -8,9 +8,9 @@ class LabelPane(QtWidgets.QWidget):
             self,
             widget: QtWidgets.QWidget,
             label_string: str,
-            *args, **kwargs
+            **kwargs
     ):
-        super().__init__(*args, **kwargs)
+        super().__init__(**kwargs)
 
         layout = QtWidgets.QVBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)

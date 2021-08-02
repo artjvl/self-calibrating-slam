@@ -2,7 +2,7 @@ from PyQt5 import QtWidgets
 from src.framework.graph.Graph import SubGraph
 from src.gui.menus.Menu import Menu
 from src.gui.modules.TreeNode import TopTreeNode
-from src.gui.modules.PopUp import PopUp
+from src.gui.utils.PopUp import PopUp
 
 
 class FileMenu(Menu):
