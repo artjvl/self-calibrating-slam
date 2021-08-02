@@ -2,7 +2,7 @@ from PyQt5 import QtWidgets
 
 from src.gui.action_pane.ParameterTree import ParameterTree
 from src.gui.action_pane.SimulationBox import SimulationBox
-from src.gui.modules.Container import TopContainer
+from src.gui.modules.TreeNode import TopTreeNode
 from src.gui.modules.SimulationHandler import SimulationHandler
 
 
@@ -11,7 +11,7 @@ class SimulationPane(QtWidgets.QWidget):
     # constructor
     def __init__(
             self,
-            container: TopContainer,
+            container: TopTreeNode,
             *args, **kwargs
     ):
         super().__init__(*args, **kwargs)

@@ -1,11 +1,11 @@
 from PyQt5 import QtCore, QtWidgets
-
 from src.framework.graph.Graph import SubGraph
 from src.gui.info_pane.BrowserTree import BrowserTree
 from src.gui.info_pane.InspectorTree import InspectorTree
 from src.gui.info_pane.LabelPane import LabelPane
-from src.gui.modules.Container import TopContainer
+from src.gui.info_pane.TimestampBox import TimestampBox
 from src.gui.modules.PopUp import PopUp
+from src.gui.modules.TreeNode import TopTreeNode
 from src.gui.viewer.Viewer import Viewer
 
 
@@ -14,7 +14,7 @@ class InfoPane(QtWidgets.QWidget):
     # constructor
     def __init__(
             self,
-            container: TopContainer,
+            container: TopTreeNode,
             viewer: Viewer,
             *args, **kwargs
     ):
@@ -56,9 +56,11 @@ class InfoPane(QtWidgets.QWidget):
         # self.setStretchFactor(0, 0)
 
         inspector = InspectorTree(self)
-        browser = BrowserTree(self._container, inspector, viewer, self)
+        timestamp_box = TimestampBox()
+        browser = BrowserTree(self._container, inspector, timestamp_box, viewer, self)
 
         panels.addWidget(LabelPane(browser, 'Graph browser'))
+        panels.addWidget(LabelPane(timestamp_box, 'Select timestamp'))
         panels.addWidget(LabelPane(inspector, 'Graph-element inspector'))
         layout.addWidget(panels)
 
@@ -70,4 +72,4 @@ class InfoPane(QtWidgets.QWidget):
     def handle_load_graph(self) -> None:
         graph: SubGraph = PopUp.load_from_file()
         if graph is not None:
-            self._container.add_graphs(None, graph)
+            self._container.add_graph(graph)

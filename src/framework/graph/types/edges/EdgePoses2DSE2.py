@@ -1,5 +1,6 @@
 import typing as tp
 
+from src.framework.graph.CalibratingGraph import SubCalibratingNode
 from src.framework.graph.protocols.visualisable.DrawEdge import DrawEdge
 from src.framework.graph.types.edges.CalibratingEdgeSE2 import CalibratingEdgeSE2
 from src.framework.graph.types.nodes.SpatialNode import NodeSE2
@@ -16,13 +17,19 @@ class EdgePoses2DSE2(CalibratingEdgeSE2, DrawEdge):
 
     def __init__(
             self,
-            value: tp.Optional[SE2] = None,
-            info_matrix: tp.Optional[Square3] = None,
+            name: tp.Optional[str] = None,
             node_a: tp.Optional[NodeSE2] = None,
-            node_b: tp.Optional[NodeSE2] = None
+            node_b: tp.Optional[NodeSE2] = None,
+            measurement: tp.Optional[SE2] = None,
+            info_matrix: tp.Optional[Square3] = None
     ):
-        nodes = list(filter(lambda n: n is not None, [node_a, node_b]))
-        super().__init__(value, info_matrix, *nodes)
+        nodes: tp.List[SubCalibratingNode] = [node for node in [node_a, node_b] if node is not None]
+        super().__init__(
+            name=name,
+            nodes=nodes,
+            measurement=measurement,
+            info_matrix=info_matrix,
+        )
 
     def get_value(self) -> SE2:
         a: NodeSE2
@@ -31,13 +38,13 @@ class EdgePoses2DSE2(CalibratingEdgeSE2, DrawEdge):
         return b.get_value() - a.get_value()
 
     def compute_rpe_translation2(self) -> float:
-        assert self.has_true()
-        delta: Vector2 = self.get_value().translation() - self.get_true().get_value().translation()
+        assert self.has_truth()
+        delta: Vector2 = self.get_value().translation() - self.get_truth().get_value().translation()
         return delta[0]**2 + delta[1]**2
 
     def compute_rpe_rotation(self) -> float:
-        assert self.has_true()
-        delta: SO2 = self.get_value().rotation() - self.get_true().get_value().rotation()
+        assert self.has_truth()
+        delta: SO2 = self.get_value().rotation() - self.get_truth().get_value().rotation()
         return delta.angle()
 
     # Visualisable

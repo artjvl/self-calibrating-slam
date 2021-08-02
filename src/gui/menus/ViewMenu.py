@@ -2,17 +2,17 @@ import functools
 
 from PyQt5.QtWidgets import QMenu, QAction
 from src.gui.menus.Menu import Menu
-from src.gui.modules.Container import TopContainer, Type, SubToggle, SubContainer
+from src.gui.modules.TreeNode import TopTreeNode, Type, SubToggle, SubTreeNode
 from src.gui.viewer.Viewer import Viewer
 
 
 class ViewMenu(Menu):
 
     # constructor
-    def __init__(self, container: TopContainer, viewer: Viewer, *args, **kwargs):
+    def __init__(self, container: TopTreeNode, viewer: Viewer, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.setTitle('&View')
-        self._container: TopContainer = container
+        self._container: TopTreeNode = container
         self._viewer = viewer
 
         self._construct_menu()
@@ -42,7 +42,7 @@ class ViewMenu(Menu):
     def _construct_recursive_container(
             self,
             menu: QMenu,
-            container: SubContainer
+            container: SubTreeNode
     ):
         # type-toggles
         type_: Type
@@ -60,11 +60,11 @@ class ViewMenu(Menu):
         menu.addSeparator()
 
         # sub-menus
-        sub_container: SubContainer
+        sub_container: SubTreeNode
         for sub_container in container.get_children():
             sub_menu: QMenu = self.add_menu(
                 menu=menu,
-                name=sub_container.get_name()
+                name=sub_container.get_gui_name()
             )
             self._construct_recursive_container(sub_menu, sub_container)
 

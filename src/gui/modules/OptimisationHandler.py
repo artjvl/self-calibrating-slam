@@ -2,9 +2,9 @@ import typing as tp
 
 from PyQt5 import QtCore
 from src.framework.graph.CalibratingGraph import SubCalibratingGraph
-from src.framework.graph.Graph import SubGraph
+from src.framework.graph.Graph import SubGraph, Graph
 from src.framework.optimiser.Optimiser import Optimiser
-from src.gui.modules.Container import GraphContainer, TrajectoryContainer
+from src.gui.modules.TreeNode import GraphTreeNode, TrajectoryTreeNode
 
 
 class OptimisationHandler(QtCore.QObject):
@@ -18,18 +18,18 @@ class OptimisationHandler(QtCore.QObject):
     ):
         super().__init__(*args, **kwargs)
         self._optimiser = Optimiser()
-        self._graph_container: tp.Optional[GraphContainer] = None
+        self._graph_node: tp.Optional[GraphTreeNode] = None
 
     def set_graph(
             self,
-            graph_container: tp.Optional[GraphContainer]
-    ):
-        if graph_container is not None:
-            self._graph_container = graph_container
+            graph_node: tp.Optional[GraphTreeNode]
+    ) -> None:
+        if graph_node is not None:
+            self._graph_node = graph_node
             print(
                 "gui/OptimisationHandler: Graph '{}/{}' set.".format(
-                    graph_container.get_parent().get_name(),
-                    graph_container.get_name()
+                    graph_node.get_parent().get_gui_name(),
+                    graph_node.get_gui_name()
                 )
             )
             self.signal_update.emit(0)
@@ -39,10 +39,21 @@ class OptimisationHandler(QtCore.QObject):
     def get_optimiser(self) -> Optimiser:
         return self._optimiser
 
-    def optimise(self):
-        assert self._graph_container is not None
-        graph: SubGraph = self._graph_container.get_graph()
-        print(f"gui/OptimisationHandler: Optimising '{graph.to_unique()}'...")
-        optimised: SubGraph = self._optimiser.instance_optimise(graph, compute_marginals=False)
-        trajectory_container: TrajectoryContainer = self._graph_container.get_parent()
-        trajectory_container.add_graphs(None, optimised)
+    def optimise(self) -> None:
+        include_subgraphs = True
+        assert self._graph_node is not None
+        graph: SubGraph = self._graph_node.get_graph()
+
+        graphs: tp.List[SubGraph] = [graph]
+        if include_subgraphs:
+            graphs = graph.get_subgraphs()
+
+        solutions: tp.List[SubGraph] = []
+        for graph_ in graphs:
+            print(f"gui/OptimisationHandler: Optimising '{graph_.to_unique()}'...")
+            solution_: SubGraph = self._optimiser.instance_optimise(graph_, compute_marginals=False)
+            solutions.append(solution_)
+        solution: SubGraph = Graph.from_subgraphs(solutions)
+
+        trajectory_node: TrajectoryTreeNode = self._graph_node.get_parent()
+        trajectory_node.add_graph(solution)

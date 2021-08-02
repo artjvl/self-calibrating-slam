@@ -3,7 +3,8 @@ import typing as tp
 from datetime import datetime
 
 from src.definitions import get_project_root
-from src.framework.graph.CalibratingGraph import CalibratingGraph
+from src.framework.graph.CalibratingGraph import CalibratingGraph, SubCalibratingGraph, SubCalibratingNode, \
+    SubCalibratingEdge, CalibratingNode, CalibratingEdge
 from src.framework.graph.Graph import SubGraph, SubNode, Edge, Node
 from src.framework.graph.types.database import database
 
@@ -73,7 +74,8 @@ class GraphParser(object):
     @classmethod
     def load(
             cls,
-            file: pathlib.Path
+            file: pathlib.Path,
+            reference: tp.Optional[SubCalibratingGraph] = None
     ) -> SubGraph:
         graph = CalibratingGraph()
 
@@ -85,36 +87,56 @@ class GraphParser(object):
 
         reader: tp.TextIO = file.open('r')
         lines: tp.List[str] = reader.readlines()
-        nodes: tp.Dict[int, SubNode] = {}
 
+        element: tp.Union[SubCalibratingNode, SubCalibratingEdge]
+        num_edges: int = 0
         line: str
         for i, line in enumerate(lines):
+            # read line
             assert line != '\n', f'Line {i} is empty.'
             line = line.strip()
             words: tp.List[str] = line.split()
 
+            # interpret tag
             tag: str = words[0]
             if tag == 'FIX':
                 id_: int = int(words[1])
-                node = nodes[id_]
+                node = graph.get_node(id_)
                 node.fix()
             else:
                 element = cls._database.from_tag(tag)
+
+                # parse node
                 if isinstance(element, Node):
+                    # read node
                     id_: int = int(words[1])
                     element.set_id(id_)
                     assert not element.read(words[2:])
-                    nodes[id_] = element
-                    # graph.add_node(element)
-                elif isinstance(element, Edge):
+
+                    if reference is not None:
+                        # copy reference content
+                        reference_node = reference.get_node(id_)
+                        element = reference_node.copy_to(element)
+
+                    # add node
+                    graph.add_node(element)
+
+                # parse edge
+                elif isinstance(element, CalibratingEdge):
+                    # read edge
                     cardinality: int = element.get_cardinality()
                     node_ids: tp.List[int] = [int(id_) for id_ in words[1: 1 + cardinality]]
                     for id_ in node_ids:
-                        assert id_ in nodes
-                        node: SubNode = nodes[id_]
-                        if not graph.contains_node_id(id_):
-                            graph.add_node(node)
+                        node: SubCalibratingNode = graph.get_node(id_)
                         element.add_node(node)
                     assert not element.read(words[1 + cardinality:])
+
+                    if reference is not None:
+                        # add reference content
+                        reference_edge = reference.get_edge(num_edges)
+                        element = reference_edge.copy_to(element)
+
+                    # add edge
                     graph.add_edge(element)
+                    num_edges += 1
         return graph

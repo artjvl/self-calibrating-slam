@@ -1,5 +1,6 @@
 import typing as tp
 
+from src.framework.graph.CalibratingGraph import SubCalibratingNode
 from src.framework.graph.protocols.visualisable.DrawEdge import DrawEdge
 from src.framework.graph.types.edges.CalibratingEdgeV2 import CalibratingEdgeV2
 from src.framework.graph.types.nodes.SpatialNode import NodeSE2
@@ -15,12 +16,20 @@ class EdgePose2DV2(CalibratingEdgeV2, DrawEdge):
 
     def __init__(
             self,
-            value: tp.Optional[Vector2] = None,
-            info_matrix: tp.Optional[Square2] = None,
-            node: tp.Optional[NodeSE2] = None
+            name: tp.Optional[str] = None,
+            node: tp.Optional[NodeSE2] = None,
+            measurement: tp.Optional[Vector2] = None,
+            info_matrix: tp.Optional[Square2] = None
     ):
-        nodes = list(filter(lambda n: n is not None, [node]))
-        super().__init__(value, info_matrix, *nodes)
+        nodes: tp.List[SubCalibratingNode] = []
+        if node is not None:
+            nodes.append(node)
+        super().__init__(
+            name=name,
+            node=nodes,
+            measurement=measurement,
+            info_matrix=info_matrix
+        )
 
     def get_value(self) -> Vector2:
         node: NodeSE2

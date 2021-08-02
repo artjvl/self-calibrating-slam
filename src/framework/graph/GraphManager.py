@@ -45,4 +45,4 @@ class GraphManager(object):
         self._timestamp = timestamp
 
     def increment_timestamp(self, delta: float) -> None:
-        self._timestamp += delta
+        self.set_timestamp(self._timestamp + delta)

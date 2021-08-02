@@ -43,8 +43,8 @@ class NodeSE2(SpatialNode[SE2], DrawAxis):
         return self.get_value().to_se3()
 
     def compute_ate2(self) -> float:
-        assert self.has_true()
-        delta: Vector2 = self.get_true().get_value().translation() - self.get_value().translation()
+        assert self.has_truth()
+        delta: Vector2 = self.get_truth().get_value().translation() - self.get_value().translation()
         return delta[0] ** 2 + delta[1] ** 2
 
 

@@ -67,11 +67,11 @@ class InspectorTree(QtWidgets.QTreeWidget):
         sub_error.setExpanded(True)
 
         # metrics
-        if graph.has_true():
+        if graph.has_truth():
             sub_metrics = self._construct_tree_property(root, 'Metrics', '', bold=True)
-            true: SubGraph = graph.get_true()
-            sub_true = self._construct_tree_property(sub_metrics, 'true', true.to_unique())
-            sub_true.obj = Indicator.TRUE
+            truth: SubGraph = graph.get_truth()
+            sub_truth = self._construct_tree_property(sub_metrics, 'truth', truth.to_unique())
+            sub_truth.obj = Indicator.TRUE
             self._construct_tree_property(sub_metrics, 'ate', str(graph.get_ate()))
             self._construct_tree_property(sub_metrics, 'rpe_translation', str(graph.get_rpe_translation()))
             self._construct_tree_property(sub_metrics, 'rpe_rotation', str(graph.get_rpe_rotation()))
@@ -87,7 +87,7 @@ class InspectorTree(QtWidgets.QTreeWidget):
 
         # properties
         sub_properties = self._construct_tree_property(root, 'Properties', '', bold=True)
-        self._construct_tree_property(sub_properties, 'path', str(graph.get_path()))
+        # self._construct_tree_property(sub_properties, 'path', str(graph.get_path()))
         sub_properties.setExpanded(True)
         return root
 
@@ -129,7 +129,7 @@ class InspectorTree(QtWidgets.QTreeWidget):
                     self._construct_marginal(item, self.obj)
                     delattr(item, 'obj')
                 elif obj == Indicator.TRUE:
-                    self.display_graph(self.obj.get_true())
+                    self.display_graph(self.obj.get_truth())
 
     # node
     def display_node(
@@ -155,11 +155,11 @@ class InspectorTree(QtWidgets.QTreeWidget):
                 self._construct_tree_property_from_value(root, 'matrix', node.get_info_matrix())
 
         # metrics
-        if node.has_true():
+        if node.has_truth():
             sub_metrics = self._construct_tree_property(root, 'Metrics', '', bold=True)
-            true: SubNode = node.get_true()
-            sub_true = self._construct_tree_property(sub_metrics, 'true', true.to_unique())
-            self._construct_node_tree(true, sub_true)
+            truth: SubNode = node.get_truth()
+            sub_truth = self._construct_tree_property(sub_metrics, 'truth', truth.to_unique())
+            self._construct_node_tree(truth, sub_truth)
             ate2: tp.Optional[float] = node.compute_ate2()
             if ate2 is not None:
                 self._construct_tree_property(sub_metrics, 'ate2', str(ate2))
@@ -205,11 +205,11 @@ class InspectorTree(QtWidgets.QTreeWidget):
         sub_error.setExpanded(True)
 
         # metrics
-        if edge.has_true():
+        if edge.has_truth():
             sub_metrics = self._construct_tree_property(root, 'Metrics', '', bold=True)
-            true: SubEdge = edge.get_true()
-            sub_true = self._construct_tree_property(sub_metrics, 'true', str(true.to_unique()))
-            self._construct_edge_tree(true, sub_true)
+            truth: SubEdge = edge.get_truth()
+            sub_truth = self._construct_tree_property(sub_metrics, 'truth', str(truth.to_unique()))
+            self._construct_edge_tree(truth, sub_truth)
             self._construct_tree_property_from_value(sub_metrics, 'rpe_translation2', edge.compute_rpe_translation2())
             self._construct_tree_property_from_value(sub_metrics, 'rpe_rotation', edge.compute_rpe_rotation())
             sub_metrics.setExpanded(True)

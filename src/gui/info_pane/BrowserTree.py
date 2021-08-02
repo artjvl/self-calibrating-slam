@@ -1,32 +1,39 @@
 import typing as tp
 
 from PyQt5 import QtCore, QtWidgets, QtGui
-from src.framework.graph.CalibratingGraph import SubCalibratingGraph
 from src.framework.graph.Graph import SubGraph, Node, Edge, SubElement
-from src.framework.graph.GraphAnalyser import GraphAnalyser
 from src.framework.graph.protocols.Visualisable import SubVisualisable, Visualisable
 from src.framework.graph.protocols.visualisable.DrawEdge import DrawEdge
 from src.framework.graph.protocols.visualisable.DrawPoint import DrawPoint
 from src.gui.info_pane.InspectorTree import InspectorTree
-from src.gui.modules.Container import TopContainer, GraphContainer, ElementContainer, SubContainer, TrajectoryContainer
+from src.gui.info_pane.TimestampBox import TimestampBox
 from src.gui.modules.PopUp import PopUp
+from src.gui.modules.TreeNode import TopTreeNode, GraphTreeNode, ElementTreeNode, SubTreeNode, TrajectoryTreeNode, \
+    SubToggle, Toggle
 from src.gui.viewer.Viewer import Viewer
 
 
 class BrowserTree(QtWidgets.QTreeWidget):
 
+    _tree: TopTreeNode
+    _inspector: InspectorTree
+    _timestamp_box: TimestampBox
+    _viewer: Viewer
+
     # constructor
     def __init__(
             self,
-            container: TopContainer,
+            container: TopTreeNode,
             inspector: InspectorTree,
+            timestamp_box: TimestampBox,
             viewer: Viewer,
             *args, **kwargs
     ):
         super().__init__(*args, **kwargs)
-        self._container: TopContainer = container
-        self._inspector: InspectorTree = inspector
-        self._viewer: Viewer = viewer
+        self._tree = container
+        self._inspector = inspector
+        self._timestamp_box = timestamp_box
+        self._viewer = viewer
 
         # formatting
         self.headerItem().setText(0, 'Object')
@@ -45,74 +52,74 @@ class BrowserTree(QtWidgets.QTreeWidget):
         self.customContextMenuRequested.connect(self._handle_context_menu)
 
         # update
-        self._container.signal_update.connect(self._handle_signal)
+        self._tree.signal_update.connect(self._handle_signal)
 
     def _construct_browser(self):
         self.clear()
 
-        trajectory_container: TrajectoryContainer
-        for trajectory_container in self._container.get_children():
+        trajectory_node: TrajectoryTreeNode
+        for trajectory_node in self._tree.get_children():
 
             # trajectory-container
-            graph_containers: tp.List[GraphContainer] = trajectory_container.get_children()
+            graph_nodes: tp.List[GraphTreeNode] = trajectory_node.get_children()
             trajectory_item: QtWidgets.QTreeWidgetItem = self._construct_tree_item(
-                trajectory_container.get_name(),
-                f'({len(graph_containers)})',
+                trajectory_node.get_gui_name(),
+                f'({len(graph_nodes)})',
                 None
             )
             trajectory_item.setCheckState(
-                0, QtCore.Qt.Checked if trajectory_container.is_checked() else QtCore.Qt.Unchecked
+                0, QtCore.Qt.Checked if trajectory_node.is_checked() else QtCore.Qt.Unchecked
             )
-            trajectory_item.obj = trajectory_container
+            trajectory_item.obj = trajectory_node
             self.addTopLevelItem(trajectory_item)
             trajectory_item.setExpanded(True)
 
-            graph_container: GraphContainer
-            for graph_container in graph_containers:
+            graph_node: GraphTreeNode
+            for graph_node in graph_nodes:
 
                 # graph-container
-                graph: SubGraph = graph_container.get_graph()
-                is_true: bool = trajectory_container.has_true() and graph == trajectory_container.get_true()
-                name: str = graph_container.get_name()
-                if is_true:
-                    name = f'[true] {name}'
+                graph: SubGraph = graph_node.get_graph()
+                is_truth: bool = trajectory_node.has_truth() and trajectory_node.get_truth() == graph_node.get_graph_container()
+                name: str = graph_node.get_gui_name()
+                if is_truth:
+                    name = f'[truth] {name}'
 
-                element_types: tp.List[tp.Type[SubElement]] = graph.get_types()
+                names: tp.List[str] = graph.get_names()
                 graph_item: QtWidgets.QTreeWidgetItem = self._construct_tree_item(
                     name,
-                    f'({len(element_types)})',
+                    f'({len(names)})',
                     trajectory_item
                 )
 
-                if is_true:
+                if is_truth:
                     graph_item.setForeground(0, QtGui.QBrush(QtGui.QColor("#00a000")))
                 else:
                     graph_item.setForeground(0, QtGui.QBrush(QtGui.QColor("#ff0000")))
 
                 # graph-container: checkbox
                 graph_item.setCheckState(
-                    0, QtCore.Qt.Checked if graph_container.is_checked() else QtCore.Qt.Unchecked
+                    0, QtCore.Qt.Checked if graph_node.is_checked() else QtCore.Qt.Unchecked
                 )
-                graph_item.obj = graph_container
+                graph_item.obj = graph_node
 
-                element_type: tp.Type[SubElement]
-                for element_type in element_types:
+                name: str
+                for name in names:
 
                     # elements-container
-                    elements: tp.List[SubElement] = graph.get_of_type(element_type)
+                    elements: tp.List[SubElement] = graph.get_of_name(name)
                     elements_item: QtWidgets.QTreeWidgetItem = self._construct_tree_item(
-                        f'{element_type.__name__}',
+                        name,
                         f'({len(elements)})',
                         graph_item
                     )
 
                     # elements-container: checkbox
-                    if graph_container.has_child_type(element_type):
-                        elements_container: ElementContainer = graph_container.get_child_type(element_type)
+                    if graph_node.has_key(name):
+                        elements_node: ElementTreeNode = graph_node.get_child(name)
                         elements_item.setCheckState(
-                            0, QtCore.Qt.Checked if elements_container.is_checked() else QtCore.Qt.Unchecked
+                            0, QtCore.Qt.Checked if elements_node.is_checked() else QtCore.Qt.Unchecked
                         )
-                        elements_item.obj = elements_container
+                        elements_item.obj = elements_node
 
                     for element in elements:
 
@@ -128,107 +135,137 @@ class BrowserTree(QtWidgets.QTreeWidget):
         for i in range(self.topLevelItemCount()):
             graph_item: QtWidgets.QTreeWidgetItem = self.topLevelItem(i)
             if hasattr(graph_item, 'obj'):
-                graph_container: GraphContainer = graph_item.obj
+                graph_container: GraphTreeNode = graph_item.obj
                 graph_item.setCheckState(
                     0, QtCore.Qt.Checked if graph_container.is_checked() else QtCore.Qt.Unchecked
                 )
                 for j in range(graph_item.childCount()):
                     element_item: QtWidgets.QTreeWidgetItem = graph_item.child(j)
                     if hasattr(element_item, 'obj'):
-                        element_container: ElementContainer = element_item.obj
+                        element_container: ElementTreeNode = element_item.obj
                         element_item.setCheckState(
                             0, QtCore.Qt.Checked if element_container.is_checked() else QtCore.Qt.Unchecked
                         )
 
     # handlers
     def _handle_signal(self, signal: int):
-        if signal >= 0:
+        if signal > 0:
+            # tree contents have been changed (i.e., a graph added or removed)
             self._construct_browser()
+        elif signal == 0:
+            self._construct_browser()
+            self._inspector.clear()
+            self._timestamp_box.clear()
         else:
+            # element has been toggled
             self._update_browser()
 
     def _handle_selection(self):
         item = self.currentItem()
         if hasattr(item, 'obj'):
-            obj: tp.Union[SubContainer, SubVisualisable] = item.obj
-            if isinstance(obj, GraphContainer):
+            obj: tp.Union[SubTreeNode, SubVisualisable] = item.obj
+            if isinstance(obj, GraphTreeNode):
                 self._inspector.display_graph(obj.get_graph())
+                self._timestamp_box.set_node(obj)
             elif isinstance(obj, Node):
                 self._inspector.display_node(obj)
             elif isinstance(obj, Edge):
                 self._inspector.display_edge(obj)
+
+    def _open_trajectory_context(
+            self,
+            node: TrajectoryTreeNode,
+            point
+    ) -> None:
+        menu = QtWidgets.QMenu()
+        action_load = QtWidgets.QAction('&Load', self)
+        menu.addAction(action_load)
+        # action_load_truth = QtWidgets.QAction('Load truth', self)
+        # menu.addAction(action_load_truth)
+        action_delete = QtWidgets.QAction('&Delete', self)
+        menu.addAction(action_delete)
+
+        # select action
+        action: QtWidgets.QAction = menu.exec_(self.mapToGlobal(point))
+        if action == action_load:
+            PopUp.load_with_callback(node.add_graph)
+        # elif action == action_load_truth:
+        #     PopUp.load_with_callback(node.add_truth_graph)
+        elif action == action_delete:
+            node.remove()
+
+    def _open_graph_context(
+            self,
+            node: GraphTreeNode,
+            point
+    ) -> None:
+
+        # create menu
+        menu = QtWidgets.QMenu()
+        # delete
+        action_delete = QtWidgets.QAction('&Delete', self)
+        menu.addAction(action_delete)
+        # save as
+        action_save = QtWidgets.QAction('&Save as', self)
+        menu.addAction(action_save)
+        # find subgraphs
+        action_subgraphs = QtWidgets.QAction('Find subgraphs', self)
+        menu.addAction(action_subgraphs)
+        action_subgraphs.setEnabled(node.is_singular())
+        # set as truth
+        action_truth = QtWidgets.QAction('Set as truth', self)
+        menu.addAction(action_truth)
+        action_truth.setEnabled(node.is_eligible_for_truth())
+
+        # action_truth = QtWidgets.QAction('Set as truth', self)
+        # menu.addAction(action_truth)
+        # can_be_truth: bool = not trajectory_container.has_truth() and not graph.is_perturbed() and not graph.has_truth()
+        # if not can_be_truth:
+        #     action_truth.setEnabled(False)
+        #
+        # action_slice = QtWidgets.QAction('Plot error-curve', self)
+        # menu.addAction(action_slice)
+        # can_be_sliced: bool = graph.has_truth() and graph.has_pre()
+        # if not can_be_sliced:
+        #     action_slice.setEnabled(False)
+        #
+        # action_metrics = QtWidgets.QAction('Plot metrics', self)
+        # menu.addAction(action_metrics)
+        # if not graph.has_truth():
+        #     action_metrics.setEnabled(False)
+
+        # select action
+        action = menu.exec_(self.mapToGlobal(point))
+        if action == action_delete:
+            node.remove()
+        elif action == action_save:
+            print('save')
+        elif action == action_subgraphs:
+            node.find_subgraphs()
+            self._timestamp_box.update_contents()
+        elif action == action_truth:
+            node.set_as_truth()
+
+        # elif action == action_truth:
+        #     trajectory_container.set_as_truth(graph)
+        # elif action == action_slice:
+        #     GraphAnalyser.plot_error_slice(graph)
+        # elif action == action_metrics:
+        #     GraphAnalyser.plot_metrics(graph)
 
     def _handle_context_menu(self, point):
         index = self.indexAt(point)
         if index.isValid():
             item = self.itemAt(point)
             if hasattr(item, 'obj'):
-                obj: tp.Union[SubContainer, SubVisualisable] = item.obj
+                obj: tp.Union[SubTreeNode, SubVisualisable] = item.obj
 
                 # if graph
-                if isinstance(obj, TrajectoryContainer):
-                    trajectory_container: TrajectoryContainer = obj
-                    top_container: TopContainer = trajectory_container.get_parent()
+                if isinstance(obj, TrajectoryTreeNode):
+                    self._open_trajectory_context(obj, point)
 
-                    # create menu
-                    menu = QtWidgets.QMenu()
-                    action_load = QtWidgets.QAction('&Load', self)
-                    menu.addAction(action_load)
-                    action_load_true = QtWidgets.QAction('Load true', self)
-                    menu.addAction(action_load_true)
-                    action_delete = QtWidgets.QAction('&Delete', self)
-                    menu.addAction(action_delete)
-
-                    # select action
-                    action: QtWidgets.QAction = menu.exec_(self.mapToGlobal(point))
-                    if action == action_load:
-                        PopUp.load_with_callback(trajectory_container.add_graph)
-                    elif action == action_load_true:
-                        PopUp.load_with_callback(trajectory_container.add_true_graph)
-                    elif action == action_delete:
-                        trajectory_container.remove()
-
-                elif isinstance(obj, GraphContainer):
-                    graph_container: GraphContainer = obj
-                    graph: SubCalibratingGraph = graph_container.get_graph()
-                    trajectory_container: TrajectoryContainer = graph_container.get_parent()
-
-                    # create menu
-                    menu = QtWidgets.QMenu()
-                    action_delete = QtWidgets.QAction('&Delete', self)
-                    menu.addAction(action_delete)
-                    action_save = QtWidgets.QAction('&Save as', self)
-                    menu.addAction(action_save)
-
-                    action_true = QtWidgets.QAction('Set as true', self)
-                    menu.addAction(action_true)
-                    can_be_true: bool = not trajectory_container.has_true() and not graph.is_perturbed() and not graph.has_true()
-                    if not can_be_true:
-                        action_true.setEnabled(False)
-
-                    action_slice = QtWidgets.QAction('Plot error-curve', self)
-                    menu.addAction(action_slice)
-                    can_be_sliced: bool = graph.has_true() and graph.has_pre()
-                    if not can_be_sliced:
-                        action_slice.setEnabled(False)
-
-                    action_metrics = QtWidgets.QAction('Plot metrics', self)
-                    menu.addAction(action_metrics)
-                    if not graph.has_true():
-                        action_metrics.setEnabled(False)
-
-                    # select action
-                    action = menu.exec_(self.mapToGlobal(point))
-                    if action == action_delete:
-                        trajectory_container.remove_graph(graph_container)
-                    elif action == action_save:
-                        print('save')
-                    elif action == action_true:
-                        trajectory_container.set_as_true(graph)
-                    elif action == action_slice:
-                        GraphAnalyser.plot_error_slice(graph)
-                    elif action == action_metrics:
-                        GraphAnalyser.plot_metrics(graph)
+                elif isinstance(obj, GraphTreeNode):
+                    self._open_graph_context(obj, point)
 
                 # if topological node
                 elif isinstance(obj, Visualisable):
@@ -243,12 +280,19 @@ class BrowserTree(QtWidgets.QTreeWidget):
                             self._viewer.focus(obj.draw_nodeset()[0])
 
     def _handle_checked(self, item: QtWidgets.QTreeWidgetItem, column: int):
+        """
+        Handler for checking checkboxes. Checking checkboxes is done via:
+        - widget interaction by user
+        - setCheckState, which is called from '_construct_browser' and '_update_browser' (via handling of
+          self._container.signal_update)
+        """
         checked: bool = item.checkState(column) == QtCore.Qt.Checked
-        if hasattr(item, 'obj'):
-            container: SubContainer = item.obj
-            if isinstance(container, (TrajectoryContainer, GraphContainer, ElementContainer)) \
-                    and container.is_checked() != checked:
-                self._container.toggle(container)
+        if hasattr(item, 'obj') and isinstance(item.obj, Toggle):
+            toggle: SubToggle = item.obj
+
+            # check if by checked by user:
+            if toggle.is_checked() != checked:
+                toggle.toggle()
 
     # helper-methods
     @staticmethod

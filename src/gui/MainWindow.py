@@ -5,7 +5,7 @@ from PyQt5.QtWidgets import QMainWindow, QWidget, QDesktopWidget, QSizePolicy, Q
 from src.gui.action_pane.ActionPane import ActionPane
 from src.gui.info_pane.InfoPane import InfoPane
 from src.gui.menus import FileMenu, ViewMenu, AboutMenu
-from src.gui.modules.Container import TopContainer
+from src.gui.modules.TreeNode import TopTreeNode
 from src.gui.terminal.TerminalText import TerminalText
 from src.gui.viewer.Viewer import Viewer
 
@@ -24,7 +24,7 @@ class MainWindow(QMainWindow):
         self.setWindowTitle('Graph-Viewer')
 
         # modules
-        self._container = TopContainer()
+        self._container = TopTreeNode()
 
         splitter = QSplitter(Qt.Horizontal)
 
@@ -70,7 +70,7 @@ class MainWindow(QMainWindow):
     @staticmethod
     def _init_viewer(
             widget: QWidget,
-            container: TopContainer
+            container: TopTreeNode
     ) -> Viewer:
         # reference: https://pyqtgraph.readthedocs.io/en/latest/
         viewer: Viewer = Viewer(container, widget)
@@ -96,7 +96,7 @@ class MainWindow(QMainWindow):
 
     def _init_menubar(
             self,
-            container: TopContainer,
+            container: TopTreeNode,
             viewer: Viewer
     ) -> QMenuBar:
         menubar = self.menuBar()

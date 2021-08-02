@@ -85,12 +85,6 @@ class FactorGraph(BaseGraph):
             marginals.append(covariance[i, i])
         return marginals
 
-    # copy
-    def __copy__(self):
-        new = super().__copy__()
-        new.init_gradient()
-        return new
-
 
 T = tp.TypeVar('T')
 
@@ -161,10 +155,11 @@ class FactorNode(BaseNode, tp.Generic[T], DataContainer[T]):
 
     def __init__(
             self,
+            name: tp.Optional[str] = None,
             id_: tp.Optional[int] = None,
             value: tp.Optional[T] = None
     ):
-        super().__init__(id_=id_, value=value)
+        super().__init__(name=name, id_=id_, value=value)
         self._is_fixed = False
 
     # fix
@@ -173,6 +168,12 @@ class FactorNode(BaseNode, tp.Generic[T], DataContainer[T]):
 
     def is_fixed(self) -> bool:
         return self._is_fixed
+
+    # copy
+    def copy_to(self, node: SubFactorNode) -> SubFactorNode:
+        node = super().copy_to(node)
+        node._is_fixed = self._is_fixed
+        return node
 
 
 class FactorEdge(BaseEdge, tp.Generic[T], DataContainer[T]):
@@ -185,14 +186,12 @@ class FactorEdge(BaseEdge, tp.Generic[T], DataContainer[T]):
 
     def __init__(
             self,
+            name: tp.Optional[str] = None,
+            nodes: tp.Optional[tp.List[SubFactorNode]] = None,
             measurement: tp.Optional[T] = None,
-            info_matrix: tp.Optional[SubSquare] = None,
-            *nodes: tp.Optional[SubFactorNode]
+            info_matrix: tp.Optional[SubSquare] = None
     ):
-        super().__init__(
-            *filter(lambda node: node is not None, nodes),
-            value=measurement
-        )
+        super().__init__(name=name, nodes=nodes, value=measurement)
         if info_matrix is None:
             info_matrix = SquareFactory.from_dim(self.get_dim()).identity()
         self._info_matrix = DataFactory.from_value(info_matrix)
@@ -316,9 +315,8 @@ class FactorEdge(BaseEdge, tp.Generic[T], DataContainer[T]):
             jacobian.append(column.to_list())
         return Matrix(np.array(jacobian).transpose())
 
-    @abstractmethod
     def get_cardinality(self) -> int:
-        pass
+        return len(self.get_nodes())
 
     # read/write
     def read(self, words: tp.List[str]) -> tp.List[str]:

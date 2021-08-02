@@ -1,14 +1,12 @@
 import copy
 import pathlib
 import typing as tp
-from abc import ABC, abstractmethod
+from abc import ABC
 from datetime import datetime
 
 import numpy as np
 from src.framework.graph.FactorGraph import FactorGraph, FactorNode, FactorEdge
 from src.framework.math.matrix.square import SubSquare
-from src.framework.math.matrix.vector import SubVector
-from src.framework.math.matrix.vector import Vector2
 
 SubGraph = tp.TypeVar('SubGraph', bound='Graph')
 SubNode = tp.TypeVar('SubNode', bound='Node')
@@ -19,7 +17,7 @@ SubElement = tp.Union[SubNode, SubEdge]
 class Graph(FactorGraph):
 
     # reference graphs
-    _true: tp.Optional[SubGraph]
+    _truth: tp.Optional[SubGraph]
     _pre: tp.Optional[SubGraph]
 
     # metadata
@@ -36,7 +34,7 @@ class Graph(FactorGraph):
         super().__init__()
 
         # reference graphs
-        self._true = None
+        self._truth = None
         self._pre = None
 
         # metadata
@@ -49,6 +47,19 @@ class Graph(FactorGraph):
         self._rpe_translation = None
         self._rpe_rotation = None
 
+    # properties
+    def set_path(self, path: pathlib.Path) -> None:
+        self._path = path
+
+    def get_path(self) -> pathlib.Path:
+        return self._path
+
+    def get_pathname(self) -> str:
+        return self._path.name
+
+    def get_timestamp(self) -> tp.Optional[float]:
+        return self.get_nodes()[-1].get_timestamp()
+
     # pre
     def has_pre(self) -> bool:
         return self._pre is not None
@@ -58,47 +69,8 @@ class Graph(FactorGraph):
         return self._pre
 
     def assign_pre(self, graph: SubGraph):
-        assert len(self.get_nodes()) == len(graph.get_nodes())
-        assert len(self.get_edges()) == len(graph.get_edges())
+        assert self.is_equivalent(graph)
         self._pre = graph
-
-    # true
-    def has_true(self) -> bool:
-        return self._true is not None
-
-    def get_true(self) -> SubGraph:
-        assert self.has_true()
-        return self._true
-
-    def is_perturbed(self) -> bool:
-        return not np.isclose(self.get_error(), 0.)
-
-    def assign_true(self, graph: SubGraph):
-        # assert self.is_perturbed()
-        assert not graph.is_perturbed()
-
-        # nodes
-        id_: int
-        node: SubNode
-        true_node: SubNode
-        for id_ in graph.get_node_ids():
-            if self.contains_node_id(id_):
-                node = self.get_node(id_)
-                true_node = graph.get_node(id_)
-                node.assign_true(true_node)
-
-        # edges
-        true_edge: SubEdge
-        edge_iter: iter = iter(self.get_edges())
-        edge: tp.Optional[SubEdge] = None
-        for i, true_edge in enumerate(graph.get_edges()):
-            is_eligible: bool = False
-            while not is_eligible:
-                edge = next(edge_iter, None)
-                assert edge is not None
-                is_eligible = edge.is_eligible_for_true(true_edge)
-            edge.assign_true(true_edge)
-        self._true = graph
 
     # error
     def compute_error(self) -> float:
@@ -111,7 +83,7 @@ class Graph(FactorGraph):
     def compute_ate(self) -> float:
         """ Returns the Absolute Trajectory Error (APE). """
 
-        assert self.has_true()
+        assert self.has_truth()
         te2: float = 0
         count: int = 0
         node: SubNode
@@ -126,7 +98,7 @@ class Graph(FactorGraph):
     def compute_rpe_translation(self) -> float:
         """ Returns the translation portion of the Relative Pose Error (RPE). """
 
-        assert self.has_true()
+        assert self.has_truth()
         rpe2: float = 0
         count: int = 0
         edge: SubEdge
@@ -141,7 +113,7 @@ class Graph(FactorGraph):
     def compute_rpe_rotation(self) -> float:
         """ Returns the rotation portion of the Relative Pose Error (RPE). """
 
-        assert self.has_true()
+        assert self.has_truth()
         rpe: float = 0
         count: int = 0
         edge: SubEdge
@@ -153,7 +125,6 @@ class Graph(FactorGraph):
         self._rpe_rotation = rpe/count
         return self._rpe_rotation
 
-    # errors
     def get_error(self) -> float:
         if self._error is None:
             self.compute_error()
@@ -174,62 +145,111 @@ class Graph(FactorGraph):
             self.compute_rpe_rotation()
         return self._rpe_rotation
 
-    # properties
-    def set_path(self, path: pathlib.Path) -> None:
-        self._path = path
+    # truth
+    def has_truth(self) -> bool:
+        return self._truth is not None
 
-    def get_path(self) -> pathlib.Path:
-        return self._path
+    def get_truth(self) -> SubGraph:
+        assert self.has_truth()
+        return self._truth
 
-    def get_pathname(self) -> str:
-        return self._path.name
+    def is_perturbed(self) -> bool:
+        return not np.isclose(self.get_error(), 0., atol=1e-06)
 
-    def get_timestamp(self) -> tp.Optional[float]:
-        return self.get_nodes()[-1].get_timestamp()
+    def is_eligible_for_truth(self) -> bool:
+        return not self.is_perturbed()
+
+    def assign_truth(
+            self,
+            graph: SubGraph
+    ) -> None:
+        """
+        Populates the 'truth' (or ground-truth) reference with <graph>.
+        Assumption: 'truth' graph only contains endpoints and shall be a subset of this graph.
+        """
+        assert graph.is_eligible_for_truth()
+
+        assert self.is_similar(graph)
+        assert not self.has_truth()
+
+        self._truth = graph
+
+        # nodes
+        id_: int
+        for id_ in graph.get_node_ids():
+            if self.contains_node_id(id_):
+                node: SubNode = self.get_node(id_)
+                truth_node: SubNode = graph.get_node(id_)
+                node.assign_truth(truth_node)
+
+        # edges
+        edge_iter: iter = iter(self.get_edges())
+        edge: tp.Optional[SubEdge] = None
+        truth_edge: SubEdge
+        for i, truth_edge in enumerate(graph.get_edges()):
+            is_eligible: bool = False
+            while not is_eligible:
+                edge = next(edge_iter, None)
+                assert edge is not None
+                is_eligible = edge.is_eligible_for_truth(truth_edge)
+            edge.assign_truth(truth_edge)
+
+        # previous graphs
+        if self.has_previous():
+            self.find_truth_subgraphs()
 
     # subgraphs
-    def get_subgraphs(self) -> tp.List[SubGraph]:
-        graph: SubGraph = type(self)()
-        true_graph: tp.Optional[SubGraph] = None
-        if self.has_true():
-            true_graph = type(self)()
+    def find_subgraphs(self) -> None:
+        super().find_subgraphs()
 
-        graphs: tp.List[SubGraph] = []
-        edge: SubEdge
-        for edge in self._edges:
+        # assigning timestamps to all nodes
+        subgraphs: tp.List[SubGraph] = self.get_subgraphs()
+        node_set: tp.Set[SubNode] = set()
+        next_set: tp.Set[SubNode]
+        for i, subgraph in enumerate(subgraphs):
+            next_set = set(subgraph.get_nodes())
+
             node: SubNode
-            for node in edge.get_nodes():
-                if not graph.contains_node_id(node.get_id()):
-                    graph.add_node(node)
-                    if self.has_true() and node.has_true():
-                        true_graph.add_node(node.get_true())
-            graph.add_edge(edge)
-            if self.has_true() and edge.has_true():
-                true_graph.add_edge(edge.get_true())
+            for node in next_set - node_set:
+                node.set_timestamp(i)
+            node_set = next_set
 
-            graph_copy: SubGraph = copy.copy(graph)
-            if self.has_true():
-                graph_copy._true = copy.copy(true_graph)
+        if self.has_truth():
+            self.find_truth_subgraphs()
 
-            graphs.append(graph_copy)
-        return graphs
+    def find_truth_subgraphs(self) -> None:
+        assert self.has_truth()
+        subgraphs: tp.List[SubGraph] = self.get_subgraphs()
+
+        truth: SubGraph = self.get_truth()
+        if not truth.has_previous():
+            truth.find_subgraphs()
+        truth_subgraphs: tp.List[SubGraph] = truth.get_subgraphs()
+        assert len(subgraphs) == len(truth_subgraphs)
+
+        for i, subgraph in enumerate(subgraphs):
+            truth_subgraph: SubGraph = truth_subgraphs[i]
+
+            # check whether all elements already have their 'truth' reference populated
+            if set(subgraph.get_elements()) <= set(self.get_elements()):
+                subgraph._truth = truth_subgraph
+            else:
+                subgraph.assign_truth(truth_subgraph)
 
     # copy
-    def copy_properties(self, graph: SubGraph) -> SubGraph:
-        graph._true = self._true
+    def copy_to(self, graph: SubGraph) -> SubGraph:
+        graph = super().copy_to(graph)
+        graph._truth = self._truth
         graph._pre = self._pre
         graph._date = self._date
-        if self.has_true():
-            graph.assign_true(self.get_true())
-        for i, node in enumerate(self.get_nodes()):
-            graph.get_node(node.get_id()).set_timestamp(node.get_timestamp())
         return graph
 
     def __copy__(self):
         new = super().__copy__()
-        new._true = copy.copy(self._true)
+        new._truth = copy.copy(self._truth)
         new._pre = copy.copy(self._pre)
         new._date = copy.copy(self._date)
+        new._error = self._error
         new._ate = self._ate
         new._rpe_translation = self._rpe_translation
         new._rpe_rotation = self._rpe_rotation
@@ -241,32 +261,38 @@ T = tp.TypeVar('T')
 
 class Node(tp.Generic[T], FactorNode[T]):
 
-    # reference to true/unperturbed equivalent node
-    _true: tp.Optional[SubNode]
+    # reference to truth/unperturbed equivalent node
+    _truth: tp.Optional[SubNode]
     _timestamp: tp.Optional[float]
 
     def __init__(
             self,
+            name: tp.Optional[str] = None,
             id_: tp.Optional[int] = None,
             value: tp.Optional[T] = None,
             timestamp: tp.Optional[float] = None
     ):
-        super().__init__(id_, value)
+        super().__init__(name=name, id_=id_, value=value)
         self._timestamp = timestamp
-        self._true = None
+        self._truth = None
 
-    # true
-    def assign_true(self, node: SubNode):
+    # error
+    def compute_ate2(self) -> tp.Optional[float]:
+        return None
+
+    # truth
+    def assign_truth(self, node: SubNode):
+        assert not self.has_truth()
         assert node.get_id() == self.get_id()
         assert node.get_timestamp() == self.get_timestamp()
-        self._true = node
+        self._truth = node
 
-    def has_true(self) -> bool:
-        return self._true is not None
+    def has_truth(self) -> bool:
+        return self._truth is not None
 
-    def get_true(self) -> SubNode:
-        assert self.has_true()
-        return self._true
+    def get_truth(self) -> SubNode:
+        assert self.has_truth()
+        return self._truth
 
     # timestamp
     def set_timestamp(self, timestamp: float) -> None:
@@ -279,24 +305,28 @@ class Node(tp.Generic[T], FactorNode[T]):
     def get_timestamp(self) -> tp.Optional[float]:
         return self._timestamp
 
-    # error
-    def compute_ate2(self) -> tp.Optional[float]:
-        return None
+    # copy
+    def copy_to(self, node: SubNode) -> SubNode:
+        node = super().copy_to(node)
+        node._truth = self._truth
+        node._timestamp = self._timestamp
+        return node
 
 
 class Edge(tp.Generic[T], FactorEdge[T], ABC):
 
-    # reference to true/unperturbed equivalent edge
-    _true: tp.Optional[SubEdge]
+    # reference to truth/unperturbed equivalent edge
+    _truth: tp.Optional[SubEdge]
 
     def __init__(
             self,
+            name: tp.Optional[str] = None,
+            nodes: tp.Optional[tp.List[SubEdge]] = None,
             measurement: tp.Optional[T] = None,
-            info_matrix: tp.Optional[SubSquare] = None,
-            *nodes: tp.Optional[SubNode]
+            info_matrix: tp.Optional[SubSquare] = None
     ):
-        super().__init__(measurement, info_matrix, *nodes)
-        self._true = None
+        super().__init__(name=name, nodes=nodes, measurement=measurement, info_matrix=info_matrix)
+        self._truth = None
 
     # error
     def compute_rpe_translation2(self) -> tp.Optional[float]:
@@ -305,23 +335,24 @@ class Edge(tp.Generic[T], FactorEdge[T], ABC):
     def compute_rpe_rotation(self) -> tp.Optional[float]:
         return None
 
-    # true
-    def is_eligible_for_true(self, edge: SubEdge):
-        """ Returns whether the provided edge is connected to all this edge's nodes that have a 'true' reference. """
+    # truth
+    def is_eligible_for_truth(self, edge: SubEdge):
+        """ Returns whether the provided edge is connected to all this edge's nodes that have a 'truth' reference. """
 
-        true_ids: tp.List[int] = [node.get_id() for node in self.get_nodes() if node.has_true()]
-        return edge.get_timestamp() == self.get_timestamp() and set(true_ids) <= set(edge.get_node_ids())
+        # truth_ids: tp.List[int] = [node.get_id() for node in self.get_nodes() if node.has_truth()]
+        return edge.get_timestamp() == self.get_timestamp() and self.get_endpoint_ids() == edge.get_endpoint_ids()
 
-    def assign_true(self, edge: SubEdge):
-        assert self.is_eligible_for_true(edge)
-        self._true = edge
+    def assign_truth(self, edge: SubEdge):
+        assert not self.has_truth()
+        assert self.is_eligible_for_truth(edge)
+        self._truth = edge
 
-    def has_true(self) -> bool:
-        return self._true is not None
+    def has_truth(self) -> bool:
+        return self._truth is not None
 
-    def get_true(self) -> SubEdge:
-        assert self.has_true()
-        return self._true
+    def get_truth(self) -> SubEdge:
+        assert self.has_truth()
+        return self._truth
 
     # timestamp
     def get_timestamp(self) -> tp.Optional[float]:
@@ -329,3 +360,9 @@ class Edge(tp.Generic[T], FactorEdge[T], ABC):
         if None in timestamps:
             return None
         return max(timestamps)
+
+    # copy
+    def copy_to(self, edge: SubEdge) -> SubEdge:
+        edge = super().copy_to(edge)
+        edge._truth = self._truth
+        return edge

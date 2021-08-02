@@ -1,14 +1,14 @@
 from PyQt5 import QtWidgets
 from src.framework.graph.Graph import SubGraph
 from src.gui.menus.Menu import Menu
-from src.gui.modules.Container import TopContainer
+from src.gui.modules.TreeNode import TopTreeNode
 from src.gui.modules.PopUp import PopUp
 
 
 class FileMenu(Menu):
 
     # constructor
-    def __init__(self, container: TopContainer, *args, **kwargs):
+    def __init__(self, container: TopTreeNode, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.setTitle('&File')
         self._container = container

@@ -1,8 +1,10 @@
+import copy
 import typing as tp
 
-from src.framework.graph.CalibratingGraph import SubCalibratingEdge, CalibratingGraph
+from src.framework.graph.CalibratingGraph import SubCalibratingEdge, CalibratingGraph, SubCalibratingGraph
 from src.framework.graph.Graph import SubGraph, SubNode, SubEdge
-from src.framework.graph.GraphManager import GraphManager
+from src.framework.graph.GraphContainer import SubGraphContainer, GraphContainer
+from src.framework.graph.GraphManager import GraphManager, SubGraphManager
 from src.framework.graph.data.DataFactory import Supported
 from src.framework.graph.types.edges.EdgeFactory import EdgeFactory
 from src.framework.graph.types.nodes.SpatialNode import NodeSE2, SpatialNodeFactory
@@ -14,6 +16,7 @@ class Simulation2D(object):
 
     # data
     _manager: GraphManager
+    _graph: SubCalibratingGraph
     _sensors: tp.Dict[str, SubSensor]
 
     # poses
@@ -21,9 +24,12 @@ class Simulation2D(object):
     _current: NodeSE2
 
     def __init__(self):
+        # data
         self._manager = GraphManager(CalibratingGraph())
+        self._graph = CalibratingGraph()
         self._sensors = {}
 
+        # poses
         self._pose_ids = []
         self._current = self.add_pose(SE2.from_translation_angle_elements(0, 0, 0))
         self._current.fix()
@@ -77,7 +83,7 @@ class Simulation2D(object):
 
         graph: SubGraph = self._manager.get_graph()
         nodes: tp.List[SubNode] = [graph.get_node(id_) for id_ in ids]
-        edge: SubCalibratingEdge = EdgeFactory.from_measurement_nodes(measurement, *nodes)
+        edge: SubCalibratingEdge = EdgeFactory.from_measurement_nodes(measurement, nodes)
 
         sensor: SubSensor = self.get_sensor(sensor_id)
         edge = sensor.extend_edge(edge)
@@ -101,6 +107,12 @@ class Simulation2D(object):
             [current.get_id(), new.get_id()],
             measurement
         )
+
+    def snapshot(self) -> SubGraph:
+        pass
+        # graph: SubGraph = copy.copy(self.get_graph())
+        # self._graph.append_graph(graph)
+        # return graph
 
     # sensors
     def add_sensor(
@@ -138,31 +150,20 @@ class Simulation2D(object):
         """ Returns the current pose-node. """
         return self._current
 
-    def get_current_pose(self) -> SE2:
-        """ Returns the current pose. """
-        return self._current.get_value()
-
-    def get_current_id(self) -> int:
-        """ Returns the id of the current pose-node. """
-        return self._current.get_id()
-
     def get_pose_ids(self) -> tp.List[int]:
         """ Returns the pose-node id history. """
         return self._pose_ids
-
-    # counter
-    def get_count(self) -> int:
-        """ Returns the counter-value of the GraphManager. """
-        return self._manager.get_count()
-
-    def set_counter(self, id_: int) -> None:
-        """ Sets the counter-value of the GraphManager. """
-        self._manager.set_count(id_)
 
     # graph
     def get_graph(self) -> SubGraph:
         """ Returns the graph. """
         return self._manager.get_graph()
+
+    def get_graph_container(self) -> SubGraphContainer:
+        return self._container
+
+    def get_graph_manager(self) -> SubGraphManager:
+        return self._manager
 
     # timestamp
     def set_timestamp(self, timestamp: float) -> None:

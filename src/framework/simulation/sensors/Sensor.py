@@ -10,10 +10,8 @@ from src.framework.graph.data.DataFactory import DataFactory
 from src.framework.graph.types.ParameterComposer import ParameterType
 from src.framework.graph.types.nodes.ParameterNode import SubParameterNode, ParameterData, ParameterNodeFactory, \
     ParameterV1
-from src.framework.math.lie.transformation import SE2
 from src.framework.math.matrix.square import SubSquare, SquareFactory
 from src.framework.math.matrix.vector import SubVector, VectorFactory
-from src.framework.math.matrix.vector import Vector3
 
 if tp.TYPE_CHECKING:
     pass
@@ -78,8 +76,8 @@ class Sensor(tp.Generic[T]):
         assert name not in self._parameters
         parameter: SubParameterNode = ParameterNodeFactory.from_value(
             value,
-            interpretation=ParameterType.BIAS,
-            name=name
+            name=name,
+            interpretation=ParameterType.BIAS
         )
         if isinstance(parameter, ParameterV1):
             parameter.set_index(index)
@@ -95,8 +93,8 @@ class Sensor(tp.Generic[T]):
         assert name not in self._parameters
         parameter: SubParameterNode = ParameterNodeFactory.from_value(
             value,
-            interpretation=ParameterType.OFFSET,
-            name=name
+            name=name,
+            interpretation=ParameterType.OFFSET
         )
         if isinstance(parameter, ParameterV1):
             parameter.set_index(index)
@@ -112,8 +110,8 @@ class Sensor(tp.Generic[T]):
         assert name not in self._parameters
         parameter: SubParameterNode = ParameterNodeFactory.from_value(
             value,
-            interpretation=ParameterType.SCALE,
-            name=name
+            name=name,
+            interpretation=ParameterType.SCALE
         )
         if isinstance(parameter, ParameterV1):
             parameter.set_index(index)

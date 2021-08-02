@@ -14,25 +14,19 @@ T = tp.TypeVar('T')
 
 class ParameterNode(tp.Generic[T], Node[T]):
     _interpretation: ParameterType
-    _name: str
 
     def __init__(
             self,
+            name: tp.Optional[str] = None,
             id_: tp.Optional[int] = None,
             value: tp.Optional[T] = None,
             timestamp: tp.Optional[float] = None,
-            interpretation: ParameterType = ParameterType.BIAS,
-            name: tp.Optional[str] = ''
+            interpretation: ParameterType = ParameterType.BIAS
     ):
-        super().__init__(id_=id_, value=value, timestamp=timestamp)
+        if name is None:
+            name = f'{self.__class__.__name__}({ParameterDict.from_interpretation(interpretation)})'
+        super().__init__(name=name, id_=id_, value=value, timestamp=timestamp)
         self.set_interpretation(interpretation)
-        self._name = name
-
-    def get_name(self) -> str:
-        return self._name
-
-    def set_name(self, name: str):
-        self._name = name
 
     def get_interpretation(self) -> ParameterType:
         return self._interpretation
@@ -43,6 +37,10 @@ class ParameterNode(tp.Generic[T], Node[T]):
     @abstractmethod
     def to_vector3(self) -> Vector3:
         pass
+
+    # Printable
+    def to_id(self) -> str:
+        return f'{self.get_id()}; {ParameterDict.from_interpretation(self._interpretation)}'
 
     # read/write
     def read(self, words: tp.List[str]) -> tp.List[str]:
@@ -152,16 +150,16 @@ class ParameterNodeFactory(object):
             cls,
             value: Supported,
             interpretation: ParameterType = ParameterType.BIAS,
+            name: tp.Optional[str] = None,
             id_: tp.Optional[int] = None,
-            timestamp: tp.Optional[float] = None,
-            name: tp.Optional[str] = None
+            timestamp: tp.Optional[float] = None
     ) -> SubParameterNode:
         node_type: tp.Type[SubParameterNode] = cls.from_value_type(type(value))
         node: SubParameterNode = node_type(
+            name=name,
             id_=id_,
             value=value,
             timestamp=timestamp,
-            interpretation=interpretation,
-            name=name
+            interpretation=interpretation
         )
         return node
