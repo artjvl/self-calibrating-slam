@@ -150,8 +150,8 @@ class Optimiser(object):
         process = subprocess.run(commands)
 
         if path_output.exists():
-            optimised: SubCalibratingGraph = GraphParser.load(path_output)
-            graph.copy_to(optimised)
-            optimised.assign_pre(graph)
-            return optimised
+            solution: SubCalibratingGraph = GraphParser.load(path_output)
+            graph.copy_to(solution)
+            solution.assign_pre(graph)
+            return solution
         return None

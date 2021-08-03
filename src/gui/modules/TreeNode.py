@@ -205,7 +205,7 @@ class GraphicsTreeNode(TreeNode, Toggle):
         super().remove()
         if should_broadcast:
             self.broadcast(self._signal_remove)
-            
+
     def get_key(self) -> str:
         return ''
 
@@ -428,16 +428,17 @@ class TrajectoryTreeNode(GraphicsTreeNode, QtCore.QObject):
             first_child: GraphTreeNode = self.get_children()[0]
             assert first_child.get_graph_container().is_superset_similar(graph_container)
 
-        if self.has_truth():
-            assert not graph.has_truth()
-        elif graph.has_truth():
+        if graph.has_truth():
             truth_container: SubGraphContainer = GraphContainer(graph.get_truth())
-            assert self.is_eligible_for_truth(truth_container)
-            self._add_graph(truth_container)
-            self.set_as_truth(truth_container)
+            if self.has_truth():
+                assert self._truth.is_superset_equal(truth_container)
+            else:
+                assert self.is_eligible_for_truth(truth_container)
+                self._add_graph(truth_container)
+                self.set_as_truth(truth_container)
 
         node: GraphTreeNode = self._add_graph(graph_container)
-        if self.has_truth():
+        if self.has_truth() and not graph.has_truth():
             node.set_truth(self._truth)
 
         if should_broadcast:

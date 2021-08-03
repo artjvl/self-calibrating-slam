@@ -26,6 +26,7 @@ class Graph(FactorGraph):
 
     # properties
     _error: tp.Optional[float]
+    _atol: tp.Optional[float]
     _ate: tp.Optional[float]
     _rpe_translation: tp.Optional[float]
     _rpe_rotation: tp.Optional[float]
@@ -43,6 +44,7 @@ class Graph(FactorGraph):
 
         # properties
         self._error = None
+        self._atol = 1e-6
         self._ate = None
         self._rpe_translation = None
         self._rpe_rotation = None
@@ -153,8 +155,11 @@ class Graph(FactorGraph):
         assert self.has_truth()
         return self._truth
 
+    def set_atol(self, atol: float) -> None:
+        self._atol = atol
+
     def is_perturbed(self) -> bool:
-        return not np.isclose(self.get_error(), 0., atol=1e-06)
+        return not np.isclose(self.get_error(), 0., atol=self._atol)
 
     def is_eligible_for_truth(self) -> bool:
         return not self.is_perturbed()
@@ -242,6 +247,7 @@ class Graph(FactorGraph):
         graph._truth = self._truth
         graph._pre = self._pre
         graph._date = self._date
+        graph._atol = self._atol
         return graph
 
     def __copy__(self):
@@ -250,6 +256,7 @@ class Graph(FactorGraph):
         new._pre = copy.copy(self._pre)
         new._date = copy.copy(self._date)
         new._error = self._error
+        new._atol = self._atol
         new._ate = self._ate
         new._rpe_translation = self._rpe_translation
         new._rpe_rotation = self._rpe_rotation

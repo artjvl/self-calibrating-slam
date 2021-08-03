@@ -84,6 +84,7 @@ class GraphParser(object):
         )
 
         graph.set_path(file)
+        graph.set_atol(1e-3)
 
         reader: tp.TextIO = file.open('r')
         lines: tp.List[str] = reader.readlines()
