@@ -53,6 +53,9 @@ class NodeContainer(object):
         assert not self.contains_node_id(id_)
         self._nodes[id_] = node
 
+    def clear(self) -> None:
+        self._nodes = {}
+
     # nodes
     def get_nodes(self) -> tp.List[SubBaseNode]:
         """ Returns all nodes. """
@@ -137,6 +140,12 @@ class BaseGraph(BaseElement, NodeContainer, Printable):
 
     def get_nodes(self) -> tp.List[SubBaseNode]:
         return [self._nodes[key] for key in sorted(self._nodes)]
+
+    def clear(self) -> None:
+        super().clear()
+        self._edges = []
+        self._by_type = {}
+        self._by_name = {}
 
     # edges
     def add_edge(self, edge: SubBaseEdge) -> None:
@@ -344,10 +353,16 @@ class BaseGraph(BaseElement, NodeContainer, Printable):
     # copy
     def copy_to(self, graph: SubBaseGraph) -> SubBaseGraph:
         graph = super().copy_to(graph)
-        for node in self.get_nodes():
-            node.copy_to(graph.get_node(node.get_id()))
-        for i, edge in enumerate(self.get_edges()):
-            edge.copy_to(graph.get_edge(i))
+        nodes: tp.List[SubBaseNode] = graph.get_nodes()
+        edges: tp.List[SubBaseEdge] = graph.get_edges()
+        graph.clear()
+
+        for node in nodes:
+            self.get_node(node.get_id()).copy_to(node)
+            graph.add_node(node)
+        for i, edge in enumerate(edges):
+            self.get_edge(i).copy_to(edge)
+            graph.add_edge(edge)
         return graph
 
     def __copy__(self):

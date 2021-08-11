@@ -435,7 +435,7 @@ class TrajectoryTreeNode(GraphicsTreeNode, QtCore.QObject):
             else:
                 assert self.is_eligible_for_truth(truth_container)
                 self._add_graph(truth_container)
-                self.set_as_truth(truth_container)
+                self.set_as_truth(truth_container, should_broadcast=False)
 
         node: GraphTreeNode = self._add_graph(graph_container)
         if self.has_truth() and not graph.has_truth():
@@ -446,13 +446,16 @@ class TrajectoryTreeNode(GraphicsTreeNode, QtCore.QObject):
 
     def set_as_truth(
             self,
-            graph_container: SubGraphContainer
+            graph_container: SubGraphContainer,
+            should_broadcast: bool = True
     ) -> None:
         assert self.is_eligible_for_truth(graph_container)
         self._truth = graph_container
         for child in self.get_children():
-            child.set_truth(graph_container)
-        self.broadcast(self.get_signal_change())
+            if child.get_graph_container() != graph_container:
+                child.set_truth(graph_container)
+        if should_broadcast:
+            self.broadcast(self.get_signal_change())
 
     def is_eligible_for_truth(self, graph_container: SubGraphContainer) -> bool:
         if self.has_truth():

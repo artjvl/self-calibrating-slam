@@ -29,6 +29,10 @@ class CalibratingGraph(Graph):
                 self._parameter_names.append(name)
         super().add_node(node)
 
+    def clear(self) -> None:
+        super().clear()
+        self._parameter_names = []
+
     def get_parameter_names(self) -> tp.List[str]:
         return self._parameter_names
 
