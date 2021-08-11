@@ -2,9 +2,8 @@ import typing as tp
 from abc import abstractmethod
 
 from src.framework.graph.Graph import Node
-from src.framework.graph.data.DataFactory import Supported
-from src.framework.graph.protocols.visualisable.DrawAxis import DrawAxis
-from src.framework.graph.protocols.visualisable.DrawPoint import DrawPoint
+from src.framework.graph.data.DataFactory import Quantity
+from src.framework.graph.protocols.Visualisable import DrawPoint, DrawAxis
 from src.framework.math.lie.transformation import SE2
 from src.framework.math.lie.transformation import SE3
 from src.framework.math.matrix.vector import Vector2
@@ -49,7 +48,7 @@ class NodeSE2(SpatialNode[SE2], DrawAxis):
 
 
 class SpatialNodeFactory(object):
-    _map: tp.Dict[Supported, tp.Type[SubSpatialNode]] = {
+    _map: tp.Dict[Quantity, tp.Type[SubSpatialNode]] = {
         SE2: NodeSE2,
         Vector2: NodeV2
     }
@@ -57,7 +56,7 @@ class SpatialNodeFactory(object):
     @classmethod
     def from_value_type(
             cls,
-            value_type: tp.Type[Supported]
+            value_type: tp.Type[Quantity]
     ) -> tp.Type[SubSpatialNode]:
         assert value_type in cls._map, f"Node with value type '{value_type}' not known."
         return cls._map[value_type]
@@ -65,7 +64,7 @@ class SpatialNodeFactory(object):
     @classmethod
     def from_value(
             cls,
-            value: Supported,
+            value: Quantity,
             id_: tp.Optional[int] = None
     ) -> SubSpatialNode:
         node_type: tp.Type[SubSpatialNode] = cls.from_value_type(type(value))

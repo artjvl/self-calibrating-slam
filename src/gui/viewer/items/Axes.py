@@ -4,8 +4,7 @@ import typing as tp
 
 from OpenGL.GL import *
 
-from src.framework.graph.protocols.Visualisable import Visualisable
-from src.framework.graph.protocols.visualisable.DrawAxis import DrawAxis
+from src.framework.graph.protocols.Visualisable import Visualisable, DrawAxis
 from src.framework.math.lie.transformation import SE3
 from src.gui.viewer.Drawer import Drawer
 from src.gui.viewer.items.GraphicsItem import GraphicsItem

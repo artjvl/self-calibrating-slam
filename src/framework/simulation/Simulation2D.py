@@ -1,32 +1,34 @@
 import copy
 import typing as tp
+from abc import abstractmethod
 
-from src.framework.graph.CalibratingGraph import SubCalibratingEdge, CalibratingGraph, SubCalibratingGraph
-from src.framework.graph.Graph import SubGraph, SubNode, SubEdge
-from src.framework.graph.GraphContainer import SubGraphContainer, GraphContainer
-from src.framework.graph.GraphManager import GraphManager, SubGraphManager
-from src.framework.graph.data.DataFactory import Supported
+from src.framework.graph.CalibratingGraph import CalibratingGraph
+from src.framework.graph.GraphManager import GraphManager
+from src.framework.graph.data.DataFactory import Quantity
 from src.framework.graph.types.edges.EdgeFactory import EdgeFactory
 from src.framework.graph.types.nodes.SpatialNode import NodeSE2, SpatialNodeFactory
 from src.framework.math.lie.transformation import SE2
-from src.framework.simulation.sensors import SubSensor
+
+if tp.TYPE_CHECKING:
+    from src.framework.graph.CalibratingGraph import SubCalibratingEdge, SubCalibratingGraph
+    from src.framework.graph.Graph import SubGraph, SubNode, SubEdge
+    from src.framework.optimiser.Optimiser import Optimiser
+    from src.framework.simulation.Parameter import SubParameterModel
+    from src.framework.simulation.sensors import SubSensor
+
+SubSimulation2D = tp.TypeVar('SubSimulation2D', bound='Simulation2D')
 
 
-class Simulation2D(object):
-
-    # data
-    _manager: GraphManager
-    _graph: SubCalibratingGraph
-    _sensors: tp.Dict[str, SubSensor]
+class Simulation2D(GraphManager):
+    # sensors
+    _sensors: tp.Dict[str, 'SubSensor']
 
     # poses
     _pose_ids: tp.List[int]
     _current: NodeSE2
 
     def __init__(self):
-        # data
-        self._manager = GraphManager(CalibratingGraph())
-        self._graph = CalibratingGraph()
+        super().__init__(CalibratingGraph())
         self._sensors = {}
 
         # poses
@@ -34,24 +36,49 @@ class Simulation2D(object):
         self._current = self.add_pose(SE2.from_translation_angle_elements(0, 0, 0))
         self._current.fix()
 
-    # add elements
-    def add_node(
+    # sensors
+    def add_sensor(
             self,
-            node: SubNode
-    ) -> SubNode:
-        """ Adds <node>. """
+            sensor_name: str,
+            sensor: 'SubSensor'
+    ) -> None:
+        assert sensor_name not in self._sensors
+        self._sensors[sensor_name] = sensor
 
-        self._manager.add_node(node)
-        return node
+    def has_sensor(self, sensor_name: str) -> bool:
+        return sensor_name in self._sensors
 
+    def get_sensor(
+            self,
+            sensor_name: str
+    ) -> 'SubSensor':
+        assert self.has_sensor(sensor_name)
+        return self._sensors[sensor_name]
+
+    def get_sensor_names(self) -> tp.List[str]:
+        return list(self._sensors.keys())
+
+    def get_sensors(self) -> tp.List['SubSensor']:
+        return list(self._sensors.values())
+
+    # parameters
+    def add_parameter(
+            self,
+            sensor_name: str,
+            parameter_name: str,
+            parameter: 'SubParameterModel'
+    ) -> None:
+        assert self.has_sensor(sensor_name)
+        self._sensors[sensor_name].add_parameter(parameter_name, parameter)
+        self.add_node(parameter.get_node())
+
+    # add elements
     def add_node_from_value(
             self,
-            value: Supported
-    ) -> SubNode:
+            value: Quantity
+    ) -> 'SubNode':
         """ Creates and adds a new node with <value>. """
-
-        node = SpatialNodeFactory.from_value(value)
-        return self.add_node(node)
+        return self.add_node(SpatialNodeFactory.from_value(value))
 
     def add_pose(
             self,
@@ -64,87 +91,51 @@ class Simulation2D(object):
         self._current = node
         return node
 
-    def add_edge(
-            self,
-            edge: SubEdge
-    ) -> SubEdge:
-        """ Adds <edge>. """
-
-        self._manager.add_edge(edge)
-        return edge
-
     def add_edge_from_value(
             self,
-            sensor_id: str,
+            sensor_name: str,
             ids: tp.List[int],
-            measurement: Supported
-    ) -> SubEdge:
-        """ Creates and adds a new edge between <ids> with <measurement>, as measurement by <sensor_id>. """
+            measurement: Quantity
+    ) -> 'SubEdge':
+        """ Creates and adds a new edge between <ids> with <measurement>, as measurement by <sensor_name>. """
+        sensor: 'SubSensor' = self.get_sensor(sensor_name)
 
-        graph: SubGraph = self._manager.get_graph()
-        nodes: tp.List[SubNode] = [graph.get_node(id_) for id_ in ids]
-        edge: SubCalibratingEdge = EdgeFactory.from_measurement_nodes(measurement, nodes)
-
-        sensor: SubSensor = self.get_sensor(sensor_id)
-        edge = sensor.extend_edge(edge)
+        graph: 'SubGraph' = self.get_graph()
+        nodes: tp.List['SubNode'] = [graph.get_node(id_) for id_ in ids]
+        edge: 'SubCalibratingEdge' = EdgeFactory.from_measurement_nodes(
+            measurement,
+            nodes,
+            name=sensor_name,
+            info_matrix=sensor.get_info_matrix()
+        )
         return self.add_edge(edge)
 
     def add_odometry(
             self,
-            sensor_id: str,
+            sensor_name: str,
             measurement: SE2
-    ) -> SubEdge:
-        """ Creates and adds a new pose and edge with <measurement>, as measured by <sensor_id>. """
+    ) -> tp.Tuple['SubNode', 'SubEdge']:
+        """ Creates and adds a new pose and edge with <measurement>, as measured by <sensor_name>. """
 
-        sensor: SubSensor = self.get_sensor(sensor_id)
+        sensor: 'SubSensor' = self.get_sensor(sensor_name)
         transformation: SE2 = sensor.compose(measurement)
 
         current: NodeSE2 = self._current
         position: SE2 = current.get_value() + transformation
         new: NodeSE2 = self.add_pose(position)
-        return self.add_edge_from_value(
-            sensor_id,
+        edge: 'SubCalibratingEdge' = self.add_edge_from_value(
+            sensor_name,
             [current.get_id(), new.get_id()],
             measurement
         )
-
-    def snapshot(self) -> SubGraph:
-        pass
-        # graph: SubGraph = copy.copy(self.get_graph())
-        # self._graph.append_graph(graph)
-        # return graph
-
-    # sensors
-    def add_sensor(
-            self,
-            id_: str,
-            sensor: SubSensor
-    ) -> None:
-        """ Adds sensor with <sensor_id>. """
-
-        sensor.set_graph(self._manager)
-        self._sensors[id_] = sensor
-
-    def has_sensor(
-            self,
-            sensor_id: str
-    ) -> bool:
-        """ Returns whether a sensor with <sensor_id> is added. """
-        return sensor_id in self._sensors
-
-    def get_sensor(
-            self,
-            sensor_id: str
-    ) -> SubSensor:
-        """ Returns the sensor with <sensor_id>. """
-
-        assert self.has_sensor(sensor_id)
-        return self._sensors[sensor_id]
+        for parameter in sensor.get_parameters():
+            parameter.add_edge(edge)
+        return new, edge
 
     # nodes
-    def get_node(self, id_: int) -> SubNode:
+    def get_node(self, id_: int) -> 'SubNode':
         """ Returns the node with <id_>. """
-        return self._manager.get_graph().get_node(id_)
+        return self._graph.get_node(id_)
 
     def get_current(self) -> NodeSE2:
         """ Returns the current pose-node. """
@@ -154,22 +145,45 @@ class Simulation2D(object):
         """ Returns the pose-node id history. """
         return self._pose_ids
 
-    # graph
-    def get_graph(self) -> SubGraph:
-        """ Returns the graph. """
-        return self._manager.get_graph()
+    @abstractmethod
+    def step(self, delta: float) -> 'SubGraph':
+        pass
 
-    def get_graph_container(self) -> SubGraphContainer:
-        return self._container
 
-    def get_graph_manager(self) -> SubGraphManager:
-        return self._manager
+class StaticSimulation2D(Simulation2D):
+
+    def update_parameter(
+            self,
+            sensor_name: str,
+            parameter_name: str,
+            value: 'Quantity'
+    ) -> None:
+        sensor: 'SubSensor' = self.get_sensor(sensor_name)
+        sensor.update_parameter(parameter_name, value)
+        parameter: 'SubParameterModel' = sensor.get_parameter(parameter_name)
+        self.add_node(parameter.get_node())
 
     # timestamp
-    def set_timestamp(self, timestamp: float) -> None:
-        """ Sets the timestamp of the GraphManager. """
-        self._manager.set_timestamp(timestamp)
+    def step(self, delta: float) -> 'SubGraph':
+        graph: 'SubGraph' = self.get_graph()
+        previous: 'SubGraph' = copy.copy(graph)
+        graph.set_previous(previous)
+        self.increment_timestamp(delta)
+        return previous
 
-    def increment_timestamp(self, delta: float) -> None:
-        """ Increments the timestamp of the GraphManager by <delta>. """
-        self._manager.increment_timestamp(delta)
+
+class SlidingSimulation2D(Simulation2D):
+    _optimiser: 'Optimiser'
+
+    def __init__(self, optimiser: 'Optimiser'):
+        super().__init__()
+        self._optimiser = optimiser
+
+    # timestamp
+    def step(self, delta: float) -> 'SubGraph':
+        graph: 'SubCalibratingGraph' = self.get_graph()
+        solution: 'SubCalibratingGraph' = self._optimiser.instance_optimise(graph)
+        graph.from_vector(solution.to_vector())
+        graph.set_previous(copy.copy(solution))
+        self.increment_timestamp(delta)
+        return solution

@@ -3,7 +3,6 @@ import typing as tp
 from src.framework.graph.CalibratingGraph import CalibratingEdge, SubCalibratingEdge
 from src.framework.graph.Database import Database
 from src.framework.graph.Graph import SubNode, Edge, Node
-from src.framework.graph.types.nodes.InformationNode import SubInformationNode
 from src.framework.graph.types.nodes.ParameterNode import SubParameterNode
 from src.utils.TwoWayDict import TwoWayDict
 
@@ -15,7 +14,6 @@ class SuffixDatabase(Database):
     def __init__(self):
         self._elements = TwoWayDict()
         self._parameters = TwoWayDict()
-        self._informations = TwoWayDict()
 
     # register
     def register_type(
@@ -31,13 +29,6 @@ class SuffixDatabase(Database):
             type_: tp.Type[SubParameterNode]
     ) -> None:
         self._parameters[suffix] = type_
-
-    def register_information_suffix(
-            self,
-            suffix: str,
-            type_: tp.Type[SubInformationNode]
-    ) -> None:
-        self._informations[suffix] = type_
 
     # tag to element
     def from_tag(self, tag: str) -> Element:
@@ -61,7 +52,7 @@ class SuffixDatabase(Database):
         elif isinstance(element, CalibratingEdge):
             count: int = 0
             for suffix in suffixes:
-                assert suffix in self._parameters or suffix in self._informations, f"'{suffix}' is not found."
+                assert suffix in self._parameters, f"'{suffix}' is not found."
                 count += 1
             element.set_num_additional(count)
         return element
@@ -86,11 +77,6 @@ class SuffixDatabase(Database):
                     type_: tp.Type[SubParameterNode] = type(parameter)
                     assert type_ in self._parameters
                     suffixes.append(self._parameters[type_])
-                if element.has_info_node():
-                    information: SubInformationNode = element.get_info_node()
-                    type_: tp.Type[SubInformationNode] = type(information)
-                    assert type_ in self._informations
-                    suffixes.append(self._informations[type_])
                 return '_'.join([tag] + suffixes)
             return tag
 

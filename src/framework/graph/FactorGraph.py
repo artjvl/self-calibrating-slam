@@ -198,34 +198,18 @@ class FactorEdge(BaseEdge, tp.Generic[T], DataContainer[T]):
         self._jacobian = None
         self._hessian = None
 
-    # DataContainer
-    def has_measurement(self) -> bool:
-        """ Returns whether a measurement has already been assigned to this edge. """
-        return super().has_value()
-
-    def get_measurement(self) -> T:
-        """ Returns the measurement encoded in this edge. """
-        return super().get_value()
-
-    def set_measurement(self, measurement: T) -> None:
-        """ Sets the measurement of this edge. """
-        return super().set_value(measurement)
-
     # estimate
     @abstractmethod
     def get_estimate(self) -> T:
-        """ Returns an estimate of the measurement. """
+        """ Returns the estimate of the measurement. """
         pass
 
     @abstractmethod
     def compute_error_vector(self) -> SubVector:
         pass
 
-    def error_vector(self) -> SubVector:
-        return self.compute_error_vector()
-
     def compute_error(self) -> float:
-        error_vector: SubVector = self.error_vector()
+        error_vector: SubVector = self.compute_error_vector()
         return self.mahalanobis_distance(error_vector, self.get_info_matrix())
 
     # information
@@ -301,12 +285,12 @@ class FactorEdge(BaseEdge, tp.Generic[T], DataContainer[T]):
             unit_vector[i] = delta
             plus: T = mean.oplus(unit_vector)
             node_copy.set_value(plus)
-            plus_error: SubVector = edge_copy.error_vector()
+            plus_error: SubVector = edge_copy.compute_error_vector()
 
             unit_vector[i] = - delta
             minus: T = mean.oplus(unit_vector)
             node_copy.set_value(minus)
-            minus_error: SubVector = edge_copy.error_vector()
+            minus_error: SubVector = edge_copy.compute_error_vector()
             error = plus_error.array() - minus_error.array()
 
             column: SubVector = VectorFactory.from_dim(self.get_dim())(

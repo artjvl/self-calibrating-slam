@@ -78,6 +78,13 @@ class NodeContainer(object):
     def get_node_ids(self) -> tp.List[int]:
         return [node.get_id() for node in self.get_nodes()]
 
+    def remove_node(self, node: SubBaseNode) -> None:
+        self.remove_node_id(node.get_id())
+
+    def remove_node_id(self, id_: int) -> None:
+        assert self.contains_node_id(id_)
+        del self._nodes[id_]
+
     # active nodes
     def get_active_nodes(self) -> tp.List[SubBaseNode]:
         """ Returns only active nodes (i.e., nodes that are not fixed). """
@@ -165,6 +172,7 @@ class BaseGraph(BaseElement, NodeContainer, Printable):
         if element_name not in self._by_name:
             self._by_name[element_name] = []
         else:
+            # ensure all elements of a certain name are of the same type
             assert type(element) == self.get_type_of_name(element_name)
         self._by_name[element_name].append(element)
 
@@ -215,6 +223,10 @@ class BaseGraph(BaseElement, NodeContainer, Printable):
             graph = graph.get_previous()
             length_ += 1
         return length_
+
+    def set_previous(self, previous: SubBaseGraph) -> None:
+        # assert not self.has_previous()
+        self._previous = previous
 
     def has_previous(self) -> bool:
         return self._previous is not None

@@ -2,9 +2,7 @@ import typing as tp
 
 from PyQt5 import QtCore, QtWidgets, QtGui
 from src.framework.graph.Graph import SubGraph, Node, Edge, SubElement
-from src.framework.graph.protocols.Visualisable import SubVisualisable, Visualisable
-from src.framework.graph.protocols.visualisable.DrawEdge import DrawEdge
-from src.framework.graph.protocols.visualisable.DrawPoint import DrawPoint
+from src.framework.graph.protocols.Visualisable import SubVisualisable, Visualisable, DrawPoint, DrawEdge
 from src.gui.info_pane.InspectorTree import InspectorTree
 from src.gui.info_pane.TimestampBox import TimestampBox
 from src.gui.modules.TreeNode import TopTreeNode, GraphTreeNode, ElementTreeNode, SubTreeNode, TrajectoryTreeNode, \

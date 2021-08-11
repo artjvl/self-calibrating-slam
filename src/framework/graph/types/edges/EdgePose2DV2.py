@@ -1,7 +1,7 @@
 import typing as tp
 
 from src.framework.graph.CalibratingGraph import SubCalibratingNode
-from src.framework.graph.protocols.visualisable.DrawEdge import DrawEdge
+from src.framework.graph.protocols.Visualisable import DrawEdge
 from src.framework.graph.types.edges.CalibratingEdgeV2 import CalibratingEdgeV2
 from src.framework.graph.types.nodes.SpatialNode import NodeSE2
 from src.framework.math.lie.transformation import SE2
@@ -12,7 +12,7 @@ from src.gui.viewer.Rgb import RgbTuple, Rgb
 
 
 class EdgePose2DV2(CalibratingEdgeV2, DrawEdge):
-    _num_topological = 1
+    _num_endpoints = 1
 
     def __init__(
             self,
@@ -31,7 +31,7 @@ class EdgePose2DV2(CalibratingEdgeV2, DrawEdge):
             info_matrix=info_matrix
         )
 
-    def get_value(self) -> Vector2:
+    def get_delta(self) -> Vector2:
         node: NodeSE2
         node, = tuple(self.get_endpoints())
         return node.get_value().translation()

@@ -5,8 +5,7 @@ import numpy as np
 from src.framework.math.lie.transformation import SE2
 from src.framework.math.matrix.square import Square3
 from src.framework.simulation.BiSimulation2D import BiSimulation2D
-from src.framework.simulation.ParameterSet import ParameterSet
-from src.framework.simulation.sensors.SensorSE2 import SensorSE2
+from src.framework.simulation.ConfigurationSet import ConfigurationSet
 
 
 class TutorialSimulation(BiSimulation2D):
@@ -15,7 +14,7 @@ class TutorialSimulation(BiSimulation2D):
     def __init__(self):
         super().__init__()
         config_path: pathlib.Path = (pathlib.Path(__file__).parent / 'config.ini').resolve()
-        self.set_parameters(ParameterSet(config_path))
+        self.set_parameters(ConfigurationSet(config_path))
 
     # public methods
     def _simulate(self):

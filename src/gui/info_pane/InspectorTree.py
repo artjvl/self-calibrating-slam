@@ -3,8 +3,7 @@ import typing as tp
 
 from PyQt5 import QtGui, QtWidgets
 from src.framework.graph.Graph import SubGraph, Graph, SubEdge, SubNode, SubElement, Node
-from src.framework.graph.data.DataFactory import Supported
-from src.framework.graph.types.nodes.InformationNode import InformationNode
+from src.framework.graph.data.DataFactory import Quantity
 from src.framework.math.Dimensional import Dimensional
 from src.framework.math.lie.Lie import Lie
 from src.framework.math.lie.rotation.SO import SO
@@ -150,9 +149,6 @@ class InspectorTree(QtWidgets.QTreeWidget):
         self._construct_tree_property(root, 'id', str(node.get_id()))
         self._construct_tree_property(root, 'timestamp', str(node.get_timestamp()))
         self._construct_tree_property(root, 'is_fixed', str(node.is_fixed()))
-        if isinstance(node, Node):
-            if isinstance(node, InformationNode):
-                self._construct_tree_property_from_value(root, 'matrix', node.get_info_matrix())
 
         # metrics
         if node.has_truth():
@@ -200,7 +196,7 @@ class InspectorTree(QtWidgets.QTreeWidget):
 
         # error
         sub_error = self._construct_tree_property(root, 'Error', '', bold=True)
-        self._construct_tree_property_from_value(sub_error, 'error_vector', edge.error_vector())
+        self._construct_tree_property_from_value(sub_error, 'error_vector', edge.compute_error_vector())
         self._construct_tree_property(sub_error, 'error', '{:f}'.format(edge.compute_error()))
         sub_error.setExpanded(True)
 
@@ -252,7 +248,7 @@ class InspectorTree(QtWidgets.QTreeWidget):
     def _construct_value_tree(
             cls,
             root: Item,
-            value: Supported,
+            value: Quantity,
             expanded: bool = True
     ) -> Item:
         cls._construct_tree_property(root, 'type', type(value).__name__)

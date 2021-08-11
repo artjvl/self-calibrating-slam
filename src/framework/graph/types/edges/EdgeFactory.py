@@ -1,7 +1,7 @@
 import typing as tp
 
 from src.framework.graph.CalibratingGraph import SubCalibratingEdge, SubCalibratingNode
-from src.framework.graph.data.DataFactory import Supported
+from src.framework.graph.data.DataFactory import Quantity
 from src.framework.graph.types.edges.EdgePose2DV2 import EdgePose2DV2
 from src.framework.graph.types.edges.EdgePosePoint2DV2 import EdgePosePoint2DV2
 from src.framework.graph.types.edges.EdgePoses2DSE2 import EdgePoses2DSE2
@@ -11,14 +11,11 @@ from src.framework.math.lie.transformation import SE2
 from src.framework.math.matrix.square import SubSquare
 from src.framework.math.matrix.vector import Vector2
 
-Key = tp.Tuple[tp.Type[Supported], tp.Tuple[tp.Type[SubCalibratingNode], ...]]
+Key = tp.Tuple[tp.Type[Quantity], tp.Tuple[tp.Type[SubCalibratingNode], ...]]
 
 
 class EdgeFactory(object):
-    _map: tp.Dict[
-        Key,
-        tp.Type[SubCalibratingEdge]
-    ] = {
+    _map: tp.Dict[Key, tp.Type[SubCalibratingEdge]] = {
         (SE2, (NodeSE2, NodeSE2)): EdgePoses2DSE2,
         (Vector2, (NodeSE2, )): EdgePose2DV2,
         (Vector2, (NodeSE2, NodeV2)): EdgePosePoint2DV2
@@ -27,7 +24,7 @@ class EdgeFactory(object):
     @classmethod
     def from_types_measurement_nodes(
             cls,
-            measurement_type: tp.Type[Supported],
+            measurement_type: tp.Type[Quantity],
             node_types: tp.List[tp.Type[SubCalibratingNode]]
     ) -> tp.Type[SubCalibratingEdge]:
         key: Key = (measurement_type, tuple(node_types))
@@ -37,7 +34,7 @@ class EdgeFactory(object):
     @classmethod
     def from_measurement_nodes(
             cls,
-            measurement: Supported,
+            measurement: Quantity,
             nodes: tp.List[SubCalibratingNode],
             name: tp.Optional[str] = None,
             info_matrix: tp.Optional[SubSquare] = None
@@ -45,8 +42,9 @@ class EdgeFactory(object):
         edge_type: tp.Type[SubCalibratingEdge] = cls.from_types_measurement_nodes(type(measurement), [type(node) for node in nodes])
         edge: SubCalibratingEdge = edge_type(
             name=name,
-            nodes=nodes,
             measurement=measurement,
             info_matrix=info_matrix
         )
+        for node in nodes:
+            edge.add_node(node)
         return edge

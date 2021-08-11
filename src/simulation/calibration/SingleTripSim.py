@@ -2,8 +2,6 @@ from src.framework.math.lie.transformation import SE2
 from src.framework.math.matrix.square import Square2
 from src.framework.math.matrix.square import Square3
 from src.framework.simulation.BiSimulation2D import BiSimulation2D
-from src.framework.simulation.sensors import SensorV2
-from src.framework.simulation.sensors.SensorSE2 import SensorSE2
 
 
 class SingleTripSim(BiSimulation2D):

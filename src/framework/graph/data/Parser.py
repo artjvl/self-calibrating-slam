@@ -1,7 +1,6 @@
 import typing as tp
 
 import numpy as np
-
 from src.framework.math.matrix.square import SubSquare, SquareFactory
 
 

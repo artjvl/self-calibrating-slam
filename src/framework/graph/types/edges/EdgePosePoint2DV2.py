@@ -10,7 +10,7 @@ from src.framework.math.matrix.vector import Vector2
 
 
 class EdgePosePoint2DV2(CalibratingEdgeSE2):
-    _num_topological = 2
+    _num_endpoints = 2
 
     def __init__(
             self,
@@ -28,7 +28,7 @@ class EdgePosePoint2DV2(CalibratingEdgeSE2):
             info_matrix=info_matrix
         )
 
-    def get_value(self) -> Vector2:
+    def get_delta(self) -> Vector2:
         a: NodeSE2
         b: NodeV2
         a, b = tuple(self.get_endpoints())

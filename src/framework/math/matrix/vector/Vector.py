@@ -7,6 +7,7 @@ from src.framework.math.Dimensional import Dimensional
 from src.framework.math.matrix.Matrix import Matrix
 
 SubVector = tp.TypeVar('SubVector', bound='Vector', covariant=True)
+SubSizeVector = tp.TypeVar('SubSizeVector', bound='SizeVector', covariant=True)
 
 
 class Vector(Matrix, Dimensional):

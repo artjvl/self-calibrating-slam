@@ -10,13 +10,14 @@ from src.framework.math.matrix.Matrix import SubMatrix
 from src.framework.math.matrix.square import Square2, Square3
 from src.framework.math.matrix.vector import Vector1, Vector2, Vector3, Vector6, SubVector
 
-Supported = tp.Union[SubSE, SubVector, SubMatrix]
+Value = tp.Union[SubSE, SubVector]
+Quantity = tp.Union[Value, SubMatrix]
 
 
 class DataFactory(object):
     """ A helper-class for creating Data-objects. """
 
-    _map: tp.Dict[tp.Type[Supported], tp.Type[SubData]] = {
+    _map: tp.Dict[tp.Type[Quantity], tp.Type[SubData]] = {
         SE2: DataSE2,
         Vector1: DataV1,
         Vector2: DataV2,
@@ -27,12 +28,12 @@ class DataFactory(object):
     }
 
     @classmethod
-    def from_type(cls, type_: tp.Type[Supported]) -> tp.Type[SubData]:
+    def from_type(cls, type_: tp.Type[Quantity]) -> tp.Type[SubData]:
         """ Returns the corresponding data-object for a given value-type. """
         assert type_ in cls._map, f'Type {type_} not supported.'
         return cls._map[type_]
 
     @classmethod
-    def from_value(cls, value: Supported) -> SubData:
+    def from_value(cls, value: Quantity) -> SubData:
         """ Returns the corresponding data-object for a given value. """
         return cls.from_type(type(value))(value)

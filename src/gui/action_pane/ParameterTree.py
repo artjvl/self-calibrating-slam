@@ -2,7 +2,7 @@ import typing as tp
 
 from PyQt5 import QtCore, QtWidgets, QtGui
 
-from src.framework.simulation.ParameterSet import Type, Value, ParameterSet
+from src.framework.simulation.ConfigurationSet import Type, Value, ConfigurationSet
 
 
 class ParameterDelegate(QtWidgets.QItemDelegate):
@@ -18,15 +18,15 @@ class ParameterDelegate(QtWidgets.QItemDelegate):
 
     def __init__(
             self,
-            parameters: ParameterSet,
+            parameters: ConfigurationSet,
             *args, **kwargs
     ):
         super().__init__(*args, **kwargs)
-        self._parameters: ParameterSet = parameters
+        self._parameters: ConfigurationSet = parameters
 
     def set_parameters(
             self,
-            parameters: ParameterSet
+            parameters: ConfigurationSet
     ):
         self._parameters = parameters
 
@@ -68,7 +68,7 @@ class ParameterTree(QtWidgets.QTreeWidget):
         self.setAlternatingRowColors(True)
 
         # save parameters
-        self._parameters: tp.Optional[ParameterSet] = None
+        self._parameters: tp.Optional[ConfigurationSet] = None
 
     def _handle_edit(
             self,
@@ -79,7 +79,7 @@ class ParameterTree(QtWidgets.QTreeWidget):
         self._parameters[key] = value
         print(f"Changed '{key}' to '{value}'.")
 
-    def construct_tree(self, parameters: ParameterSet):
+    def construct_tree(self, parameters: ConfigurationSet):
         # save parameters
         self._parameters = parameters
 

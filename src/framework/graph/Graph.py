@@ -1,7 +1,7 @@
 import copy
 import pathlib
 import typing as tp
-from abc import ABC
+from abc import ABC, abstractmethod
 from datetime import datetime
 
 import numpy as np
@@ -334,6 +334,16 @@ class Edge(tp.Generic[T], FactorEdge[T], ABC):
     ):
         super().__init__(name=name, nodes=nodes, measurement=measurement, info_matrix=info_matrix)
         self._truth = None
+
+    # DataContainer
+    def has_measurement(self) -> bool:
+        """ Returns whether a measurement has already been assigned to this edge. """
+        return super().has_value()
+
+    @abstractmethod
+    def get_measurement(self) -> T:
+        """ Returns the measurement encoded in this edge. """
+        pass
 
     # error
     def compute_rpe_translation2(self) -> tp.Optional[float]:

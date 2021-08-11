@@ -6,13 +6,21 @@ SubGraphManager = tp.TypeVar('SubGraphManager', bound='GraphManager')
 
 class GraphManager(object):
 
+    # graph
     _graph: SubGraph
-    _counter: int
+
+    # counters
+    _id_counter: int
+    _id_set: tp.Set[int]
     _timestamp: float
 
     def __init__(self, graph: SubGraph):
+        # graph
         self._graph = graph
-        self._counter = 0
+
+        # counters
+        self._id_counter = 0
+        self._id_set = set()
         self._timestamp = 0.
 
     # graph
@@ -20,24 +28,40 @@ class GraphManager(object):
         return self._graph
 
     # elements
-    def add_node(self, node: SubNode) -> None:
-        node.set_id(self.get_count(increment=True))
+    def add_node(
+            self,
+            node: SubNode,
+            id_: tp.Optional[int] = None
+    ) -> SubNode:
+        if id_ is not None:
+            # check if node-id has not been used before
+            assert id_ not in self._id_set
+            self._id_set.add(id_)
+        else:
+            # use default node-id
+            id_ = self.get_id(should_increment=True)
+
+        node.set_id(id_)
         node.set_timestamp(self._timestamp)
         self._graph.add_node(node)
+        return node
 
-    def add_edge(self, edge: SubEdge) -> None:
+    def add_edge(self, edge: SubEdge) -> SubEdge:
         self._graph.add_edge(edge)
+        return edge
 
     # count
-    def get_count(self, increment: bool = False) -> int:
-        count: int = self._counter
-        if increment:
-            self._counter += 1
-        return count
+    def get_id(self, should_increment: bool = False) -> int:
+        id_: int = self._id_counter
+        if should_increment:
+            self._id_set.add(id_)
+            while self._id_counter in self._id_set:
+                self._id_counter += 1
+        return id_
 
     def set_count(self, count: int) -> None:
-        assert count >= self._counter
-        self._counter = count
+        assert count >= self._id_counter and count not in self._id_set
+        self._id_counter = count
 
     # timestamp
     def set_timestamp(self, timestamp: float) -> None:

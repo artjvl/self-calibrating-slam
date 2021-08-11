@@ -1,14 +1,13 @@
 import typing as tp
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 
-from src.framework.graph.protocols.ReadWrite import ReadWrite
 from src.framework.math.matrix.vector import SubVector
 
 T = tp.TypeVar('T')
 SubData = tp.TypeVar('SubData', bound='Data')
 
 
-class Data(tp.Generic[T], ReadWrite, ABC):
+class Data(tp.Generic[T]):
     """ A data-object that contains a value and value-type, which can be read and written. """
 
     _type: tp.Type[T]
@@ -67,6 +66,25 @@ class Data(tp.Generic[T], ReadWrite, ABC):
         """ Returns the dimension (i.e., minimal number of variables to fully define the data structure). """
         pass
 
+    # read/write
+    def read_rest(self, words: tp.List[str]) -> tp.List[str]:
+        """ Takes an over-sized list of words and reads only the required portion, while returning the rest. """
+        count: int = self.get_length()
+        assert len(words) >= count, f"Words <{words}> should have at least length {count}."
+        self.read(words[: count])
+        return words[count:]
+
+    @abstractmethod
+    def read(self, words: tp.List[str]) -> None:
+        """ Reads (or parses) the list of words (strings) and sets the class attributes. """
+        pass
+
+    @abstractmethod
+    def write(self) -> tp.List[str]:
+        """ Writes (or serialises) the class attributes to a list of words (strings). """
+        pass
+
     @classmethod
     def get_length(cls) -> int:
+        """ Returns the length of the list of words necessary to instantiate the class instance. """
         return cls.get_dim()

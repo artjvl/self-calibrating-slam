@@ -6,7 +6,7 @@ Type = tp.Union[tp.Type[str], tp.Type[int], tp.Type[float], tp.Type[bool]]
 Value = tp.Union[str, int, float, bool]
 
 
-class Parameter(object):
+class Configuration(object):
 
     _prefixes = {
         's_': str,
@@ -50,7 +50,7 @@ class Parameter(object):
         return self._type
 
 
-class ParameterSet(object):
+class ConfigurationSet(object):
 
     def __init__(self, path: pathlib.Path):
         config = configparser.ConfigParser()
@@ -58,20 +58,20 @@ class ParameterSet(object):
         assert 'PARAMETERS' in config
         dict_: tp.Dict[str, Value] = dict(config['PARAMETERS'])
 
-        self._parameters: tp.Dict[str, Parameter] = {}
+        self._parameters: tp.Dict[str, Configuration] = {}
         for key, value in dict_.items():
-            parameter = Parameter(key, value)
+            parameter = Configuration(key, value)
             self._parameters[parameter.get_name()] = parameter
 
     def __getitem__(self, key: str) -> Value:
         return self._parameters[key].get_value()
 
     def __setitem__(self, key, value):
-        parameter: Parameter = self.get(key)
+        parameter: Configuration = self.get(key)
         parameter.set_value(value)
 
-    def get(self, index: int) -> Parameter:
+    def get(self, index: int) -> Configuration:
         return list(self._parameters.values())[index]
 
-    def to_dict(self) -> tp.Dict[str, Parameter]:
+    def to_dict(self) -> tp.Dict[str, Configuration]:
         return self._parameters
