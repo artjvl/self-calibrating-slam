@@ -1,13 +1,10 @@
 import typing as tp
 from abc import ABC, abstractmethod
 
-import numpy as np
 from src.framework.graph.Graph import Edge, Node, Graph, SubNode
 from src.framework.graph.types.nodes.ParameterNode import ParameterNode, SubParameterNode
 from src.framework.graph.types.nodes.SpatialNode import SubSpatialNode, SpatialNode
 from src.framework.math.matrix.square import SubSquare
-from src.framework.math.matrix.vector import SubVector
-from src.framework.math.matrix.vector import VectorFactory
 
 SubCalibratingGraph = tp.TypeVar('SubCalibratingGraph', bound='CalibratingGraph')
 SubCalibratingEdge = tp.TypeVar('SubCalibratingEdge', bound='CalibratingEdge')

@@ -11,13 +11,17 @@ from src.gui.viewer.Grid import Grid
 class Viewer(gl.GLViewWidget):
     # reference: https://pyqtgraph.readthedocs.io/en/latest/
 
-    def __init__(self, container: TopTreeNode, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(
+            self,
+            tree: TopTreeNode,
+            **kwargs
+    ):
+        super().__init__(**kwargs)
         self.setMinimumSize(QSize(600, 400))
         self.setCameraPosition(distance=40)
         self.set_isometric_view()
-        self._container: TopTreeNode = container
-        self._container.signal_update.connect(self.update_items)
+        self._tree: TopTreeNode = tree
+        self._tree.signal_update.connect(self.update_items)
         self._is_grid = True
         self._grid = Grid(size=(100, 100), spacing=(1, 1))
         self.update_items()
@@ -37,7 +41,7 @@ class Viewer(gl.GLViewWidget):
         self.setCameraPosition(pos=QVector3D(*(pos.to_list())))
 
     def update_items(self):
-        items = self._container.get_graphics()
+        items = self._tree.get_graphics()
         if self._is_grid:
             items.append(self._grid)
 

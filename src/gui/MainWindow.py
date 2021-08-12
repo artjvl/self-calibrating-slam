@@ -19,7 +19,7 @@ class MainWindow(QMainWindow):
         super().__init__(*args, **kwargs)
 
         # window
-        self.setGeometry(200, 200, 1400, 1000)
+        self.setGeometry(200, 200, 1600, 1000)
         # self.centre()
         self.setWindowTitle('Graph-Viewer')
 
@@ -53,7 +53,7 @@ class MainWindow(QMainWindow):
                 self._viewer
             )
         )
-        splitter.setSizes([50, 200, 300])
+        splitter.setSizes([200, 800, 400])
         self.setCentralWidget(splitter)
 
         # additional settings
@@ -73,7 +73,7 @@ class MainWindow(QMainWindow):
             container: TopTreeNode
     ) -> Viewer:
         # reference: https://pyqtgraph.readthedocs.io/en/latest/
-        viewer: Viewer = Viewer(container, widget)
+        viewer: Viewer = Viewer(container, parent=widget)
         viewer.setSizePolicy(QSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored))
         return viewer
 
