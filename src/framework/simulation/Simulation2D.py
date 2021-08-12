@@ -14,7 +14,7 @@ if tp.TYPE_CHECKING:
     from src.framework.graph.Graph import SubGraph, SubNode, SubEdge
     from src.framework.optimiser.Optimiser import Optimiser
     from src.framework.simulation.Parameter import SubParameterModel
-    from src.framework.simulation.sensors import SubSensor
+    from src.framework.simulation.Sensor import SubSensor
 
 SubSimulation2D = tp.TypeVar('SubSimulation2D', bound='Simulation2D')
 
