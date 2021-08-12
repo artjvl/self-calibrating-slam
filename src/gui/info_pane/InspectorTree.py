@@ -86,6 +86,8 @@ class InspectorTree(QtWidgets.QTreeWidget):
 
         # properties
         sub_properties = self._construct_tree_property(root, 'Properties', '', bold=True)
+        if graph.has_previous():
+            self._construct_tree_property(sub_properties, 'previous', graph.get_previous().to_unique())
         # self._construct_tree_property(sub_properties, 'path', str(graph.get_path()))
         sub_properties.setExpanded(True)
         return root
