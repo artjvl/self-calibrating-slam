@@ -2,6 +2,7 @@ import typing as tp
 
 from PyQt5 import QtCore, QtWidgets, QtGui
 from src.framework.graph.Graph import SubGraph, Node, Edge, SubElement
+from src.framework.graph.GraphAnalyser import GraphAnalyser
 from src.framework.graph.protocols.Visualisable import SubVisualisable, Visualisable, DrawPoint, DrawEdge
 from src.gui.info_pane.InspectorTree import InspectorTree
 from src.gui.info_pane.TimestampBox import TimestampBox
@@ -25,9 +26,9 @@ class BrowserTree(QtWidgets.QTreeWidget):
             inspector: InspectorTree,
             timestamp_box: TimestampBox,
             viewer: Viewer,
-            *args, **kwargs
+            **kwargs
     ):
-        super().__init__(*args, **kwargs)
+        super().__init__(**kwargs)
         self._tree = tree
         self._inspector = inspector
         self._timestamp_box = timestamp_box
@@ -36,7 +37,7 @@ class BrowserTree(QtWidgets.QTreeWidget):
         # formatting
         self.headerItem().setText(0, 'Object')
         self.headerItem().setText(1, 'Type')
-        self.setColumnWidth(0, 240)
+        self.setColumnWidth(0, 300)
         self.setAlternatingRowColors(True)
 
         # selection
@@ -106,7 +107,7 @@ class BrowserTree(QtWidgets.QTreeWidget):
                     # elements-container
                     elements: tp.List[SubElement] = graph.get_of_name(name)
                     elements_item: QtWidgets.QTreeWidgetItem = self._construct_tree_item(
-                        name,
+                        f"'{name}' ({graph.get_type_of_name(name).__name__})",
                         f'({len(elements)})',
                         graph_item
                     )
@@ -118,6 +119,9 @@ class BrowserTree(QtWidgets.QTreeWidget):
                             0, QtCore.Qt.Checked if elements_node.is_checked() else QtCore.Qt.Unchecked
                         )
                         elements_item.obj = elements_node
+                    else:
+                        text: str = elements_item.text(0)
+                        elements_item.setText(0, "{}  {}".format(u'\u2014', text))
 
                     for element in elements:
 
@@ -197,30 +201,29 @@ class BrowserTree(QtWidgets.QTreeWidget):
             node: GraphTreeNode,
             point
     ) -> None:
+        graph: SubGraph = node.get_graph()
 
         # create menu
         menu = QtWidgets.QMenu()
         # delete
-        action_delete = QtWidgets.QAction('&Delete', self)
-        menu.addAction(action_delete)
+        action_delete = menu.addAction('&Delete')
         # save as
-        action_save = QtWidgets.QAction('&Save as', self)
-        menu.addAction(action_save)
+        action_save = menu.addAction('&Save as')
         # find subgraphs
-        action_subgraphs = QtWidgets.QAction('Find subgraphs', self)
-        menu.addAction(action_subgraphs)
+        action_subgraphs = menu.addAction('Find subgraphs')
         action_subgraphs.setEnabled(node.is_singular())
         # set as truth
-        action_truth = QtWidgets.QAction('Set as truth', self)
-        menu.addAction(action_truth)
+        action_truth = menu.addAction('Set as truth')
         action_truth.setEnabled(node.is_eligible_for_truth())
+        # analyse
+        sub_analyse = menu.addMenu('Analyse')
+        # analyse - plot graph
+        action_plot = sub_analyse.addAction('Plot graph')
+        # analyse - metrics - ate
+        sub_analyse_metrics = sub_analyse.addMenu('Metrics')
+        action_ate = sub_analyse_metrics.addAction('Plot ATE')
+        action_ate.setEnabled(not node.is_singular() and graph.is_perturbed())
 
-        # action_truth = QtWidgets.QAction('Set as truth', self)
-        # menu.addAction(action_truth)
-        # can_be_truth: bool = not trajectory_container.has_truth() and not graph.is_perturbed() and not graph.has_truth()
-        # if not can_be_truth:
-        #     action_truth.setEnabled(False)
-        #
         # action_slice = QtWidgets.QAction('Plot error-curve', self)
         # menu.addAction(action_slice)
         # can_be_sliced: bool = graph.has_truth() and graph.has_pre()
@@ -243,6 +246,11 @@ class BrowserTree(QtWidgets.QTreeWidget):
             self._timestamp_box.update_contents()
         elif action == action_truth:
             node.set_as_truth()
+        elif action == action_plot:
+            self._tree.get_analyser().plot_topology(graph)
+        elif action == action_ate:
+            self._tree.get_analyser().plot_ate(graph)
+
 
         # elif action == action_truth:
         #     trajectory_container.set_as_truth(graph)

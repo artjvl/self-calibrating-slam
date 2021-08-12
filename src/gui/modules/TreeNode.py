@@ -4,6 +4,7 @@ import typing as tp
 from abc import abstractmethod
 
 from PyQt5 import QtCore
+from framework.graph.GraphAnalyser import GraphAnalyser
 from src.framework.graph.Graph import SubGraph, SubElement
 from src.framework.graph.GraphContainer import SubGraphContainer, GraphContainer
 from src.gui.viewer.items import Items
@@ -23,7 +24,7 @@ class Toggle(object):
     _relay: tp.Optional[SubToggle]
     _checked: bool
 
-    _signal_checked: int
+    _signal_checked: int = -1
 
     def __init__(
             self,
@@ -131,7 +132,6 @@ class GraphicsTreeNode(TreeNode, Toggle):
 
     _signal_remove: int = 0
     _signal_change: int = 1
-    _signal_checked = -1
 
     def __init__(
             self,
@@ -511,11 +511,15 @@ class TopTreeNode(GraphicsTreeNode, QtCore.QObject):
     - signal < 0: update Viewer only
     """
 
+    _id_counter: int
+    _analyser: GraphAnalyser
+
     signal_update = QtCore.pyqtSignal(int)
 
     def __init__(self):
         super().__init__()
-        self._id_counter: int = 1
+        self._id_counter = 1
+        self._analyser = GraphAnalyser()
 
         for item in Items:
             self.add_toggle(item.value)
@@ -547,6 +551,9 @@ class TopTreeNode(GraphicsTreeNode, QtCore.QObject):
         for child in self.get_children():
             child.remove(should_broadcast=False)
         self.signal_update.emit(self.get_signal_remove())
+
+    def get_analyser(self) -> GraphAnalyser:
+        return self._analyser
 
     def get_graphs(self) -> tp.List[SubGraph]:
         graphs: tp.List[SubGraph] = []

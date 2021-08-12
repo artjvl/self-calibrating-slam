@@ -18,9 +18,9 @@ class InfoPane(QtWidgets.QWidget):
             self,
             tree: TopTreeNode,
             viewer: Viewer,
-            *args, **kwargs
+            **kwargs
     ):
-        super().__init__(*args, **kwargs)
+        super().__init__(**kwargs)
         self._tree = tree
 
         # self.setOrientation(QtCore.Qt.Vertical)
@@ -59,10 +59,10 @@ class InfoPane(QtWidgets.QWidget):
 
         inspector = InspectorTree(self)
         timestamp_box = TimestampBox()
-        browser = BrowserTree(self._tree, inspector, timestamp_box, viewer, self)
+        browser = BrowserTree(self._tree, inspector, timestamp_box, viewer, parent=self)
 
         panels.addWidget(LabelPane(browser, 'Graph browser'))
-        panels.addWidget(LabelPane(timestamp_box, 'Select timestamp'))
+        panels.addWidget(LabelPane(timestamp_box, 'Select timestamp:'))
         panels.addWidget(LabelPane(inspector, 'Graph-element inspector'))
         layout.addWidget(panels)
 

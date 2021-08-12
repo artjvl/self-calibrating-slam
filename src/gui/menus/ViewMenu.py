@@ -51,7 +51,7 @@ class ViewMenu(Menu):
             action = self.add_action(
                 menu=menu,
                 name=type_.__name__,
-                handler=functools.partial(self._container.toggle, toggle),
+                handler=functools.partial(toggle.toggle, True),
                 checked=toggle.is_checked()
             )
             action.obj = toggle
