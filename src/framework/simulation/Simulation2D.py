@@ -8,11 +8,11 @@ from src.framework.graph.data.DataFactory import Quantity
 from src.framework.graph.types.edges.EdgeFactory import EdgeFactory
 from src.framework.graph.types.nodes.SpatialNode import NodeSE2, SpatialNodeFactory
 from src.framework.math.lie.transformation import SE2
+from src.framework.optimiser.Optimiser import Optimiser
 
 if tp.TYPE_CHECKING:
     from src.framework.graph.CalibratingGraph import SubCalibratingEdge, SubCalibratingGraph
     from src.framework.graph.Graph import SubGraph, SubNode, SubEdge
-    from src.framework.optimiser.Optimiser import Optimiser
     from src.framework.simulation.Parameter import SubParameterModel
     from src.framework.simulation.Sensor import SubSensor
 
@@ -173,10 +173,12 @@ class StaticSimulation2D(Simulation2D):
 
 
 class SlidingSimulation2D(Simulation2D):
-    _optimiser: 'Optimiser'
+    _optimiser: Optimiser
 
-    def __init__(self, optimiser: 'Optimiser'):
+    def __init__(self, optimiser: tp.Optional[Optimiser] = None):
         super().__init__()
+        if optimiser is None:
+            optimiser = Optimiser()
         self._optimiser = optimiser
 
     # timestamp

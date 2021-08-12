@@ -99,6 +99,8 @@ class SlidingParameter(Parameter):
             is_visible=True
         )
         self._window = window
+        self._in = []
+        self._out = []
 
     def get_window(self) -> int:
         return self._window
@@ -111,6 +113,6 @@ class SlidingParameter(Parameter):
         if len(self._in) > self._window:
             first: 'SubCalibratingEdge' = self._in[0]
             first.remove_parameter_id(node.get_id())
-            first.set_measurement(node.decompose(first.get_measurement()))
+            first.set_measurement(node.compose(first.get_measurement(), is_inverse=False))
             self._out.append(first)
             self._in = self._in[1:]

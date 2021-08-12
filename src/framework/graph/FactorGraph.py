@@ -38,7 +38,7 @@ class FactorGraph(BaseGraph):
         return Vector(list_)
 
     def from_vector(self, vector: SubVector) -> None:
-        assert vector.get_dim() == sum([node.get_dim() for node in self.get_nodes()])
+        assert vector.get_length() == sum([node.get_dim() for node in self.get_nodes()])
         list_: tp.List[float] = vector.to_list()
 
         index: int = 0

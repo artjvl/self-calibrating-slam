@@ -9,7 +9,7 @@ from src.framework.math.lie.transformation import SE2
 from src.framework.simulation.ConfigurationSet import ConfigurationSet
 from src.framework.simulation.Parameter import StaticParameter, SlidingParameter
 from src.framework.simulation.Sensor import SensorFactory
-from src.framework.simulation.Simulation2D import StaticSimulation2D
+from src.framework.simulation.Simulation2D import StaticSimulation2D, SlidingSimulation2D
 from src.utils import GeoHash2D
 
 if tp.TYPE_CHECKING:
@@ -48,6 +48,9 @@ class BiSimulation2D(object):
 
         # parameters
         self._parameters = None
+
+    def set_sliding(self, is_sliding: bool = True) -> None:
+        self.init(SlidingSimulation2D if is_sliding else StaticSimulation2D)
 
     def init(self, sim: tp.Type['SubSimulation2D'] = StaticSimulation2D) -> None:
         self._truth = StaticSimulation2D()

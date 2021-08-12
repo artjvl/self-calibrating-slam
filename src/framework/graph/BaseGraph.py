@@ -363,6 +363,9 @@ class BaseGraph(BaseElement, NodeContainer, Printable):
         for i, edge in enumerate(edges):
             self.get_edge(i).copy_to(edge)
             graph.add_edge(edge)
+
+        graph._name = self._name
+        graph._previous = self._previous
         return graph
 
     def __copy__(self):

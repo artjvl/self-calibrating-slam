@@ -24,6 +24,9 @@ class Vector(Matrix, Dimensional):
         vector = column.astype(float)
         super().__init__(vector)
 
+    def get_length(self) -> int:
+        return self.shape()[0]
+
     def __neg__(self) -> SubVector:
         return type(self)(- self.array())
 
@@ -58,6 +61,8 @@ class Vector(Matrix, Dimensional):
 
 
 class SizeVector(Vector):
+
+    _dim: int
 
     def __init__(
             self,
