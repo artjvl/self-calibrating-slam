@@ -21,7 +21,7 @@ class Element(Generic[T]):
 class GeoHash2D(Generic[T]):
 
     # constructor
-    def __init__(self, size: Optional[float] = 1.):
+    def __init__(self, size: Optional[float] = .5):
         self._size: float = size
         self._hash: Dict[int, Dict[int, List[Element[T]]]] = {}
 
