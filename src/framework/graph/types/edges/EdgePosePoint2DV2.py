@@ -32,4 +32,4 @@ class EdgePosePoint2DV2(CalibratingEdgeSE2):
         a: NodeSE2
         b: NodeV2
         a, b = tuple(self.get_endpoints())
-        return Vector2(b.get_value() - a.get_value().translation())
+        return Vector2(b.get_delta() - a.get_delta().translation())

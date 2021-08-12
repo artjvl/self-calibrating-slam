@@ -39,7 +39,7 @@ class EdgePose2DV2(CalibratingEdgeV2, DrawEdge):
     # Visualisable
     def draw_nodeset(self) -> tp.Tuple[Vector3, Vector3]:
         pose: SE2 = self.get_endpoints()[0].get_value()
-        translation: Vector2 = self.get_value()
+        translation: Vector2 = self.get_delta()
         return pose.translation().to_vector3(), translation.to_vector3()
 
     @staticmethod

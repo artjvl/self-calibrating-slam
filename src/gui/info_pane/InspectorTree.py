@@ -212,7 +212,7 @@ class InspectorTree(QtWidgets.QTreeWidget):
 
         # measurement
         sub_measurement = self._construct_tree_property(root, 'Measurement', '', bold=True)
-        self._construct_value_tree(sub_measurement, edge.get_measurement())
+        self._construct_value_tree(sub_measurement, edge.get_value())
 
         # estimate
         sub_estimate = self._construct_tree_property(root, 'Estimate', '', bold=True)

@@ -46,6 +46,23 @@ def round_down(value: float, nearest: float = 1.) -> float:
 
 class GraphAnalyser(object):
 
+    _error: tp.Optional[plt.Axes]
+    _ate: tp.Optional[plt.Axes]
+    _rpe_translation: tp.Optional[plt.Axes]
+    _rpe_rotation: tp.Optional[plt.Axes]
+
+    def __init__(self):
+        self._error = None
+        self._ate = None
+        self._rpe_translation = None
+        self._rpe_rotation = None
+
+    def clear(self) -> None:
+        self._error = None
+        self._ate = None
+        self._rpe_translation = None
+        self._rpe_rotation = None
+
     # topology
     @staticmethod
     def find_domain(graph: SubGraph) -> tp.Tuple[float, float, float, float]:
@@ -241,16 +258,114 @@ class GraphAnalyser(object):
         # plt.show()
         # print(error)
 
+    def instance_plot_error(
+            self,
+            graph: SubGraph
+    ):
+        self._error = self.plot_error(graph, self._error)
+
     @classmethod
-    def plot_ate(cls, graph: SubGraph):
+    def plot_error(
+            cls,
+            graph: SubGraph,
+            ax: tp.Optional[plt.Axes] = None
+    ) -> plt.Axes:
         assert graph.has_previous()
+
+        if ax is None:
+            _, ax = plt.subplots()
+            ax.set_title('Error')
+
+        graphs: tp.List[SubGraph] = graph.get_subgraphs()
+
+        data: PlotData = PlotData()
+        for _, graph in enumerate(graphs):
+            data.append(graph.get_timestamp(), graph.get_error())
+
+        ax.plot(*data.to_lists())
+        ax.figure.show()
+        return ax
+
+    def instance_plot_ate(
+            self,
+            graph: SubGraph
+    ):
+        self._ate = self.plot_ate(graph, self._ate)
+
+    @classmethod
+    def plot_ate(
+            cls,
+            graph: SubGraph,
+            ax: tp.Optional[plt.Axes] = None
+    ) -> plt.Axes:
+        assert graph.has_previous()
+
+        if ax is None:
+            _, ax = plt.subplots()
+            ax.set_title('ATE')
+
         graphs: tp.List[SubGraph] = graph.get_subgraphs()
 
         data: PlotData = PlotData()
         for _, graph in enumerate(graphs):
             data.append(graph.get_timestamp(), graph.get_ate())
 
-        plt.figure()
-        # plt.ylim(0, 2 * ate[-1])
-        plt.plot(*data.to_lists())
-        plt.show()
+        ax.plot(*data.to_lists())
+        ax.figure.show()
+        return ax
+
+    def instance_plot_rpe_translation(
+            self,
+            graph: SubGraph
+    ):
+        self._rpe_translation = self.plot_rpe_translation(graph, self._rpe_translation)
+
+    @classmethod
+    def plot_rpe_translation(
+            cls,
+            graph: SubGraph,
+            ax: tp.Optional[plt.Axes] = None
+    ) -> plt.Axes:
+        assert graph.has_previous()
+
+        if ax is None:
+            _, ax = plt.subplots()
+            ax.set_title('RPE (translation)')
+
+        graphs: tp.List[SubGraph] = graph.get_subgraphs()
+
+        data: PlotData = PlotData()
+        for _, graph in enumerate(graphs):
+            data.append(graph.get_timestamp(), graph.get_rpe_translation())
+
+        ax.plot(*data.to_lists())
+        ax.figure.show()
+        return ax
+
+    def instance_plot_rpe_rotation(
+            self,
+            graph: SubGraph
+    ):
+        self._rpe_rotation = self.plot_rpe_rotation(graph, self._rpe_rotation)
+
+    @classmethod
+    def plot_rpe_rotation(
+            cls,
+            graph: SubGraph,
+            ax: tp.Optional[plt.Axes] = None
+    ) -> plt.Axes:
+        assert graph.has_previous()
+
+        if ax is None:
+            _, ax = plt.subplots()
+            ax.set_title('RPE (rotation)')
+
+        graphs: tp.List[SubGraph] = graph.get_subgraphs()
+
+        data: PlotData = PlotData()
+        for _, graph in enumerate(graphs):
+            data.append(graph.get_timestamp(), graph.get_rpe_rotation())
+
+        ax.plot(*data.to_lists())
+        ax.figure.show()
+        return ax

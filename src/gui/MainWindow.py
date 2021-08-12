@@ -1,10 +1,10 @@
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QMainWindow, QWidget, QDesktopWidget, QSizePolicy, QMenuBar, \
     QStatusBar, QSplitter
-
 from src.gui.action_pane.ActionPane import ActionPane
 from src.gui.info_pane.InfoPane import InfoPane
 from src.gui.menus import FileMenu, ViewMenu, AboutMenu
+from src.gui.menus.AnalyserMenu import AnalyserMenu
 from src.gui.modules.TreeNode import TopTreeNode
 from src.gui.terminal.TerminalText import TerminalText
 from src.gui.viewer.Viewer import Viewer
@@ -96,13 +96,14 @@ class MainWindow(QMainWindow):
 
     def _init_menubar(
             self,
-            container: TopTreeNode,
+            tree: TopTreeNode,
             viewer: Viewer
     ) -> QMenuBar:
         menubar = self.menuBar()
-        menubar.addMenu(FileMenu(container, self))
-        menubar.addMenu(ViewMenu(container, viewer, self))
-        menubar.addMenu(AboutMenu(self))
+        menubar.addMenu(FileMenu(tree, parent=self))
+        menubar.addMenu(ViewMenu(tree, viewer, parent=self))
+        menubar.addMenu(AnalyserMenu(tree.get_analyser(), parent=self))
+        menubar.addMenu(AboutMenu(parent=self))
         return menubar
 
     # helper-methods: window

@@ -39,12 +39,12 @@ class EdgePoses2DSE2(CalibratingEdgeSE2, DrawEdge):
 
     def compute_rpe_translation2(self) -> float:
         assert self.has_truth()
-        delta: Vector2 = self.get_value().translation() - self.get_truth().get_value().translation()
+        delta: Vector2 = self.get_delta().translation() - self.get_truth().get_delta().translation()
         return delta[0]**2 + delta[1]**2
 
     def compute_rpe_rotation(self) -> float:
         assert self.has_truth()
-        delta: SO2 = self.get_value().rotation() - self.get_truth().get_value().rotation()
+        delta: SO2 = self.get_delta().rotation() - self.get_truth().get_delta().rotation()
         return delta.angle()
 
     # Visualisable

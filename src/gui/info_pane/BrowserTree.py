@@ -221,8 +221,15 @@ class BrowserTree(QtWidgets.QTreeWidget):
         action_plot = sub_analyse.addAction('Plot graph')
         # analyse - metrics - ate
         sub_analyse_metrics = sub_analyse.addMenu('Metrics')
+        has_metrics: bool = not node.is_singular() and graph.is_perturbed()
+        action_error = sub_analyse_metrics.addAction('Plot error')
+        action_error.setEnabled(has_metrics)
         action_ate = sub_analyse_metrics.addAction('Plot ATE')
-        action_ate.setEnabled(not node.is_singular() and graph.is_perturbed())
+        action_ate.setEnabled(has_metrics)
+        action_rpe_translation = sub_analyse_metrics.addAction('Plot RPE (translation')
+        action_rpe_translation.setEnabled(has_metrics)
+        action_rpe_rotation = sub_analyse_metrics.addAction('Plot RPE (rotation)')
+        action_rpe_rotation.setEnabled(has_metrics)
 
         # action_slice = QtWidgets.QAction('Plot error-curve', self)
         # menu.addAction(action_slice)
@@ -248,8 +255,14 @@ class BrowserTree(QtWidgets.QTreeWidget):
             node.set_as_truth()
         elif action == action_plot:
             self._tree.get_analyser().plot_topology(graph)
+        elif action == action_error:
+            self._tree.get_analyser().instance_plot_error(graph)
         elif action == action_ate:
-            self._tree.get_analyser().plot_ate(graph)
+            self._tree.get_analyser().instance_plot_ate(graph)
+        elif action == action_rpe_translation:
+            self._tree.get_analyser().instance_plot_rpe_translation(graph)
+        elif action == action_rpe_rotation:
+            self._tree.get_analyser().instance_plot_rpe_rotation(graph)
 
 
         # elif action == action_truth:
