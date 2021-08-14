@@ -1,8 +1,9 @@
 import typing as tp
+import functools
 
 from PyQt5 import QtCore, QtWidgets, QtGui
+from src.framework.graph.CalibratingGraph import SubCalibratingGraph
 from src.framework.graph.Graph import SubGraph, Node, Edge, SubElement
-from src.framework.graph.GraphAnalyser import GraphAnalyser
 from src.framework.graph.protocols.Visualisable import SubVisualisable, Visualisable, DrawPoint, DrawEdge
 from src.gui.info_pane.InspectorTree import InspectorTree
 from src.gui.info_pane.TimestampBox import TimestampBox
@@ -201,76 +202,83 @@ class BrowserTree(QtWidgets.QTreeWidget):
             node: GraphTreeNode,
             point
     ) -> None:
-        graph: SubGraph = node.get_graph()
+        graph: SubCalibratingGraph = node.get_graph()
+        action: QtWidgets.QAction
+        commands: tp.Dict[QtWidgets.QAction, tp.Callable] = {}
 
         # create menu
         menu = QtWidgets.QMenu()
         # delete
-        action_delete = menu.addAction('&Delete')
+        commands[menu.addAction('&Delete')] = functools.partial(node.remove)
         # save as
-        action_save = menu.addAction('&Save as')
+        commands[menu.addAction('&Save as')] = functools.partial(print, 'save')
         # find subgraphs
-        action_subgraphs = menu.addAction('Find subgraphs')
-        action_subgraphs.setEnabled(node.is_singular())
+        action_find_subgraphs: QtWidgets.QAction = menu.addAction('Find subgraphs')
+        action_find_subgraphs.setEnabled(node.is_singular())
         # set as truth
-        action_truth = menu.addAction('Set as truth')
-        action_truth.setEnabled(node.is_eligible_for_truth())
+        action = menu.addAction('Set as truth')
+        action.setEnabled(node.is_eligible_for_truth())
+        commands[action] = functools.partial(node.set_as_truth)
+
         # analyse
         sub_analyse = menu.addMenu('Analyse')
         # analyse - plot graph
-        action_plot = sub_analyse.addAction('Plot graph')
-        # analyse - metrics - ate
+        commands[sub_analyse.addAction('Plot graph')] = functools.partial(self._tree.get_analyser().plot_topology, graph)
+        # analyse - metrics
         sub_analyse_metrics = sub_analyse.addMenu('Metrics')
         has_metrics: bool = not node.is_singular() and graph.is_perturbed()
-        action_error = sub_analyse_metrics.addAction('Plot error')
-        action_error.setEnabled(has_metrics)
-        action_ate = sub_analyse_metrics.addAction('Plot ATE')
-        action_ate.setEnabled(has_metrics)
-        action_rpe_translation = sub_analyse_metrics.addAction('Plot RPE (translation')
-        action_rpe_translation.setEnabled(has_metrics)
-        action_rpe_rotation = sub_analyse_metrics.addAction('Plot RPE (rotation)')
-        action_rpe_rotation.setEnabled(has_metrics)
-
-        # action_slice = QtWidgets.QAction('Plot error-curve', self)
-        # menu.addAction(action_slice)
-        # can_be_sliced: bool = graph.has_truth() and graph.has_pre()
-        # if not can_be_sliced:
-        #     action_slice.setEnabled(False)
-        #
-        # action_metrics = QtWidgets.QAction('Plot metrics', self)
-        # menu.addAction(action_metrics)
-        # if not graph.has_truth():
-        #     action_metrics.setEnabled(False)
+        # analyse - metrics - error
+        action = sub_analyse_metrics.addAction('Plot error')
+        action.setEnabled(has_metrics)
+        commands[action] = functools.partial(self._tree.get_analyser().instance_plot_error, graph)
+        # analyse - metrics - ATE
+        action = sub_analyse_metrics.addAction('Plot ATE')
+        action.setEnabled(has_metrics)
+        commands[action] = functools.partial(self._tree.get_analyser().instance_plot_ate, graph)
+        # analyse - metrics - RPE (translation)
+        action = sub_analyse_metrics.addAction('Plot RPE (translation')
+        action.setEnabled(has_metrics)
+        commands[action] = functools.partial(self._tree.get_analyser().instance_plot_rpe_translation, graph)
+        # analyse - metrics - RPE (rotation)
+        action = sub_analyse_metrics.addAction('Plot RPE (rotation)')
+        action.setEnabled(has_metrics)
+        commands[action] = functools.partial(self._tree.get_analyser().instance_plot_rpe_rotation, graph)
+        # analyse - plot parameter dynamics
+        sub_analyse_parameter_dynamics = sub_analyse.addMenu('Plot parameter dynamics')
+        if graph.has_previous():
+            parameter_names: tp.List[str] = graph.get_parameter_names()
+            for parameter_name in parameter_names:
+                if len(graph.get_of_name(parameter_name)) == 1:
+                    commands[sub_analyse_parameter_dynamics.addAction(f"'{parameter_name}'")] = functools.partial(
+                        self._tree.get_analyser().plot_parameter_dynamics, graph, parameter_name
+                    )
+        sub_analyse_parameter_dynamics.setEnabled(bool(sub_analyse_parameter_dynamics.actions()))
+        # analyse - plot parameter
+        sub_analyse_plot_parameters = sub_analyse.addMenu('Plot parameters')
+        parameter_names: tp.List[str] = graph.get_parameter_names()
+        for parameter_name in parameter_names:
+            if len(graph.get_of_name(parameter_name)) > 1:
+                commands[sub_analyse_parameter_dynamics.addAction(f"'{parameter_name}'")] = functools.partial(
+                    self._tree.get_analyser().plot_parameter, graph, parameter_name
+                )
+        sub_analyse_plot_parameters.setEnabled(bool(sub_analyse_plot_parameters.actions()))
+        # analyse - plot edge variance
+        sub_analyse_plot_edge_variance = sub_analyse.addMenu('Plot edge variance')
+        edge_names: tp.List[str] = graph.get_edge_names()
+        for edge_name in edge_names:
+            commands[sub_analyse_plot_edge_variance.addAction(f"'{edge_name}'")] = functools.partial(
+                self._tree.get_analyser().plot_edge_variance, graph, edge_name
+            )
+        sub_analyse_plot_edge_variance.setEnabled(bool(sub_analyse_plot_edge_variance.actions()))
 
         # select action
         action = menu.exec_(self.mapToGlobal(point))
-        if action == action_delete:
-            node.remove()
-        elif action == action_save:
-            print('save')
-        elif action == action_subgraphs:
+        if action in commands:
+            print(action.text())
+            commands[action]()
+        elif action == action_find_subgraphs:
             node.find_subgraphs()
             self._timestamp_box.update_contents()
-        elif action == action_truth:
-            node.set_as_truth()
-        elif action == action_plot:
-            self._tree.get_analyser().plot_topology(graph)
-        elif action == action_error:
-            self._tree.get_analyser().instance_plot_error(graph)
-        elif action == action_ate:
-            self._tree.get_analyser().instance_plot_ate(graph)
-        elif action == action_rpe_translation:
-            self._tree.get_analyser().instance_plot_rpe_translation(graph)
-        elif action == action_rpe_rotation:
-            self._tree.get_analyser().instance_plot_rpe_rotation(graph)
-
-
-        # elif action == action_truth:
-        #     trajectory_container.set_as_truth(graph)
-        # elif action == action_slice:
-        #     GraphAnalyser.plot_error_slice(graph)
-        # elif action == action_metrics:
-        #     GraphAnalyser.plot_metrics(graph)
 
     def _handle_context_menu(self, point):
         index = self.indexAt(point)

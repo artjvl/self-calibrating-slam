@@ -185,22 +185,40 @@ class BaseGraph(BaseElement, NodeContainer, Printable):
             assert type(element) == self.get_type_of_name(element_name)
         self._by_name[element_name].append(element)
 
+    def has_name(self, name: str) -> bool:
+        return name in self._by_name
+
     def get_names(self) -> tp.List[str]:
         return sorted(self._by_name.keys())
 
+    def get_node_names(self) -> tp.List[str]:
+        return [name for name in self.get_names() if issubclass(self.get_type_of_name(name), BaseNode)]
+
+    def get_edge_names(self) -> tp.List[str]:
+        return [name for name in self.get_names() if issubclass(self.get_type_of_name(name), BaseEdge)]
+
     def get_of_name(self, name: str) -> tp.List[SubBaseElement]:
-        assert name in self._by_name
+        assert self.has_name(name)
         return self._by_name[name]
 
     def get_type_of_name(self, name: str) -> tp.Type[SubBaseElement]:
-        assert name in self._by_name
+        assert self.has_name(name)
         return type(self._by_name[name][0])
+
+    def has_type(self, type_: tp.Type[SubBaseElement]) -> bool:
+        return type_ in self._by_type
 
     def get_types(self) -> tp.List[tp.Type[SubBaseElement]]:
         return list(self._by_type.keys())
 
+    def get_node_types(self) -> tp.List[tp.Type[SubBaseNode]]:
+        return [type_ for type_ in self.get_types() if issubclass(type_, BaseNode)]
+
+    def get_edge_types(self) -> tp.List[tp.Type[SubBaseEdge]]:
+        return [type_ for type_ in self.get_types() if issubclass(type_, BaseEdge)]
+
     def get_of_type(self, type_: tp.Type[SubBaseElement]) -> tp.List[SubBaseElement]:
-        assert type_ in self._by_type
+        assert self.has_type(type_)
         return self._by_type[type_]
 
     # elements

@@ -107,6 +107,7 @@ class SlidingParameter(Parameter):
 
     def add_edge(self, edge: 'SubCalibratingEdge') -> None:
         node: SubParameterNode = self.get_node()
+        # node.set_timestamp(edge.get_timestamp())
         edge.add_parameter(node)
         self._in.append(edge)
 

@@ -179,6 +179,7 @@ class FactorNode(BaseNode, tp.Generic[T], DataContainer[T]):
 class FactorEdge(BaseEdge, tp.Generic[T], DataContainer[T]):
 
     _info_matrix: SubDataSymmetric
+    _error_vector: tp.Optional[SubVector]
 
     # gradient
     _jacobian: tp.Optional[SubBlockMatrix]
@@ -195,6 +196,8 @@ class FactorEdge(BaseEdge, tp.Generic[T], DataContainer[T]):
         if info_matrix is None:
             info_matrix = SquareFactory.from_dim(self.get_dim()).identity()
         self._info_matrix = DataFactory.from_value(info_matrix)
+        self._error_vector = None
+
         self._jacobian = None
         self._hessian = None
 
@@ -208,8 +211,17 @@ class FactorEdge(BaseEdge, tp.Generic[T], DataContainer[T]):
     def compute_error_vector(self) -> SubVector:
         pass
 
+    def get_error_vector(self) -> SubVector:
+        if self._error_vector is None:
+            self._error_vector = self.compute_error_vector()
+        return self._error_vector
+
     def compute_error(self) -> float:
         error_vector: SubVector = self.compute_error_vector()
+        return self.mahalanobis_distance(error_vector, self.get_info_matrix())
+
+    def get_error(self) -> float:
+        error_vector: SubVector = self.get_error_vector()
         return self.mahalanobis_distance(error_vector, self.get_info_matrix())
 
     # information

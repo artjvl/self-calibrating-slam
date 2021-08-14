@@ -6,7 +6,7 @@ import numpy as np
 import scipy.interpolate as spi
 from matplotlib import pyplot as plt
 from src.framework.graph.CalibratingGraph import SubCalibratingGraph, SubCalibratingEdge
-from src.framework.graph.Graph import SubGraph, SubNode, SubElement
+from src.framework.graph.Graph import SubGraph, SubNode, SubElement, SubEdge
 from src.framework.graph.protocols.Visualisable import Visualisable, DrawPoint, DrawAxis, DrawEdge
 from src.framework.graph.types.nodes.ParameterNode import SubParameterNode
 from src.framework.graph.types.nodes.SpatialNode import SubSpatialNode
@@ -15,7 +15,6 @@ from src.framework.math.matrix.vector import SubVector
 from src.framework.math.matrix.vector import Vector2
 from src.framework.math.matrix.vector import Vector3
 from src.framework.math.matrix.vector.Vector import Vector
-from src.framework.optimiser.Optimiser import Optimiser, Library, Solver
 from src.gui.viewer.Rgb import Rgb
 
 
@@ -140,45 +139,55 @@ class GraphAnalyser(object):
         plt.plot(line, error)
         plt.show()
 
-    # iterations
+    # parameters
     @staticmethod
-    def optimise_graphs(
-            graphs: tp.List[SubGraph],
-            optimiser: tp.Optional[Optimiser] = None,
-            library: Library = Library.CHOLMOD,
-            solver: Solver = Solver.GN
-    ) -> tp.List[SubGraph]:
-        solutions: tp.List[SubGraph] = []
+    def plot_parameter(
+            graph: SubCalibratingGraph,
+            name: str
+    ) -> None:
+        assert graph.has_name(name)
+        parameters: tp.List[SubParameterNode] = graph.get_type_of_name(name)
+        assert len(parameters) > 1
 
-        # optimiser
-        optimiser: tp.Optional[Optimiser] = optimiser
-        if optimiser is None:
-            optimiser = Optimiser(library, solver)
+        dim: int = parameters[0].get_dim()
+        data: tp.List[PlotData] = [PlotData() for _ in range(dim)]
+        for parameter in parameters:
+            vector: SubVector = parameter.to_vector()
+            timestamp: float = parameter.get_timestamp()
+            for i in range(dim):
+                data[i].append(timestamp, vector[i])
 
-        # solutions
-        for i, subgraph in enumerate(graphs):
-            solution: SubGraph = optimiser.instance_optimise(subgraph, verbose=True, compute_marginals=False)
-            if solution is not None:
-                solutions.append(solution)
-        return solutions
+        fig, axes = plt.subplots(dim, 1)
+        for i, ax in enumerate(np.array(axes).flatten()):
+            ax.plot(*(data[i].to_lists()))
+        fig.show()
 
     @staticmethod
-    def plot_parameter_dynamics(graph: SubCalibratingGraph):
-        assert graph.has_truth()
-        for name in graph.get_parameter_names():
-            parameters: tp.List[SubParameterNode] = graph.get_parameters(name)
-            dim: int = parameters[0].get_dim()
-            size: tp.Tuple[int, int] = dim, len(parameters)
+    def plot_parameter_dynamics(
+            graph: SubCalibratingGraph,
+            name: str
+    ) -> None:
+        assert graph.has_name(name)
+        assert graph.has_previous()
 
-            estimated: np.ndarray = np.zeros(size)
-            truth: np.ndarray = np.zeros(size)
-            timestamps: tp.List[float] = []
-            for i, parameter in enumerate(parameters):
-                estimated[:, i] = parameter.to_vector().array()[:, 0]
-                truth[:, i] = parameter.get_truth().to_vector().array()[:, 0]
-                timestamps.append(parameter.get_timestamp())
-            plt.plot(timestamps, estimated[0, :], timestamps, truth[0, :])
-            plt.show()
+        dim: int = graph.get_type_of_name(name).get_dim()
+        data: tp.List[PlotData] = [PlotData() for _ in range(dim)]
+
+        subgraphs: tp.List[SubCalibratingGraph] = graph.get_subgraphs()
+        for subgraph in subgraphs:
+            parameters: tp.List[SubParameterNode] = subgraph.get_of_name(name)
+            assert len(parameters) == 1
+            parameter: SubParameterNode = parameters[0]
+
+            vector: SubVector = parameter.to_vector()
+            timestamp: float = subgraph.get_timestamp()
+            for i in range(dim):
+                data[i].append(timestamp, vector[i])
+
+        fig, axes = plt.subplots(dim, 1)
+        for i, ax in enumerate(np.array(axes).flatten()):
+            ax.plot(*(data[i].to_lists()))
+        fig.show()
 
     @staticmethod
     def plot_parameter_map(graph: SubCalibratingGraph):
@@ -224,40 +233,38 @@ class GraphAnalyser(object):
             plt.imshow(grid.T, extent=(x_min, x_max, y_min, y_max), origin='lower')
             plt.show()
 
-    # metrics
+    # covariance
     @staticmethod
-    def plot_metrics(graph: SubGraph) -> None:
-        # GraphAnalyser.plot_error_slice(graph)
-        GraphAnalyser.plot_topology(graph)
-        GraphAnalyser.plot_parameter_dynamics(graph)
-        GraphAnalyser.plot_parameter_map(graph)
+    def plot_edge_variance(
+            graph: SubGraph,
+            name: str,
+            window: int = 10
+    ) -> None:
+        assert graph.has_previous()
+        assert name in graph.get_edge_names()
+        dim: int = graph.get_type_of_name(name).get_dim()
 
-        # assert graph.has_metrics()
-        # optimiser = Optimiser()
-        #
-        # import time
-        # t = time.time()
-        # subgraphs: tp.List[SubGraph] = graph.get_subgraphs()
-        # suboptimised: tp.List[SubGraph] = []
-        #
-        # print(time.time() - t)
-        # for i, subgraph in enumerate(subgraphs):
-        #     print(i)
-        #     if i == 9:
-        #         print('9')
-        #     optimised: SubGraph = optimiser.optimise(subgraph, verbose=True, compute_marginals=False)
-        #     if optimised is not None:
-        #         suboptimised.append(optimised)
-        #
-        # edge_count: tp.List[int] = []
-        # error: tp.List[float] = []
-        # for i, optimised in enumerate(suboptimised):
-        #     error.append(optimised.compute_error())
-        #     edge_count.append(i)
-        # plt.plot(edge_count, error)
-        # plt.show()
-        # print(error)
+        data: tp.List[PlotData] = [PlotData() for _ in range(dim)]
+        subgraphs: tp.List[SubGraph] = graph.get_subgraphs()
+        for subgraph in subgraphs:
+            if name in subgraph.get_edge_names():
+                edges: tp.List[SubEdge] = subgraph.get_of_name(name)
+                if len(edges) > window:
+                    edges = edges[- (window + 1):]
 
+                error_vectors: tp.List[SubVector] = [edge.get_error_vector() for edge in edges]
+                timestamp: float = subgraph.get_timestamp()
+                for i in range(dim):
+                    errors: tp.List[float] = [error_vector[i] for error_vector in error_vectors]
+                    data[i].append(timestamp, float(np.std(errors)))
+
+        fig, axes = plt.subplots(dim, 1)
+        for i, ax in enumerate(np.array(axes).flatten()):
+            ax.plot(*(data[i].to_lists()))
+        fig.show()
+
+
+    # metrics
     def instance_plot_error(
             self,
             graph: SubGraph
@@ -276,11 +283,11 @@ class GraphAnalyser(object):
             _, ax = plt.subplots()
             ax.set_title('Error')
 
-        graphs: tp.List[SubGraph] = graph.get_subgraphs()
+        subgraphs: tp.List[SubGraph] = graph.get_subgraphs()
 
         data: PlotData = PlotData()
-        for _, graph in enumerate(graphs):
-            data.append(graph.get_timestamp(), graph.get_error())
+        for _, subgraph in enumerate(subgraphs):
+            data.append(subgraph.get_timestamp(), subgraph.get_error())
 
         ax.plot(*data.to_lists())
         ax.figure.show()
@@ -304,11 +311,11 @@ class GraphAnalyser(object):
             _, ax = plt.subplots()
             ax.set_title('ATE')
 
-        graphs: tp.List[SubGraph] = graph.get_subgraphs()
+        subgraphs: tp.List[SubGraph] = graph.get_subgraphs()
 
         data: PlotData = PlotData()
-        for _, graph in enumerate(graphs):
-            data.append(graph.get_timestamp(), graph.get_ate())
+        for _, subgraph in enumerate(subgraphs):
+            data.append(subgraph.get_timestamp(), subgraph.get_ate())
 
         ax.plot(*data.to_lists())
         ax.figure.show()
@@ -332,11 +339,11 @@ class GraphAnalyser(object):
             _, ax = plt.subplots()
             ax.set_title('RPE (translation)')
 
-        graphs: tp.List[SubGraph] = graph.get_subgraphs()
+        subgraphs: tp.List[SubGraph] = graph.get_subgraphs()
 
         data: PlotData = PlotData()
-        for _, graph in enumerate(graphs):
-            data.append(graph.get_timestamp(), graph.get_rpe_translation())
+        for _, subgraph in enumerate(subgraphs):
+            data.append(subgraph.get_timestamp(), subgraph.get_rpe_translation())
 
         ax.plot(*data.to_lists())
         ax.figure.show()
@@ -360,11 +367,11 @@ class GraphAnalyser(object):
             _, ax = plt.subplots()
             ax.set_title('RPE (rotation)')
 
-        graphs: tp.List[SubGraph] = graph.get_subgraphs()
+        subgraphs: tp.List[SubGraph] = graph.get_subgraphs()
 
         data: PlotData = PlotData()
-        for _, graph in enumerate(graphs):
-            data.append(graph.get_timestamp(), graph.get_rpe_rotation())
+        for _, subgraph in enumerate(subgraphs):
+            data.append(subgraph.get_timestamp(), subgraph.get_rpe_rotation())
 
         ax.plot(*data.to_lists())
         ax.figure.show()
