@@ -211,7 +211,7 @@ class BrowserTree(QtWidgets.QTreeWidget):
         # delete
         commands[menu.addAction('&Delete')] = functools.partial(node.remove)
         # save as
-        commands[menu.addAction('&Save as')] = functools.partial(print, 'save')
+        commands[menu.addAction('&Save as')] = functools.partial(PopUp.save_file, graph)
         # find subgraphs
         action_find_subgraphs: QtWidgets.QAction = menu.addAction('Find subgraphs')
         action_find_subgraphs.setEnabled(node.is_singular())

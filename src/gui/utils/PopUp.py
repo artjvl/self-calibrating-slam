@@ -10,13 +10,14 @@ class PopUp(object):
 
     @staticmethod
     def load_from_file() -> tp.Optional[SubGraph]:
-        filename: tp.Optional[tp.Tuple[str, str]] = QtWidgets.QFileDialog.getOpenFileName(
+        filename: tp.Optional[str]
+        filename, _ = QtWidgets.QFileDialog.getOpenFileName(
             caption='Select file',
             directory='',
             filter='g2o (*.g2o)'
         )
-        if filename[0]:
-            path = pathlib.Path(filename[0])
+        if filename:
+            path = pathlib.Path(filename)
             graph: SubGraph = GraphParser.load(path, should_sort=True)
             return graph
         return None
@@ -33,3 +34,16 @@ class PopUp(object):
                 callback(graph, *args, **kwargs)
             finally:
                 pass
+
+    @staticmethod
+    def save_file(graph: SubGraph) -> None:
+        filename: tp.Optional[str]
+        filename, _ = QtWidgets.QFileDialog.getSaveFileName(
+            caption='Save as file',
+            directory='',
+            filter='g2o (*.g2o)'
+        )
+        if filename:
+            if not filename.endswith('.g2o'):
+                filename += '.g2o'
+            GraphParser.save(graph, pathlib.Path(filename))
