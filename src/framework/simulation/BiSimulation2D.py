@@ -43,6 +43,7 @@ class BiSimulation2D(object):
             seed: tp.Optional[int] = None
     ):
         # rng
+        self._seed = None
         self.set_seed(seed)
         self.init()
 
@@ -72,14 +73,16 @@ class BiSimulation2D(object):
         """ Adds a sensor with <sensor_name>. """
         self._truth.add_sensor(
             sensor_name, SensorFactory.from_value(
-                type_=type_,
-                info_matrix=info_matrix_truth
+                type_,
+                info_matrix=info_matrix_truth,
+                seed=self._seed
             )
         )
         self._estimate.add_sensor(
             sensor_name, SensorFactory.from_value(
-                type_=type_,
-                info_matrix=info_matrix_estimate
+                type_,
+                info_matrix=info_matrix_estimate,
+                seed=self._seed
             )
         )
 
@@ -168,7 +171,7 @@ class BiSimulation2D(object):
             ids: tp.List[int],
             value: 'Quantity'
     ) -> None:
-        """ Adds a new edge between <ids> with <value>, as measured by <sensor_id>. """
+        """ Adds a new edge between <ids> with <value>, as measured by <sensor_name>. """
         truth_sensor, estimate_sensor = self.get_sensors(sensor_name)
 
         # add new 'truth' edge
@@ -189,7 +192,7 @@ class BiSimulation2D(object):
             from_id: int,
             to_id: int
     ) -> None:
-        """ Adds an edge between <from_id> and <to_id> with the 'truth' transformation, as measured by <sensor_id>. """
+        """ Adds an edge between <from_id> and <to_id> with the 'truth' transformation, as measured by <sensor_name>. """
 
         transformation: SE2 = self._truth.get_node(to_id).get_value() - self._truth.get_node(from_id).get_value()
         self.add_edge(sensor_name, [from_id, to_id], transformation)
@@ -200,7 +203,7 @@ class BiSimulation2D(object):
             sensor_name: str,
             transformation: SE2
     ) -> None:
-        """ Adds a new pose-node and edge with <transformation>, as measured by <sensor_id>. """
+        """ Adds a new pose-node and edge with <transformation>, as measured by <sensor_name>. """
 
         # add new 'truth' pose and edge
         truth_sensor: 'SubSensor' = self._truth.get_sensor(sensor_name)
@@ -220,13 +223,22 @@ class BiSimulation2D(object):
         # align ids because of potential edge parameters
         self.align_ids()
 
+    def add_odometry_to(
+            self,
+            sensor_name: str,
+            pose: SE2
+    ) -> None:
+        """ Adds a new pose-node and edge at <pose>, as measured by <sensor_name>. """
+        transformation: SE2 = pose - self.get_current_pose()
+        self.add_odometry(sensor_name, transformation)
+
     # gps
     def add_gps(
             self,
             sensor_name: str,
             translation: tp.Optional['Vector2'] = None
     ) -> None:
-        """ Adds a GPS measurement (i.e., location prior) at <translation>, as measured by <sensor_id>. """
+        """ Adds a GPS measurement (i.e., location prior) at <translation>, as measured by <sensor_name>. """
 
         if translation is None:
             translation = self._truth.get_current().get_value().translation()
@@ -254,7 +266,7 @@ class BiSimulation2D(object):
     ) -> None:
         """
         Creates a loop-closure constraint IF POSSIBLE with the oldest node within <distance> and separated by
-        <separation> ids, with the 'truth' transformation, as measurement by <sensor_id>.
+        <separation> ids, with the 'truth' transformation, as measurement by <sensor_name>.
         """
 
         pose_ids: tp.List[int] = self._truth.get_pose_ids()
@@ -293,7 +305,7 @@ class BiSimulation2D(object):
     ) -> None:
         """
         Creates a proximity constraint IF POSSIBLE with the node separated by <steps>, with the 'truth' transformation,
-        as measurement by <sensor_id>.
+        as measurement by <sensor_name>.
         """
 
         pose_ids: tp.List[int] = self._truth.get_pose_ids()
@@ -372,13 +384,15 @@ class BiSimulation2D(object):
     def get_rng(self) -> np.random.RandomState:
         return self._rng
 
-    def set_seed(self, seed: tp.Optional[int] = None):
+    def set_seed(self, seed: tp.Optional[int] = None) -> None:
         """
         Sets the seed for the RNG of this simulation. In order for the seed to propagate to the Sensors, set the
         seed before adding the Sensors!
         """
+        self._rng = np.random.RandomState(seed)
+
+    def set_sensor_seed(self, seed: tp.Optional[int] = None) -> None:
         self._seed = seed
-        self._rng = np.random.RandomState(self._seed)
 
     # simulation
     def simulate(self) -> tp.Tuple['SubGraph', 'SubGraph']:

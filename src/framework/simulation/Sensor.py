@@ -182,7 +182,7 @@ class SensorFactory(object):
     def from_value(
             cls,
             type_: tp.Type['Quantity'],
-            seed: tp.Optional[int] = None,
-            info_matrix: tp.Optional['SubSquare'] = None
+            info_matrix: tp.Optional['SubSquare'] = None,
+            seed: tp.Optional[int] = None
     ):
         return cls.from_type(type_)(seed, info_matrix)
