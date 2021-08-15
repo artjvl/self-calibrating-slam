@@ -224,12 +224,13 @@ class BrowserTree(QtWidgets.QTreeWidget):
         sub_analyse = menu.addMenu('Analyse')
         # analyse - plot graph
         commands[sub_analyse.addAction('Plot graph')] = functools.partial(self._tree.get_analyser().plot_topology, graph)
+
         # analyse - metrics
         sub_analyse_metrics = sub_analyse.addMenu('Metrics')
-        has_metrics: bool = not node.is_singular() and graph.is_perturbed()
+        has_metrics: bool = not node.is_singular() and graph.has_truth()
         # analyse - metrics - error
         action = sub_analyse_metrics.addAction('Plot error')
-        action.setEnabled(has_metrics)
+        action.setEnabled(not node.is_singular())
         commands[action] = functools.partial(self._tree.get_analyser().instance_plot_error, graph)
         # analyse - metrics - ATE
         action = sub_analyse_metrics.addAction('Plot ATE')
@@ -243,6 +244,7 @@ class BrowserTree(QtWidgets.QTreeWidget):
         action = sub_analyse_metrics.addAction('Plot RPE (rotation)')
         action.setEnabled(has_metrics)
         commands[action] = functools.partial(self._tree.get_analyser().instance_plot_rpe_rotation, graph)
+
         # analyse - plot parameter dynamics
         sub_analyse_parameter_dynamics = sub_analyse.addMenu('Plot parameter dynamics')
         if graph.has_previous():

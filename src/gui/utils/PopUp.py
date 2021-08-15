@@ -17,7 +17,7 @@ class PopUp(object):
         )
         if filename[0]:
             path = pathlib.Path(filename[0])
-            graph: SubGraph = GraphParser.load(path)
+            graph: SubGraph = GraphParser.load(path, should_sort=True)
             return graph
         return None
 
