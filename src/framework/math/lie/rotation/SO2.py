@@ -11,9 +11,15 @@ from src.framework.math.matrix.vector import Vector1, Vector3
 class SO2(SO):
     _dim = 2
     _dof = 1
+    _angle: float
 
     def __init__(self, matrix: Square2):
         super().__init__(matrix)
+        self._angle = np.arctan2(matrix[1, 0], matrix[0, 0])
+
+    def __mul__(self, other: SO2):
+        assert type(self) == type(other)
+        return self.from_angle(self.angle() + other.angle())
 
     # conversion
     def to_so3(self) -> SO3:
@@ -22,11 +28,10 @@ class SO2(SO):
 
     # properties
     def angle(self) -> float:
-        matrix: Square2 = self.matrix()
-        return np.arctan2(matrix[1, 0], matrix[0, 0])
+        return self._angle
 
     def inverse(self) -> SO2:
-        return super().inverse()
+        return type(self).from_angle(- self._angle)
 
     def jacobian(self) -> Square2:
         angle: float = self.angle()
@@ -51,19 +56,17 @@ class SO2(SO):
         return super().algebra()
 
     def vector(self) -> Vector1:
-        return Vector1(self.angle())
+        return Vector1(self._angle)
 
     def matrix(self) -> Square2:
-        return super().matrix()
+        return self._angle_to_matrix(self._angle)
 
     # alternative creators
     @classmethod
     def from_angle(cls, angle: float) -> SO2:
-        sin_angle: float = np.sin(angle)
-        cos_angle: float = np.cos(angle)
-        matrix_array = np.array([[cos_angle, -sin_angle],
-                                 [sin_angle, cos_angle]])
-        return cls(Square2(matrix_array))
+        return cls(
+            cls._angle_to_matrix(angle)
+        )
 
     @classmethod
     def from_vector(cls, vector: Vector1) -> SO2:
@@ -83,3 +86,11 @@ class SO2(SO):
     @staticmethod
     def _algebra_to_vector(algebra: Square2) -> Vector1:
         return Vector1(algebra[1, 0])
+
+    @staticmethod
+    def _angle_to_matrix(angle: float) -> Square2:
+        sin_angle: float = np.sin(angle)
+        cos_angle: float = np.cos(angle)
+        array = np.array([[cos_angle, -sin_angle],
+                          [sin_angle, cos_angle]])
+        return Square2(array)
