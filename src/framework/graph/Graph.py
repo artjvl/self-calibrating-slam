@@ -129,7 +129,10 @@ class Graph(FactorGraph):
 
     def get_error(self) -> float:
         if self._error is None:
-            self.compute_error()
+            error: float = 0.
+            for edge in self.get_edges():
+                error += edge.get_error()
+            self._error = error
         return self._error
 
     def get_ate(self) -> float:
