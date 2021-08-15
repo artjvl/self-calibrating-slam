@@ -27,10 +27,11 @@ if tp.TYPE_CHECKING:
 class BiSimulation2D(object):
 
     # rng
-    _seed: tp.Optional[int]
-    _rng = np.random.RandomState
+    _sensor_seed: tp.Optional[int]
+    _rng: np.random.RandomState
 
     # data
+    _sim: tp.Type['SubSimulation2D']
     _geo: GeoHash2D[int]
     _truth: StaticSimulation2D
     _estimate: 'SubSimulation2D'
@@ -38,24 +39,23 @@ class BiSimulation2D(object):
     # parameters
     _parameters: tp.Optional[ConfigurationSet]
 
-    def __init__(
-            self,
-            seed: tp.Optional[int] = None
-    ):
+    def __init__(self):
         # rng
-        self._seed = None
-        self.set_seed(seed)
-        self.init()
+        self._sensor_seed = None
+        self._sim = StaticSimulation2D
+        self.set_path_rng(None)
+        self.reset()
 
         # parameters
         self._parameters = None
 
     def set_sliding(self, is_sliding: bool = True) -> None:
-        self.init(SlidingSimulation2D if is_sliding else StaticSimulation2D)
+        self._sim = SlidingSimulation2D if is_sliding else StaticSimulation2D
+        self.reset()
 
-    def init(self, sim: tp.Type['SubSimulation2D'] = StaticSimulation2D) -> None:
+    def reset(self) -> None:
         self._truth = StaticSimulation2D()
-        self._estimate = sim()
+        self._estimate = self._sim()
         self._estimate.get_graph().assign_truth(self._truth.get_graph())
 
         self._geo = GeoHash2D[int]()
@@ -75,14 +75,14 @@ class BiSimulation2D(object):
             sensor_name, SensorFactory.from_value(
                 type_,
                 info_matrix=info_matrix_truth,
-                seed=self._seed
+                seed=self._sensor_seed
             )
         )
         self._estimate.add_sensor(
             sensor_name, SensorFactory.from_value(
                 type_,
                 info_matrix=info_matrix_estimate,
-                seed=self._seed
+                seed=self._sensor_seed
             )
         )
 
@@ -137,6 +137,7 @@ class BiSimulation2D(object):
             index=index
         )
         self._estimate.add_parameter(sensor_name, parameter_name, parameter)
+        self.set_sliding()
 
     def add_constant_estimate_parameter(
             self,
@@ -384,7 +385,7 @@ class BiSimulation2D(object):
     def get_rng(self) -> np.random.RandomState:
         return self._rng
 
-    def set_seed(self, seed: tp.Optional[int] = None) -> None:
+    def set_path_rng(self, seed: tp.Optional[int] = None) -> None:
         """
         Sets the seed for the RNG of this simulation. In order for the seed to propagate to the Sensors, set the
         seed before adding the Sensors!
@@ -392,14 +393,14 @@ class BiSimulation2D(object):
         self._rng = np.random.RandomState(seed)
 
     def set_sensor_seed(self, seed: tp.Optional[int] = None) -> None:
-        self._seed = seed
+        self._sensor_seed = seed
 
     # simulation
     def simulate(self) -> tp.Tuple['SubGraph', 'SubGraph']:
         self._simulate()
         truth, perturbed = self.get_graphs()
         self.save()
-        self.init()
+        self.reset()
         return truth, perturbed
 
     @abstractmethod

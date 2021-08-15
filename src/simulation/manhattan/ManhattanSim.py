@@ -5,7 +5,7 @@ from src.framework.math.matrix.square import Square3, Square2
 from src.framework.math.matrix.vector import Vector1
 from src.framework.math.matrix.vector import Vector2
 from src.framework.math.matrix.vector import Vector3
-from src.framework.simulation.BiSimulation2D import BiSimulation2D
+from src.framework.simulation.simulations.ManhattanSimulation2D import ManhattanSimulation2D
 
 
 def f_space(x, y):
@@ -17,10 +17,12 @@ def f_time(x):
     return 0.1 * np.sin(0.1 * x)
 
 
-class ManhattanSim(BiSimulation2D):
+class ManhattanSim(ManhattanSimulation2D):
 
     def _simulate(self) -> None:
-        self.set_seed(3)
+        self.set_path_rng(4)
+        # self.set_sensor_seed(1)
+        # self.set_sliding()
 
         info_diagonal = Vector3([900., 625., 400.])
         info_matrix3 = Square3.from_diagonal(info_diagonal.to_list())
@@ -28,7 +30,9 @@ class ManhattanSim(BiSimulation2D):
         # wheel
         self.add_sensor('wheel', SE2, info_matrix3, info_matrix3)
         self.add_truth_parameter('wheel', 'bias', Vector1(-0.2), ParameterSpecification.BIAS, index=1)
-        self.add_constant_estimate_parameter('wheel', 'bias', Vector1(0.), ParameterSpecification.BIAS, index=1)
+        # self.add_truth_parameter('wheel', 'bias', Vector2(0.1, -0.2), ParameterSpecification.BIAS, index=2)
+        # self.add_constant_estimate_parameter('wheel', 'bias', Vector1(0.), ParameterSpecification.BIAS, index=1)
+        self.add_sliding_estimate_parameter('wheel', 'bias', Vector1(0.), ParameterSpecification.BIAS, 40, index=1)
 
         # lidar
         self.add_sensor('lidar', SE2, info_matrix3, info_matrix3)
@@ -38,18 +42,12 @@ class ManhattanSim(BiSimulation2D):
         self.add_sensor('gps', Vector2, info_matrix2, info_matrix2)
 
         delta: float = 0.1
-        counter: int = 1
-        num: int = 5
-        angle: float
-        for _ in range(1):
-            for __ in range(20):
-                for ___ in range(num):
-                    angle = np.deg2rad(self.get_rng().choice([90, -90])) if ___ == num - 1 else 0.
-                    motion = SE2.from_translation_angle_elements(0.5, 0.1, angle)
-                    self.add_odometry('wheel', motion)
-                    self.roll_proximity('lidar', 5, threshold=0.9)
-                    self.roll_closure('lidar', 3., threshold=0.4)
-                    self.step(delta)
+        for _ in range(200):
+            self.auto_odometry('wheel')
+            self.roll_proximity('lidar', 3, threshold=0.8)
+            self.roll_closure('lidar', 1., threshold=0.2)
+            self.step(delta)
+
             # translation: Vector2 = self.get_current_pose().translation()
             # true_odo.update_parameter('bias', Vector1(f_time(counter * delta)), 1)
             # true_odo.update_parameter('bias', Vector1(f_space(translation[0], translation[1])), 1)
