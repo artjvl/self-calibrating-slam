@@ -53,9 +53,6 @@ class NodeContainer(object):
         assert not self.contains_node_id(id_)
         self._nodes[id_] = node
 
-    def clear(self) -> None:
-        self._nodes = {}
-
     # nodes
     def get_nodes(self) -> tp.List[SubBaseNode]:
         """ Returns all nodes. """
@@ -109,9 +106,34 @@ class NodeContainer(object):
         return [node.get_id() for node in self.get_endpoints()]
 
 
-class BaseGraph(BaseElement, NodeContainer, Printable):
+class EdgeContainer(object):
+    _edges: tp.Dict[tp.Tuple[int, ...], SubBaseEdge]
+
+    def __init__(
+            self,
+            **kwargs
+    ):
+        super().__init__(**kwargs)
+        self._edges = {}
+
+    def add_edge(self, edge: SubBaseEdge):
+        node_ids: tp.Tuple[int, ...] = tuple(node.get_id() for node in edge.get_nodes())
+        assert node_ids not in self._edges
+        self._edges[node_ids] = edge
+
+    def get_edges(self) -> tp.List[SubBaseEdge]:
+        return list(self._edges.values())
+
+    def get_edge_from_ids(self, node_ids: tp.Tuple[int, ...]) -> SubBaseEdge:
+        assert node_ids in self._edges
+        return self._edges[node_ids]
+
+    def get_edge_from_index(self, index: int) -> SubBaseEdge:
+        return self.get_edges()[index]
+
+
+class BaseGraph(BaseElement, NodeContainer, EdgeContainer, Printable):
     # sorting
-    _edges: tp.List[SubBaseEdge]  # list of edges
     _by_type: tp.Dict[tp.Type[SubBaseElement], tp.List[SubBaseElement]]  # elements grouped by type
     _by_name: tp.Dict[str, tp.List[SubBaseNode]]  # elements grouped by name
 
@@ -126,7 +148,6 @@ class BaseGraph(BaseElement, NodeContainer, Printable):
         super().__init__(name=name, **kwargs)
 
         # sorting
-        self._edges = []
         self._by_type = {}
         self._by_name = {}
 
@@ -142,24 +163,17 @@ class BaseGraph(BaseElement, NodeContainer, Printable):
         return [self._nodes[key] for key in sorted(self._nodes)]
 
     def clear(self) -> None:
-        super().clear()
-        self._edges = []
+        self._nodes = {}
+        self._edges = {}
         self._by_type = {}
         self._by_name = {}
 
     # edges
     def add_edge(self, edge: SubBaseEdge) -> None:
-        assert edge not in self.get_edges()
         for node in edge.get_nodes():
             assert self.contains_node(node)
         self.register_element(edge)
-        self._edges.append(edge)
-
-    def get_edges(self) -> tp.List[SubBaseEdge]:
-        return self._edges
-
-    def get_edge(self, i: int) -> SubBaseEdge:
-        return self._edges[i]
+        super().add_edge(edge)
 
     def get_connected_edges(self, id_: int):
         edges: tp.List[SubBaseEdge] = []
@@ -379,11 +393,11 @@ class BaseGraph(BaseElement, NodeContainer, Printable):
             self.get_node(node.get_id()).copy_to(node)
             graph.add_node(node)
         for i, edge in enumerate(edges):
-            self.get_edge(i).copy_to(edge)
+            self.get_edge_from_index(i).copy_to(edge)
             graph.add_edge(edge)
 
         graph._name = self._name
-        graph._previous = self._previous
+        # graph._previous = self._previous
         return graph
 
     def __copy__(self):
