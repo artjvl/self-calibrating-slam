@@ -1,6 +1,6 @@
 from PyQt5 import QtWidgets
 
-from src.gui.action_pane.ParameterTree import ParameterTree
+from src.gui.action_pane.ConfigurationTree import ConfigurationTree
 from src.gui.action_pane.SimulationBox import SimulationBox
 from src.gui.modules.TreeNode import TopTreeNode
 from src.gui.modules.SimulationHandler import SimulationHandler
@@ -16,7 +16,7 @@ class SimulationPane(QtWidgets.QWidget):
     ):
         super().__init__(*args, **kwargs)
         self._container = container
-        tree = ParameterTree(self)
+        tree = ConfigurationTree(self)
         self._simulation_handler = SimulationHandler(container, tree)
 
         layout = QtWidgets.QVBoxLayout()

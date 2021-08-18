@@ -52,8 +52,7 @@ class GraphContainer(object):
         return set(self.get_timestamps()) >= set(other.get_timestamps())
 
     def is_superset_similar(self, other: SubGraphContainer) -> bool:
-        is_superset: bool = self.is_superset(other)
-        if is_superset:
+        if self.is_superset(other):
             timestamp: float = other.get_timestamps()[-1]
             return self.get_graph(timestamp).is_similar(other.get_graph(timestamp))
         return False

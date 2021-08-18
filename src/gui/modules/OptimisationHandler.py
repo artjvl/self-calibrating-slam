@@ -53,16 +53,18 @@ class OptimisationHandler(QtCore.QObject):
         assert self._graph_node is not None
         graph: SubGraph = self._graph_node.get_graph()
 
-        graphs: tp.List[SubGraph] = [graph]
+        subgraphs: tp.List[SubGraph] = [graph]
         if self._include_history:
-            graphs = graph.get_subgraphs()
+            subgraphs = graph.get_subgraphs()
 
-        solutions: tp.List[SubGraph] = []
-        for graph_ in graphs:
-            print(f"gui/OptimisationHandler: Optimising '{graph_.to_unique()}'...")
-            solution_: SubGraph = self._optimiser.instance_optimise(graph_, compute_marginals=False)
-            solutions.append(solution_)
-        solution: SubGraph = Graph.from_subgraphs(solutions)
+        subsolutions: tp.List[SubGraph] = []
+        for subgraph in subgraphs:
+            print(f"gui/OptimisationHandler: Optimising '{subgraph.to_unique()}'...")
+            subsolution: SubGraph = self._optimiser.instance_optimise(subgraph, compute_marginals=False)
+            if subsolutions:
+                subsolution.set_previous(subsolutions[-1])
+            subsolutions.append(subsolution)
+        solution: SubGraph = Graph.from_subgraphs(subsolutions)
 
         trajectory_node: TrajectoryTreeNode = self._graph_node.get_parent()
         trajectory_node.add_graph(solution)

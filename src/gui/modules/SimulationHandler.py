@@ -3,13 +3,13 @@ import typing as tp
 from PyQt5.QtCore import QObject, pyqtSignal
 
 from src.framework.simulation.BiSimulation2D import BiSimulation2D
-from src.gui.action_pane.ParameterTree import ParameterTree
+from src.gui.action_pane.ConfigurationTree import ConfigurationTree
 from src.gui.modules.TreeNode import TopTreeNode
 
 
 class SimulationHandler(QObject):
     _tree: TopTreeNode
-    _config: ParameterTree
+    _config: ConfigurationTree
     _simulation: tp.Optional[BiSimulation2D]
 
     signal_update = pyqtSignal(int)
@@ -18,12 +18,12 @@ class SimulationHandler(QObject):
     def __init__(
             self,
             tree: TopTreeNode,
-            config: ParameterTree,
+            config: ConfigurationTree,
             *args, **kwargs
     ):
         super().__init__(*args, **kwargs)
         self._tree: TopTreeNode = tree
-        self._config: ParameterTree = config
+        self._config: ConfigurationTree = config
         self._simulation = None
 
     def set_simulation(self, sim_type: tp.Type[BiSimulation2D]):

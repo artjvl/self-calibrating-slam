@@ -2,7 +2,6 @@ import typing as tp
 
 import numpy as np
 from scipy import linalg
-
 from src.framework.math.Dimensional import Dimensional
 from src.framework.math.matrix.Matrix import Matrix
 

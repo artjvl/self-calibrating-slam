@@ -1,5 +1,4 @@
-from framework.graph.GraphAnalyser import GraphAnalyser
-
+from src.framework.graph.GraphAnalyser import GraphAnalyser
 from src.gui.menus.Menu import Menu
 
 

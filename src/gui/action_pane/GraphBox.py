@@ -29,7 +29,7 @@ class GraphBox(GroupComboBox):
 
     # handlers
     def _handle_graph_update(self, signal: int):
-        if signal == self._tree.get_signal_change():
+        if signal == self._tree.get_signal_change() or signal == self._tree.get_signal_remove():
             if self._tree.is_empty():
                 self.clear()
             else:

@@ -53,7 +53,7 @@ class ParameterDelegate(QtWidgets.QItemDelegate):
         self.signal_edit.emit(index.row())
 
 
-class ParameterTree(QtWidgets.QTreeWidget):
+class ConfigurationTree(QtWidgets.QTreeWidget):
     _config: tp.Optional[ConfigurationSet]
 
     # constructor

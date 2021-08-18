@@ -2,9 +2,9 @@ import copy
 import typing as tp
 from abc import abstractmethod
 
-from framework.graph.GraphParser import GraphParser
 from src.framework.graph.CalibratingGraph import CalibratingGraph
 from src.framework.graph.GraphManager import GraphManager
+from src.framework.graph.GraphParser import GraphParser
 from src.framework.graph.data.DataFactory import Quantity
 from src.framework.graph.types.edges.EdgeFactory import EdgeFactory
 from src.framework.graph.types.nodes.SpatialNode import NodeSE2, SpatialNodeFactory
