@@ -107,18 +107,18 @@ class GraphParser(object):
             if reference is not None:
                 # copy reference content
                 reference_node = reference.get_node(node.get_id())
-                node = reference_node.copy_to(node)
+                node = reference_node.copy_meta_to(node)
             graph.add_node(node)
 
         for edge in edges_sorted:
             if reference is not None:
                 # copy reference content
                 reference_edge = reference.get_edge_from_ids(tuple(edge.get_node_ids()))
-                edge = reference_edge.copy_to(edge)
+                edge = reference_edge.copy_meta_to(edge)
             graph.add_edge(edge)
 
         if reference is not None:
-            reference.copy_to(graph)
+            reference.copy_meta_to(graph)
         return graph
 
     @classmethod

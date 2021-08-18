@@ -23,10 +23,10 @@ class Graph(FactorGraph):
     # metadata
     _date: str
     _path: tp.Optional[pathlib.Path]
+    _atol: tp.Optional[float]
 
     # properties
     _error: tp.Optional[float]
-    _atol: tp.Optional[float]
     _ate: tp.Optional[float]
     _rpe_translation: tp.Optional[float]
     _rpe_rotation: tp.Optional[float]
@@ -41,10 +41,10 @@ class Graph(FactorGraph):
         # metadata
         self._date = datetime.now().strftime('%Y%m%d-%H%M%S')
         self._path = None
+        self._atol = 1e-6
 
         # properties
         self._error = None
-        self._atol = 1e-6
         self._ate = None
         self._rpe_translation = None
         self._rpe_rotation = None
@@ -53,10 +53,15 @@ class Graph(FactorGraph):
     def set_path(self, path: pathlib.Path) -> None:
         self._path = path
 
+    def has_path(self) -> bool:
+        return self._path is not None
+
     def get_path(self) -> pathlib.Path:
+        assert self.has_path()
         return self._path
 
     def get_pathname(self) -> str:
+        assert self.has_path()
         return self._path.name
 
     def get_timestamp(self) -> tp.Optional[float]:
@@ -245,25 +250,13 @@ class Graph(FactorGraph):
                 subgraph.assign_truth(truth_subgraph)
 
     # copy
-    def copy_to(self, graph: SubGraph) -> SubGraph:
-        graph = super().copy_to(graph)
+    def copy_meta_to(self, graph: SubGraph) -> SubGraph:
+        graph = super().copy_meta_to(graph)
         graph._truth = self._truth
         graph._pre = self._pre
         graph._date = self._date
         graph._atol = self._atol
         return graph
-
-    def __copy__(self):
-        new = super().__copy__()
-        new._truth = copy.copy(self._truth)
-        new._pre = copy.copy(self._pre)
-        new._date = copy.copy(self._date)
-        new._error = self._error
-        new._atol = self._atol
-        new._ate = self._ate
-        new._rpe_translation = self._rpe_translation
-        new._rpe_rotation = self._rpe_rotation
-        return new
 
 
 T = tp.TypeVar('T')
@@ -316,11 +309,25 @@ class Node(tp.Generic[T], FactorNode[T]):
         return self._timestamp
 
     # copy
-    def copy_to(self, node: SubNode) -> SubNode:
-        node = super().copy_to(node)
+    def copy_meta_to(self, node: SubNode) -> SubNode:
+        node = super().copy_meta_to(node)
         node._truth = self._truth
         node._timestamp = self._timestamp
         return node
+
+    def __copy__(self):
+        new = super().__copy__()
+        new._timestamp = self._timestamp
+        return new
+
+    def __deepcopy__(self, memo: tp.Optional[tp.Dict[int, tp.Any]] = None):
+        if memo is None:
+            memo = {}
+        new = super().__deepcopy__(memo)
+        memo[id(self)] = new
+
+        new._timestamp = self._timestamp
+        return new
 
 
 class Edge(tp.Generic[T], FactorEdge[T], ABC):
@@ -382,7 +389,7 @@ class Edge(tp.Generic[T], FactorEdge[T], ABC):
         return max(timestamps)
 
     # copy
-    def copy_to(self, edge: SubEdge) -> SubEdge:
-        edge = super().copy_to(edge)
+    def copy_meta_to(self, edge: SubEdge) -> SubEdge:
+        edge = super().copy_meta_to(edge)
         edge._truth = self._truth
         return edge

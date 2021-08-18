@@ -186,13 +186,15 @@ class Simulation2D(GraphManager):
                 # optimises the graph if a loop-closure was made
                 solution = self._optimiser.instance_optimise(graph)
             else:
-                solution = GraphParser.copy(graph)
+                solution = copy.deepcopy(graph)
 
             graph.from_vector(solution.to_vector())
             previous = copy.copy(solution)
         else:
             # creates a shallow-copy of the graph to be used as a previous
             previous = copy.copy(graph)
+            if graph.has_previous():
+                previous.set_previous(graph.get_previous())
         self._has_closure = False
 
         graph.set_previous(previous)

@@ -35,7 +35,7 @@ class BaseElement(object):
     def is_equivalent(self, element: SubBaseElement) -> bool:
         pass
 
-    def copy_to(self, element: SubBaseElement) -> SubBaseElement:
+    def copy_meta_to(self, element: SubBaseElement) -> SubBaseElement:
         assert self.is_equivalent(element)
         element._name = self._name
         return element
@@ -336,20 +336,6 @@ class BaseGraph(BaseElement, NodeContainer, EdgeContainer, Printable):
 
     @staticmethod
     def from_subgraphs(subgraphs: tp.List[SubBaseGraph]) -> SubBaseGraph:
-        # graph_iter: iter = iter(subgraphs)
-        # graph: SubBaseGraph = next(graph_iter)
-        #
-        # next_graph: tp.Optional[SubBaseGraph]
-        # is_finished: bool = False
-        # while not is_finished:
-        #     next_graph = next(graph_iter, None)
-        #     if next_graph is not None:
-        #         next_graph._previous = graph
-        #         graph = next_graph
-        #     else:
-        #         is_finished = True
-        # return graph
-
         for i in range(1, len(subgraphs)):
             subgraphs[i]._previous = subgraphs[i - 1]
         return subgraphs[-1]
@@ -380,35 +366,6 @@ class BaseGraph(BaseElement, NodeContainer, EdgeContainer, Printable):
         Returns whether this graph is equal to <graph> (i.e., the same as a copy) by comparing all element instances.
         """
         return graph.get_elements() == self.get_elements()
-
-    # copy
-    def copy_to(self, graph: SubBaseGraph) -> SubBaseGraph:
-        graph = super().copy_to(graph)
-        nodes: tp.List[SubBaseNode] = graph.get_nodes()
-        edges: tp.List[SubBaseEdge] = graph.get_edges()
-        graph.clear()
-
-        for node in nodes:
-            self.get_node(node.get_id()).copy_to(node)
-            graph.add_node(node)
-        for i, edge in enumerate(edges):
-            self.get_edge_from_index(i).copy_to(edge)
-            graph.add_edge(edge)
-
-        graph._name = self._name
-        # graph._previous = self._previous  # copy to optimisation solution?
-        return graph
-
-    def __copy__(self):
-        cls = self.__class__
-        new = cls.__new__(cls)
-        new._name = self._name
-        new._nodes = copy.copy(self._nodes)
-        new._edges = copy.copy(self._edges)
-        new._by_type = {type_: copy.copy(elements) for (type_, elements) in self._by_type.items()}
-        new._by_name = {name: copy.copy(elements) for (name, elements) in self._by_name.items()}
-        new._previous = self._previous
-        return new
 
 
 class BaseNode(BaseElement, Printable):
@@ -442,18 +399,6 @@ class BaseNode(BaseElement, Printable):
     # Printable
     def to_id(self) -> str:
         return f'{self.get_id()}'
-
-    def __copy__(self):
-        cls = self.__class__
-        new = cls.__new__(cls)
-        new._name = self._name
-        new._id = self._id
-        return new
-
-    def __deepcopy__(self, memo: tp.Dict[int, tp.Any]):
-        new = copy.copy(self)
-        memo[id(new)] = new
-        return new
 
 
 class BaseEdge(BaseElement, NodeContainer, Printable):

@@ -62,13 +62,6 @@ class CalibratingGraph(Graph):
     def get_parameter_names(self) -> tp.List[str]:
         return self._parameter_names
 
-    def __copy__(self):
-        new = super().__copy__()
-        new._endpoints = copy.copy(self._endpoints)
-        new._parameters = copy.copy(self._parameters)
-        new._parameter_names = self._parameter_names
-        return new
-
 
 T = tp.TypeVar('T')
 
@@ -190,7 +183,21 @@ class CalibratingEdge(tp.Generic[T], Edge[T], ABC):
         return words
 
     # copy
-    def copy_to(self, edge: SubCalibratingEdge) -> SubCalibratingEdge:
-        edge = super().copy_to(edge)
+    def copy_meta_to(self, edge: SubCalibratingEdge) -> SubCalibratingEdge:
+        edge = super().copy_meta_to(edge)
         edge._num_additional = self._num_additional
         return edge
+
+    def __copy__(self):
+        new = super().__copy__()
+        new._num_additional = self._num_additional
+        return new
+
+    def __deepcopy__(self, memo: tp.Optional[tp.Dict[int, tp.Any]] = None):
+        if memo is None:
+            memo = {}
+        new = super().__deepcopy__(memo)
+        memo[id(self)] = new
+
+        new._num_additional = self._num_additional
+        return new
