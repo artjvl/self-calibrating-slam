@@ -1,4 +1,5 @@
 import numpy as np
+from src.framework.graph.types.nodes.ParameterNode import ParameterSpecification
 from src.framework.math.lie.transformation import SE2
 from src.framework.math.matrix.square import Square3
 from src.framework.simulation.BiSimulation2D import BiSimulation2D
@@ -6,17 +7,19 @@ from src.framework.simulation.BiSimulation2D import BiSimulation2D
 
 class ReturnTripSim(BiSimulation2D):
 
-    def _simulate(self) -> None:
-
+    def init(self) -> None:
         info_matrix3 = Square3([[8000., 0., 0.], [0., 6000., 0.], [0., 0., 4000.]])
-        true_lidar = SensorSE2()
-        true_lidar.add_bias('bias', SE2.from_translation_angle_elements(0.0, 0.0, 0.))
-        true_lidar.set_info_matrix(info_matrix3)
-        perturbed_lidar = SensorSE2()
-        perturbed_lidar.add_bias('bias', SE2.from_translation_angle_elements(0., 0.2, 0.))
-        perturbed_lidar.set_info_matrix(info_matrix3)
-        self.add_sensor('lidar', true_lidar, perturbed_lidar)
+        self.add_sensor('lidar', SE2, info_matrix3, info_matrix3)
+        self.add_truth_parameter(
+            'lidar', 'bias',
+            SE2.from_translation_angle_elements(0., 0., 0.), ParameterSpecification.BIAS
+        )
+        self.add_constant_estimate_parameter(
+            'lidar', 'bias',
+            SE2.from_translation_angle_elements(0., 0.2, 0.), ParameterSpecification.BIAS
+        )
 
+    def loop(self) -> None:
         num = 10
         for _ in range(2):
             for __ in range(num):

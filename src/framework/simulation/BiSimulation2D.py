@@ -9,7 +9,7 @@ from src.framework.math.lie.transformation import SE2
 from src.framework.simulation.ConfigurationSet import ConfigurationSet
 from src.framework.simulation.Parameter import StaticParameter, SlidingParameter
 from src.framework.simulation.Sensor import SensorFactory
-from src.framework.simulation.Simulation2D import StaticSimulation2D, SlidingSimulation2D
+from src.framework.simulation.Simulation2D import Simulation2D
 from src.utils import GeoHash2D
 
 if tp.TYPE_CHECKING:
@@ -19,7 +19,7 @@ if tp.TYPE_CHECKING:
     from src.framework.graph.Graph import SubGraph, SubEdge
     from src.framework.graph.types.nodes.ParameterNode import ParameterSpecification
     from src.framework.graph.types.nodes.SpatialNode import NodeSE2
-    from src.framework.simulation.Parameter import SubParameterModel
+    from src.framework.simulation.Parameter import SubParameter
     from src.framework.simulation.Sensor import SubSensor
     from src.framework.simulation.Simulation2D import SubSimulation2D
 
@@ -33,29 +33,24 @@ class BiSimulation2D(object):
     # data
     _sim: tp.Type['SubSimulation2D']
     _geo: GeoHash2D[int]
-    _truth: StaticSimulation2D
+    _truth: 'SubSimulation2D'
     _estimate: 'SubSimulation2D'
 
     # parameters
-    _parameters: tp.Optional[ConfigurationSet]
+    _config: tp.Optional[ConfigurationSet]
 
     def __init__(self):
         # rng
         self._sensor_seed = None
-        self._sim = StaticSimulation2D
         self.set_path_rng(None)
         self.reset()
 
         # parameters
-        self._parameters = None
-
-    def set_sliding(self, is_sliding: bool = True) -> None:
-        self._sim = SlidingSimulation2D if is_sliding else StaticSimulation2D
-        self.reset()
+        self._config = None
 
     def reset(self) -> None:
-        self._truth = StaticSimulation2D()
-        self._estimate = self._sim()
+        self._truth = Simulation2D()
+        self._estimate = Simulation2D()
         self._estimate.get_graph().assign_truth(self._truth.get_graph())
 
         self._geo = GeoHash2D[int]()
@@ -103,7 +98,7 @@ class BiSimulation2D(object):
             index: int = 0,
             is_visible: bool = True
     ) -> None:
-        parameter: 'SubParameterModel' = StaticParameter(
+        parameter: 'SubParameter' = StaticParameter(
             value=value,
             specification=specification,
             index=index,
@@ -117,9 +112,7 @@ class BiSimulation2D(object):
             parameter_name: str,
             value: 'Quantity'
     ) -> None:
-        assert self.has_sensor(sensor_name)
-        sensor: 'SubSensor' = self._truth.get_sensor(sensor_name)
-        assert sensor.update_parameter(parameter_name, value)
+        self._truth.update_parameter(sensor_name, parameter_name, value)
 
     def add_sliding_estimate_parameter(
             self,
@@ -130,14 +123,13 @@ class BiSimulation2D(object):
             window: int,
             index: int = 0
     ) -> None:
-        parameter: 'SubParameterModel' = SlidingParameter(
+        parameter: 'SubParameter' = SlidingParameter(
             value=value,
             specification=specification,
             window=window,
             index=index
         )
         self._estimate.add_parameter(sensor_name, parameter_name, parameter)
-        self.set_sliding()
 
     def add_constant_estimate_parameter(
             self,
@@ -147,7 +139,7 @@ class BiSimulation2D(object):
             specification: 'ParameterSpecification',
             index: int = 0
     ) -> None:
-        parameter: 'SubParameterModel' = StaticParameter(
+        parameter: 'SubParameter' = StaticParameter(
             value=value,
             specification=specification,
             index=index,
@@ -173,19 +165,18 @@ class BiSimulation2D(object):
             value: 'Quantity'
     ) -> None:
         """ Adds a new edge between <ids> with <value>, as measured by <sensor_name>. """
+
+        self.align_ids()
         truth_sensor, estimate_sensor = self.get_sensors(sensor_name)
 
         # add new 'truth' edge
         truth_measurement: 'Quantity' = truth_sensor.decompose(value)
-        truth_edge: 'SubEdge' = self._truth.add_edge_from_value(sensor_name, ids, truth_measurement)
+        truth_edge: 'SubEdge' = self._truth.add_edge_from_value(sensor_name, ids, truth_measurement, is_closure=True)
 
         # add new 'perturbed' edge
         estimate_measurement: 'Quantity' = truth_sensor.measure(truth_measurement)
-        estimate_edge: 'SubEdge' = self._estimate.add_edge_from_value(sensor_name, ids, estimate_measurement)
+        estimate_edge: 'SubEdge' = self._estimate.add_edge_from_value(sensor_name, ids, estimate_measurement, is_closure=True)
         estimate_edge.assign_truth(truth_edge)
-
-        # align ids because of potential edge parameters
-        self.align_ids()
 
     def add_poses_edge(
             self,
@@ -205,6 +196,7 @@ class BiSimulation2D(object):
             transformation: SE2
     ) -> None:
         """ Adds a new pose-node and edge with <transformation>, as measured by <sensor_name>. """
+        self.align_ids()
 
         # add new 'truth' pose and edge
         truth_sensor: 'SubSensor' = self._truth.get_sensor(sensor_name)
@@ -220,9 +212,6 @@ class BiSimulation2D(object):
         estimate_node, estimate_edge = self._estimate.add_odometry(sensor_name, estimate_measurement)
         estimate_node.assign_truth(truth_node)
         estimate_edge.assign_truth(truth_edge)
-
-        # align ids because of potential edge parameters
-        self.align_ids()
 
     def add_odometry_to(
             self,
@@ -371,15 +360,15 @@ class BiSimulation2D(object):
         return self.get_current_node().get_id()
 
     # parameters
-    def set_parameters(self, parameters: ConfigurationSet) -> None:
-        self._parameters = parameters
+    def set_config(self, config: ConfigurationSet) -> None:
+        self._config = config
 
-    def has_parameters(self) -> bool:
-        return self._parameters is not None
+    def has_config(self) -> bool:
+        return self._config is not None
 
-    def get_parameters(self) -> ConfigurationSet:
-        assert self.has_parameters()
-        return self._parameters
+    def get_config(self) -> ConfigurationSet:
+        assert self.has_config()
+        return self._config
 
     # seed
     def get_rng(self) -> np.random.RandomState:
@@ -397,13 +386,20 @@ class BiSimulation2D(object):
 
     # simulation
     def simulate(self) -> tp.Tuple['SubGraph', 'SubGraph']:
-        self._simulate()
+        self.init()
+        self.loop()
+
         truth, perturbed = self.get_graphs()
         self.save()
         self.reset()
         return truth, perturbed
 
     @abstractmethod
-    def _simulate(self) -> None:
-        """ Override this method to define a simulation that modifies '_truth' and '_perturbed'. """
+    def init(self) -> None:
+        """ Override this method to define the initialisation of simulation. """
+        pass
+
+    @abstractmethod
+    def loop(self) -> None:
+        """ Override this method to define the simulation loop header. """
         pass

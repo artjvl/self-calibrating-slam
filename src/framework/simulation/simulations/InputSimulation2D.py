@@ -11,9 +11,6 @@ if tp.TYPE_CHECKING:
 
 class InputSimulation2D(BiSimulation2D, ABC):
     _poses: tp.Optional[tp.List['SE2']]
-    _iter: tp.Optional[iter]
-    _next: tp.Optional['SE2']
-
     _counter: int
 
     def __init__(self):

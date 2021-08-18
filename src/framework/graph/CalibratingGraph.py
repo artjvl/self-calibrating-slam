@@ -1,3 +1,4 @@
+import copy
 import typing as tp
 from abc import ABC, abstractmethod
 
@@ -12,22 +13,50 @@ SubCalibratingNode = tp.TypeVar('SubCalibratingNode', bound='CalibratingNode')
 
 
 class CalibratingGraph(Graph):
+    _endpoints: tp.Dict[int, SubSpatialNode]
+    _parameters: tp.Dict[int, SubParameterNode]
     _parameter_names: tp.List[str]  # parameters names
 
     def __init__(self):
         super().__init__()
+        self._endpoints = {}
+        self._parameters = {}
         self._parameter_names = []
 
     # parameters
     def add_node(self, node: SubNode) -> None:
-        if isinstance(node, ParameterNode):
+        if isinstance(node, SpatialNode):
+            self.add_endpoint(node)
+        elif isinstance(node, ParameterNode):
             name: str = node.get_name()
             if name not in self.get_names():
                 self._parameter_names.append(name)
+            self.add_parameter(node)
+        else:
+            super().add_node(node)
+
+    def add_endpoint(self, node: ParameterNode):
+        id_: int = node.get_id()
+        assert id_ not in self._endpoints, f'{id_}'
+        self._endpoints[id_] = node
         super().add_node(node)
+
+    def get_endpoints(self) -> tp.List[SubSpatialNode]:
+        return list(self._endpoints.values())
+
+    def add_parameter(self, node: ParameterNode):
+        id_: int = node.get_id()
+        assert id_ not in self._parameters
+        self._parameters[id_] = node
+        super().add_node(node)
+
+    def get_parameters(self) -> tp.List[SubParameterNode]:
+        return list(self._parameters.values())
 
     def clear(self) -> None:
         super().clear()
+        self._endpoints = {}
+        self._parameters = {}
         self._parameter_names = []
 
     def get_parameter_names(self) -> tp.List[str]:
@@ -35,6 +64,8 @@ class CalibratingGraph(Graph):
 
     def __copy__(self):
         new = super().__copy__()
+        new._endpoints = copy.copy(self._endpoints)
+        new._parameters = copy.copy(self._parameters)
         new._parameter_names = self._parameter_names
         return new
 
@@ -87,7 +118,7 @@ class CalibratingEdge(tp.Generic[T], Edge[T], ABC):
         elif isinstance(node, ParameterNode):
             self.add_parameter(node)
         else:
-            self.add_node(node)
+            super().add_node(node)
 
     def get_nodes(self) -> tp.List[SubNode]:
         nodes: tp.List[SubNode] = []

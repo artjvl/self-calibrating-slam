@@ -1,4 +1,4 @@
-from typing import *
+import typing as tp
 
 from PyQt5.QtCore import QObject, pyqtSignal
 
@@ -8,29 +8,32 @@ from src.gui.modules.TreeNode import TopTreeNode
 
 
 class SimulationHandler(QObject):
+    _tree: TopTreeNode
+    _config: ParameterTree
+    _simulation: tp.Optional[BiSimulation2D]
 
     signal_update = pyqtSignal(int)
 
     # constructor
     def __init__(
             self,
-            container: TopTreeNode,
-            tree: ParameterTree,
+            tree: TopTreeNode,
+            config: ParameterTree,
             *args, **kwargs
     ):
         super().__init__(*args, **kwargs)
-        self._container: TopTreeNode = container
-        self._tree: ParameterTree = tree
-        self._simulation: Optional[BiSimulation2D] = None
+        self._tree: TopTreeNode = tree
+        self._config: ParameterTree = config
+        self._simulation = None
 
-    def set_simulation(self, simulation: BiSimulation2D):
-        self._simulation = simulation
-        if simulation.has_parameters():
-            self._tree.construct_tree(simulation.get_parameters())
+    def set_simulation(self, sim_type: tp.Type[BiSimulation2D]):
+        self._simulation = sim_type()
+        if self._simulation.has_config():
+            self._config.construct_tree(self._simulation.get_config())
         else:
-            self._tree.clear()
+            self._config.clear()
 
-        print(f"gui/SimulationHandler: Simulation '{type(simulation).__name__}' selected")
+        print(f"gui/SimulationHandler: Simulation '{sim_type.__name__}' selected")
         self.signal_update.emit(1)
 
     def get_simulation(self) -> BiSimulation2D:
@@ -39,4 +42,4 @@ class SimulationHandler(QObject):
     def simulate(self):
         print(f'gui/SimulationHandler: Simulating trajectory with {type(self._simulation).__name__}...')
         graph_truth, graph_perturbed = self._simulation.simulate()
-        self._container.add_graph(graph_perturbed)
+        self._tree.add_graph(graph_perturbed)

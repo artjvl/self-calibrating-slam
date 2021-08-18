@@ -1,35 +1,29 @@
 import numpy as np
+from src.framework.graph.types.nodes.ParameterNode import ParameterSpecification
 from src.framework.math.lie.transformation import SE2
 from src.framework.math.matrix.square import Square2
 from src.framework.math.matrix.square import Square3
+from src.framework.math.matrix.vector import Vector2
 from src.framework.simulation.BiSimulation2D import BiSimulation2D
 
 
 class SquarePriorTripSim(BiSimulation2D):
 
-    # constructor
-    def __init__(self):
-        super().__init__()
-
-    # public methods
-    def _simulate(self):
-
+    def init(self) -> None:
         info_matrix3 = Square3([[8000., 0., 0.], [0., 6000., 0.], [0., 0., 4000.]])
-        true_odo = SensorSE2()
-        true_odo.add_bias('bias', SE2.from_translation_angle_elements(0., 0.2, 0.))
-        true_odo.set_info_matrix(info_matrix3)
-        perturbed_odo = SensorSE2()
-        perturbed_odo.add_bias('bias', SE2.from_translation_angle_elements(0., 0., 0.))
-        perturbed_odo.set_info_matrix(info_matrix3)
-        self.add_sensor('lidar', true_odo, perturbed_odo)
-
+        self.add_sensor('lidar', SE2, info_matrix3, info_matrix3)
+        self.add_truth_parameter(
+            'lidar', 'bias',
+            SE2.from_translation_angle_elements(0., 0., 0.), ParameterSpecification.BIAS
+        )
+        self.add_constant_estimate_parameter(
+            'lidar', 'bias',
+            SE2.from_translation_angle_elements(0., 0.2, 0.), ParameterSpecification.BIAS
+        )
         info_matrix2 = Square2([[800., 0.], [0., 600.]])
-        true_gps = SensorV2()
-        true_gps.set_info_matrix(info_matrix2)
-        perturbed_gps = SensorV2()
-        perturbed_gps.set_info_matrix(info_matrix2)
-        self.add_sensor('gps', true_gps, perturbed_gps)
+        self.add_sensor('gps', Vector2, info_matrix2, info_matrix2)
 
+    def loop(self):
         angle: float
         num = 5
         for _ in range(4):

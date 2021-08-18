@@ -3,9 +3,9 @@ import typing as tp
 from datetime import datetime
 
 from src.definitions import get_project_root
-from src.framework.graph.CalibratingGraph import CalibratingGraph, SubCalibratingGraph, SubCalibratingNode, \
-    SubCalibratingEdge, CalibratingNode, CalibratingEdge
-from src.framework.graph.Graph import SubGraph, SubNode, Edge, Node
+from src.framework.graph.CalibratingGraph import CalibratingGraph, SubCalibratingGraph, SubCalibratingEdge, \
+    CalibratingEdge
+from src.framework.graph.Graph import SubGraph, SubNode, Node
 from src.framework.graph.types.database import database
 
 
@@ -35,7 +35,7 @@ class GraphParser(object):
             if node.is_fixed():
                 writer.write(f'FIX {id_}\n')
 
-        edge: SubEdge
+        edge: SubCalibratingEdge
         for edge in graph.get_edges():
             tag: str = cls._database.from_element(edge)
             ids: str = ' '.join([f'{id_}' for id_ in edge.get_node_ids()])
@@ -113,10 +113,12 @@ class GraphParser(object):
         for edge in edges_sorted:
             if reference is not None:
                 # copy reference content
-                reference_edge = reference.get_edge_from_ids(edge.get_node_ids())
+                reference_edge = reference.get_edge_from_ids(tuple(edge.get_node_ids()))
                 edge = reference_edge.copy_to(edge)
             graph.add_edge(edge)
 
+        if reference is not None:
+            reference.copy_to(graph)
         return graph
 
     @classmethod
@@ -178,3 +180,14 @@ class GraphParser(object):
                     # add edge
                     edges.append(edge)
         return nodes, edges
+
+    @classmethod
+    def copy(
+            cls,
+            graph: SubGraph
+    ) -> SubGraph:
+        root: pathlib.Path = get_project_root()
+        path: pathlib.Path = (root / 'graphs/temp/copy.g2o').resolve()
+        cls.save(graph, path)
+        copy: SubGraph = cls.load(path, reference=graph)
+        return copy

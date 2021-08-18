@@ -107,29 +107,28 @@ class NodeContainer(object):
 
 
 class EdgeContainer(object):
-    _edges: tp.Dict[tp.Tuple[int, ...], SubBaseEdge]
+    _edges: tp.List[SubBaseEdge]
 
     def __init__(
             self,
             **kwargs
     ):
         super().__init__(**kwargs)
-        self._edges = {}
+        self._edges = []
 
     def add_edge(self, edge: SubBaseEdge):
-        node_ids: tp.Tuple[int, ...] = tuple(node.get_id() for node in edge.get_nodes())
-        assert node_ids not in self._edges
-        self._edges[node_ids] = edge
+        self._edges.append(edge)
 
     def get_edges(self) -> tp.List[SubBaseEdge]:
-        return list(self._edges.values())
+        return self._edges
 
     def get_edge_from_ids(self, node_ids: tp.Tuple[int, ...]) -> SubBaseEdge:
-        assert node_ids in self._edges
-        return self._edges[node_ids]
+        by_node_ids: tp.Dict[tp.Tuple[int, ...], SubBaseEdge] = {tuple(edge.get_node_ids()): edge for edge in self._edges}
+        assert node_ids in by_node_ids
+        return by_node_ids[node_ids]
 
     def get_edge_from_index(self, index: int) -> SubBaseEdge:
-        return self.get_edges()[index]
+        return self._edges[index]
 
 
 class BaseGraph(BaseElement, NodeContainer, EdgeContainer, Printable):
@@ -164,7 +163,7 @@ class BaseGraph(BaseElement, NodeContainer, EdgeContainer, Printable):
 
     def clear(self) -> None:
         self._nodes = {}
-        self._edges = {}
+        self._edges = []
         self._by_type = {}
         self._by_name = {}
 
@@ -397,7 +396,7 @@ class BaseGraph(BaseElement, NodeContainer, EdgeContainer, Printable):
             graph.add_edge(edge)
 
         graph._name = self._name
-        # graph._previous = self._previous
+        # graph._previous = self._previous  # copy to optimisation solution?
         return graph
 
     def __copy__(self):
@@ -443,6 +442,18 @@ class BaseNode(BaseElement, Printable):
     # Printable
     def to_id(self) -> str:
         return f'{self.get_id()}'
+
+    def __copy__(self):
+        cls = self.__class__
+        new = cls.__new__(cls)
+        new._name = self._name
+        new._id = self._id
+        return new
+
+    def __deepcopy__(self, memo: tp.Dict[int, tp.Any]):
+        new = copy.copy(self)
+        memo[id(new)] = new
+        return new
 
 
 class BaseEdge(BaseElement, NodeContainer, Printable):

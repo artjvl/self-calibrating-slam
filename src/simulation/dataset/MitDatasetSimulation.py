@@ -18,7 +18,7 @@ class MitDatasetSimulation(InputSimulation2D):
         path: pathlib.Path = (root / 'graphs/solution_MITb_g2o.g2o').resolve()
         self.set_input_graph(GraphParser.load(path))
 
-    def _simulate(self) -> None:
+    def loop(self) -> None:
         info_diagonal = Vector3([900., 625., 400.])
         info_matrix3 = Square3.from_diagonal(info_diagonal.to_list())
 

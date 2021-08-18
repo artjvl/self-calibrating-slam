@@ -15,7 +15,7 @@ from src.framework.simulation.Parameter import StaticParameter
 if tp.TYPE_CHECKING:
     from src.framework.math.matrix.square import SubSquare
     from src.framework.graph.data.DataFactory import Quantity
-    from src.framework.simulation.Parameter import SubParameterModel
+    from src.framework.simulation.Parameter import SubParameter
 
 T = tp.TypeVar('T')
 SubSensor = tp.TypeVar('SubSensor', bound='Sensor')
@@ -27,7 +27,7 @@ class Sensor(tp.Generic[T]):
     _rng: np.random.RandomState
 
     _info_matrix: 'SubSquare'
-    _parameters: tp.Dict[str, 'SubParameterModel']
+    _parameters: tp.Dict[str, 'SubParameter']
 
     def __init__(
             self,
@@ -79,9 +79,9 @@ class Sensor(tp.Generic[T]):
     def add_parameter(
             self,
             name: str,
-            parameter: 'SubParameterModel'
+            parameter: 'SubParameter'
     ) -> None:
-        assert name not in self._parameters
+        assert name not in self._parameters, f'{name}'
         parameter.set_name(name)
         self._parameters[name] = parameter
 
@@ -90,22 +90,22 @@ class Sensor(tp.Generic[T]):
             name: str,
             value: 'Quantity'
     ) -> None:
-        assert name in self._parameters
-        parameter: 'SubParameterModel' = self._parameters[name]
+        assert name in self._parameters, f'{name}'
+        parameter: 'SubParameter' = self._parameters[name]
         assert isinstance(parameter, StaticParameter)
         parameter.update(value)
 
     def get_parameter(
             self,
             name: str
-    ) -> 'SubParameterModel':
+    ) -> 'SubParameter':
         assert self.has_parameter(name)
         return self._parameters[name]
 
     def get_parameters(
             self,
             is_reverse: bool = False
-    ) -> tp.List['SubParameterModel']:
+    ) -> tp.List['SubParameter']:
         if is_reverse:
             return list(reversed(self._parameters.values()))
         return list(self._parameters.values())
@@ -175,7 +175,7 @@ class SensorFactory(object):
             cls,
             type_: tp.Type['Quantity']
     ) -> tp.Type[SubSensor]:
-        assert type_ in cls._map
+        assert type_ in cls._map, f'{type_}'
         return cls._map[type_]
 
     @classmethod

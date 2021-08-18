@@ -5,6 +5,7 @@ from src.simulation.Simulation import Simulation
 
 
 class SimulationBox(QtWidgets.QComboBox):
+    _simulation: SimulationHandler
 
     # constructor
     def __init__(
@@ -16,9 +17,9 @@ class SimulationBox(QtWidgets.QComboBox):
         self._simulation = simulation
 
         # add simulations to combobox
-        self._sim_types = [item.value() for item in Simulation]
-        for sim in self._sim_types:
-            self.addItem(type(sim).__name__)
+        self._sim_types = [item.value for item in Simulation]
+        for sim_type in self._sim_types:
+            self.addItem(sim_type.__name__)
         self._simulation.set_simulation(self._sim_types[0])
         self.currentIndexChanged.connect(self._handle_index_change)
 

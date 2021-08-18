@@ -10,7 +10,7 @@ if tp.TYPE_CHECKING:
     from src.framework.graph.protocols.Measurement2D import SubMeasurement2D
     from src.framework.graph.types.nodes.ParameterNode import SubParameterNode, ParameterSpecification
 
-SubParameterModel = tp.TypeVar('SubParameterModel', bound='ParameterModel')
+SubParameter = tp.TypeVar('SubParameter', bound='Parameter')
 
 
 class Parameter(object):
