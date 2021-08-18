@@ -208,6 +208,8 @@ class BrowserTree(QtWidgets.QTreeWidget):
 
         # create menu
         menu = QtWidgets.QMenu()
+        # select
+        menu.addAction('&Select')
         # delete
         commands[menu.addAction('&Delete')] = functools.partial(node.remove)
         # save as

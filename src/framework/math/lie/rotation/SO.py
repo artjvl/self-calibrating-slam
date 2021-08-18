@@ -11,6 +11,7 @@ SubSO = tp.TypeVar('SubSO', bound='SO')
 
 
 class SO(Lie):
+    _matrix: SubSquare
 
     def __init__(
             self,

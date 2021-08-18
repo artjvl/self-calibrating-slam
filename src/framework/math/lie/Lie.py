@@ -10,7 +10,6 @@ SubLie = tp.TypeVar('SubLie', bound='Lie')
 
 
 class Lie(Dimensional):
-
     _dof: int
 
     # operators

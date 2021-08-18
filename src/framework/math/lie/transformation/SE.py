@@ -13,6 +13,8 @@ SubSE = tp.TypeVar('SubSE', bound='SE')
 
 
 class SE(Lie, ABC):
+    _translation: SubVector
+    _rotation: SubSO
 
     def __init__(
             self,
