@@ -50,30 +50,31 @@ class InspectorTree(QtWidgets.QTreeWidget):
             graph: SubGraph,
             root: Item
     ) -> Item:
+        self._construct_tree_property(root, 'name', f'{graph.get_name()}')
+        self._construct_tree_property(root, 'address', f'{hex(id(graph))}')
+
         # sub-elements
-        sub_elements = self._construct_tree_property(root, 'Elements', '', bold=True)
+        sub_elements = self._construct_tree_property(root, 'Elements', '', bold=True, is_expanded=True)
         element_type: tp.Type[SubElement]
         for element_type in graph.get_types():
             self._construct_tree_property(
-                sub_elements, f"num '{element_type.__name__}'", str(len(graph.get_of_type(element_type)))
+                sub_elements, f"num '{element_type.__name__}'", f'{len(graph.get_of_type(element_type))}'
             )
-        sub_elements.setExpanded(True)
 
         # error
-        sub_error = self._construct_tree_property(root, 'Error', '', bold=True)
-        self._construct_tree_property(sub_error, 'is_perturbed', str(graph.is_perturbed()))
-        self._construct_tree_property(sub_error, 'error', str(graph.get_error()))
-        sub_error.setExpanded(True)
+        sub_error = self._construct_tree_property(root, 'Error', '', bold=True, is_expanded=True)
+        self._construct_tree_property(sub_error, 'is_perturbed', f'{graph.is_perturbed()}')
+        self._construct_tree_property(sub_error, 'error', f'{graph.get_error()}')
 
         # metrics
         if graph.has_truth():
             sub_metrics = self._construct_tree_property(root, 'Metrics', '', bold=True)
             truth: SubGraph = graph.get_truth()
-            sub_truth = self._construct_tree_property(sub_metrics, 'truth', truth.to_unique())
+            sub_truth = self._construct_tree_property(sub_metrics, 'truth', f'{truth.to_unique()}')
             sub_truth.obj = Indicator.TRUE
-            self._construct_tree_property(sub_metrics, 'ate', str(graph.get_ate()))
-            self._construct_tree_property(sub_metrics, 'rpe_translation', str(graph.get_rpe_translation()))
-            self._construct_tree_property(sub_metrics, 'rpe_rotation', str(graph.get_rpe_rotation()))
+            self._construct_tree_property(sub_metrics, 'ate', f'{graph.get_ate()}')
+            self._construct_tree_property(sub_metrics, 'rpe_translation', f'{graph.get_rpe_translation()}')
+            self._construct_tree_property(sub_metrics, 'rpe_rotation', f'{graph.get_rpe_rotation()}')
             sub_metrics.setExpanded(True)
 
         # jacobian/hessian
@@ -87,7 +88,7 @@ class InspectorTree(QtWidgets.QTreeWidget):
         # properties
         sub_properties = self._construct_tree_property(root, 'Properties', '', bold=True)
         if graph.has_previous():
-            self._construct_tree_property(sub_properties, 'previous', graph.get_previous().to_unique())
+            self._construct_tree_property(sub_properties, 'previous', f'{graph.get_previous().to_unique()}')
         # self._construct_tree_property(sub_properties, 'path', str(graph.get_path()))
         sub_properties.setExpanded(True)
         return root
@@ -138,6 +139,7 @@ class InspectorTree(QtWidgets.QTreeWidget):
             node: SubNode
     ) -> None:
         self.clear()
+        self.obj = node
         self._construct_node_tree(node, self.invisibleRootItem())
 
     def _construct_node_tree(
@@ -145,26 +147,27 @@ class InspectorTree(QtWidgets.QTreeWidget):
             node: SubNode,
             root: Item
     ) -> Item:
-        self.obj = node
+        self._construct_tree_property(root, 'name', f'{node.get_name()}')
+        self._construct_tree_property(root, 'address', f'{hex(id(node))}')
 
         # top
-        self._construct_tree_property(root, 'id', str(node.get_id()))
-        self._construct_tree_property(root, 'timestamp', str(node.get_timestamp()))
-        self._construct_tree_property(root, 'is_fixed', str(node.is_fixed()))
+        sub_node = self._construct_tree_property(root, 'Node', '', bold=True, is_expanded=True)
+        self._construct_tree_property(sub_node, 'id', f'{node.get_id()}')
+        self._construct_tree_property(sub_node, 'timestamp', f'{node.get_timestamp():.3f}')
+        self._construct_tree_property(sub_node, 'is_fixed', f'{node.is_fixed()}')
 
         # metrics
         if node.has_truth():
-            sub_metrics = self._construct_tree_property(root, 'Metrics', '', bold=True)
+            sub_metrics = self._construct_tree_property(root, 'Metrics', '', bold=True, is_expanded=True)
             truth: SubNode = node.get_truth()
-            sub_truth = self._construct_tree_property(sub_metrics, 'truth', truth.to_unique())
+            sub_truth = self._construct_tree_property(sub_metrics, 'truth', f'{truth.to_unique()}')
             self._construct_node_tree(truth, sub_truth)
             ate2: tp.Optional[float] = node.compute_ate2()
             if ate2 is not None:
-                self._construct_tree_property(sub_metrics, 'ate2', str(ate2))
-            sub_metrics.setExpanded(True)
+                self._construct_tree_property(sub_metrics, 'ate2', f'{ate2}')
 
         # value
-        sub_value = self._construct_tree_property(root, 'Value', '', bold=True)
+        sub_value = self._construct_tree_property(root, 'Value', '', bold=True, is_expanded=True)
         self._construct_value_tree(sub_value, node.get_value())
         return root
 
@@ -174,6 +177,7 @@ class InspectorTree(QtWidgets.QTreeWidget):
             edge: SubEdge
     ) -> None:
         self.clear()
+        self.obj = edge
         self._construct_edge_tree(edge, self.invisibleRootItem())
 
     def _construct_edge_tree(
@@ -181,36 +185,35 @@ class InspectorTree(QtWidgets.QTreeWidget):
             edge: SubEdge,
             root: Item
     ):
-        self.obj = edge
+        self._construct_tree_property(root, 'name', f'{edge.get_name()}')
+        self._construct_tree_property(root, 'address', f'{hex(id(edge))}')
 
         # top
-        self._construct_tree_property(root, 'timestamp', str(edge.get_timestamp()))
-        self._construct_tree_property(root, 'cardinality', str(edge.get_cardinality()))
-        self._construct_tree_property_from_value(root, 'information', edge.get_info_matrix())
+        sub_edge = self._construct_tree_property(root, 'Edge', '', bold=True, is_expanded=True)
+        self._construct_tree_property(sub_edge, 'timestamp', f'{edge.get_timestamp():.3f}')
+        self._construct_tree_property(sub_edge, 'cardinality', f'{edge.get_cardinality()}')
+        self._construct_tree_property_from_value(sub_edge, 'information', edge.get_info_matrix())
 
         # nodes
         nodes = edge.get_nodes()
-        sub_nodes = self._construct_tree_property(root, 'Nodes', str(len(nodes)), bold=True)
+        sub_nodes = self._construct_tree_property(root, 'Nodes', f'{len(nodes)}', bold=True, is_expanded=True)
         for node in nodes:
-            sub_node = self._construct_tree_property(sub_nodes, str(node.get_id()), node.to_unique())
+            sub_node = self._construct_tree_property(sub_nodes, f'{node.get_id()}', node.to_unique())
             self._construct_node_tree(node, sub_node)
-        sub_nodes.setExpanded(True)
 
         # error
-        sub_error = self._construct_tree_property(root, 'Error', '', bold=True)
+        sub_error = self._construct_tree_property(root, 'Error', '', bold=True, is_expanded=True)
         self._construct_tree_property_from_value(sub_error, 'error_vector', edge.compute_error_vector())
-        self._construct_tree_property(sub_error, 'error', '{:f}'.format(edge.compute_error()))
-        sub_error.setExpanded(True)
+        self._construct_tree_property(sub_error, 'error', f'{edge.compute_error():f}')
 
         # metrics
         if edge.has_truth():
-            sub_metrics = self._construct_tree_property(root, 'Metrics', '', bold=True)
+            sub_metrics = self._construct_tree_property(root, 'Metrics', '', bold=True, is_expanded=True)
             truth: SubEdge = edge.get_truth()
-            sub_truth = self._construct_tree_property(sub_metrics, 'truth', str(truth.to_unique()))
+            sub_truth = self._construct_tree_property(sub_metrics, 'truth', f'{truth.to_unique()}')
             self._construct_edge_tree(truth, sub_truth)
             self._construct_tree_property_from_value(sub_metrics, 'rpe_translation2', edge.compute_rpe_translation2())
             self._construct_tree_property_from_value(sub_metrics, 'rpe_rotation', edge.compute_rpe_rotation())
-            sub_metrics.setExpanded(True)
 
         # measurement
         sub_measurement = self._construct_tree_property(root, 'Measurement', '', bold=True)
@@ -221,16 +224,15 @@ class InspectorTree(QtWidgets.QTreeWidget):
         self._construct_value_tree(sub_estimate, edge.get_estimate())
 
         # jacobian/hessian
-        sub_linearisation = self._construct_tree_property(root, 'Linearisation', '', bold=True)
+        sub_linearisation = self._construct_tree_property(root, 'Linearisation', '', bold=True, is_expanded=True)
         jacobian: SubBlockMatrix = edge.get_jacobian()
-        sub_jacobian = self._construct_tree_property(sub_linearisation, 'Jacobian', str(jacobian.shape()))
+        sub_jacobian = self._construct_tree_property(sub_linearisation, 'Jacobian', f'{jacobian.shape()}')
         active_nodes = edge.get_active_nodes()
         for i, node in enumerate(active_nodes):
-            self._construct_tree_property_from_value(sub_jacobian, str(node.get_id()), jacobian[0, i])
-        sub_jacobian.setExpanded(True)
+            self._construct_tree_property_from_value(sub_jacobian, f'{node.get_id()}', jacobian[0, i])
 
         hessian: SubBlockMatrix = edge.get_hessian()
-        sub_hessian = self._construct_tree_property(sub_linearisation, 'Hessian', str(hessian.shape()))
+        sub_hessian = self._construct_tree_property(sub_linearisation, 'Hessian', f'{hessian.shape()}', is_expanded=True)
         for i, node_i in enumerate(active_nodes):
             for j, node_j in enumerate(active_nodes):
                 if j <= i:
@@ -239,11 +241,6 @@ class InspectorTree(QtWidgets.QTreeWidget):
                         f'({node_i.get_id()}, {node_j.get_id()})',
                         hessian[i, j]
                     )
-        sub_hessian.setExpanded(True)
-
-        sub_linearisation.setExpanded(True)
-
-        # root.expandAll()
 
     # helper-methods
     @classmethod
@@ -281,7 +278,8 @@ class InspectorTree(QtWidgets.QTreeWidget):
             first: str,
             second: str,
             tooltip: tp.Optional[str] = None,
-            bold: bool = False
+            bold: bool = False,
+            is_expanded: bool = False
     ) -> Item:
         item = QtWidgets.QTreeWidgetItem(root)
         if bold:
@@ -292,6 +290,7 @@ class InspectorTree(QtWidgets.QTreeWidget):
         item.setText(1, second)
         item.setFont(1, QtGui.QFont('Courier New', 10))
         item.setToolTip(1, tooltip)
+        item.setExpanded(is_expanded)
         return item
 
     @classmethod
@@ -300,7 +299,8 @@ class InspectorTree(QtWidgets.QTreeWidget):
             root: tp.Optional[Item],
             first: str,
             value: tp.Any,
-            bold: bool = False
+            bold: bool = False,
+            is_expanded: bool = False
     ):
         second: str = str(value)
         tooltip: tp.Optional[str] = None
@@ -311,5 +311,6 @@ class InspectorTree(QtWidgets.QTreeWidget):
             first,
             second,
             tooltip=tooltip,
-            bold=bold
+            bold=bold,
+            is_expanded=is_expanded
         )
