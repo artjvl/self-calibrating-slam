@@ -169,9 +169,6 @@ class Graph(FactorGraph):
     def is_perturbed(self) -> bool:
         return not np.isclose(self.get_error(), 0., atol=self._atol)
 
-    def is_eligible_for_truth(self) -> bool:
-        return not self.is_perturbed()
-
     def assign_truth(
             self,
             graph: SubGraph
@@ -180,11 +177,9 @@ class Graph(FactorGraph):
         Populates the 'truth' (or ground-truth) reference with <graph>.
         Assumption: 'truth' graph only contains endpoints and shall be a subset of this graph.
         """
-        assert graph.is_eligible_for_truth()
-
+        assert not graph.is_perturbed()
         assert self.is_similar(graph)
         assert not self.has_truth()
-
         self._truth = graph
 
         # nodes
@@ -252,6 +247,8 @@ class Graph(FactorGraph):
     # copy
     def copy_meta_to(self, graph: SubGraph) -> SubGraph:
         graph = super().copy_meta_to(graph)
+        # note: _previous is not part of the metadata copied
+
         graph._truth = self._truth
         graph._pre = self._pre
         graph._date = self._date
