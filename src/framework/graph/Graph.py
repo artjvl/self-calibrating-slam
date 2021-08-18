@@ -315,6 +315,7 @@ class Node(tp.Generic[T], FactorNode[T]):
     def __copy__(self):
         new = super().__copy__()
         new._timestamp = self._timestamp
+        new._truth = self._truth
         return new
 
     def __deepcopy__(self, memo: tp.Optional[tp.Dict[int, tp.Any]] = None):
@@ -324,6 +325,7 @@ class Node(tp.Generic[T], FactorNode[T]):
         memo[id(self)] = new
 
         new._timestamp = self._timestamp
+        new._truth = self._truth
         return new
 
 
@@ -390,3 +392,17 @@ class Edge(tp.Generic[T], FactorEdge[T], ABC):
         edge = super().copy_meta_to(edge)
         edge._truth = self._truth
         return edge
+
+    def __copy__(self):
+        new = super().__copy__()
+        new._truth = self._truth
+        return new
+
+    def __deepcopy__(self, memo: tp.Optional[tp.Dict[int, tp.Any]] = None):
+        if memo is None:
+            memo = {}
+        new = super().__deepcopy__(memo)
+        memo[id(self)] = new
+
+        new._truth = self._truth
+        return new
