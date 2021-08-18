@@ -1,4 +1,5 @@
 import copy
+import sys
 import typing as tp
 
 import matplotlib as mpl
@@ -146,8 +147,10 @@ class GraphAnalyser(object):
             name: str
     ) -> None:
         assert graph.has_name(name)
-        parameters: tp.List[SubParameterNode] = graph.get_type_of_name(name)
+        parameters: tp.List[SubParameterNode] = graph.get_of_name(name)
         assert len(parameters) > 1
+
+        print(f"Plotting parameter '{name}' for {graph.to_unique()}..")
 
         dim: int = parameters[0].get_dim()
         data: tp.List[PlotData] = [PlotData() for _ in range(dim)]
@@ -170,11 +173,15 @@ class GraphAnalyser(object):
         assert graph.has_name(name)
         assert graph.has_previous()
 
+        print(f"Plotting parameter dynamics of '{name}' for {graph.to_unique()}..")
+
         dim: int = graph.get_type_of_name(name).get_dim()
         data: tp.List[PlotData] = [PlotData() for _ in range(dim)]
 
         subgraphs: tp.List[SubCalibratingGraph] = graph.get_subgraphs()
-        for subgraph in subgraphs:
+        size: int = len(subgraphs)
+
+        for i, subgraph in enumerate(subgraphs):
             parameters: tp.List[SubParameterNode] = subgraph.get_of_name(name)
             assert len(parameters) == 1
             parameter: SubParameterNode = parameters[0]
@@ -183,6 +190,11 @@ class GraphAnalyser(object):
             timestamp: float = subgraph.get_timestamp()
             for i in range(dim):
                 data[i].append(timestamp, vector[i])
+
+            sys.__stdout__.write(f'\r{100 * i / size:.2f}%')
+            sys.__stdout__.flush()
+        sys.__stdout__.write(f'\rDone!\n')
+        sys.__stdout__.flush()
 
         fig, axes = plt.subplots(dim, 1)
         for i, ax in enumerate(np.array(axes).flatten()):
@@ -193,7 +205,7 @@ class GraphAnalyser(object):
     def plot_parameter_map(graph: SubCalibratingGraph):
         assert graph.has_truth()
         for name in graph.get_parameter_names():
-            parameters: tp.List[SubParameterNode] = graph.get_parameters(name)
+            parameters: tp.List[SubParameterNode] = graph.get_of_name(name)
             dim: int = parameters[0].get_dim()
 
             x_min, x_max, y_min, y_max = 0., 0., 0., 0.
@@ -238,15 +250,19 @@ class GraphAnalyser(object):
     def plot_edge_variance(
             graph: SubGraph,
             name: str,
-            window: int = 10
+            window: int = 50
     ) -> None:
         assert graph.has_previous()
         assert name in graph.get_edge_names()
-        dim: int = graph.get_type_of_name(name).get_dim()
 
+        print(f"Plotting edge variance of '{name}' for {graph.to_unique()}..")
+
+        dim: int = graph.get_type_of_name(name).get_dim()
         data: tp.List[PlotData] = [PlotData() for _ in range(dim)]
         subgraphs: tp.List[SubGraph] = graph.get_subgraphs()
-        for subgraph in subgraphs:
+        size: int = len(subgraphs)
+
+        for i, subgraph in enumerate(subgraphs):
             if name in subgraph.get_edge_names():
                 edges: tp.List[SubEdge] = subgraph.get_of_name(name)
                 if len(edges) > window:
@@ -257,6 +273,11 @@ class GraphAnalyser(object):
                 for i in range(dim):
                     errors: tp.List[float] = [error_vector[i] for error_vector in error_vectors]
                     data[i].append(timestamp, float(np.std(errors)))
+
+            sys.__stdout__.write(f'\r{100 * i/size:.2f}%')
+            sys.__stdout__.flush()
+        sys.__stdout__.write(f'\rDone!\n')
+        sys.__stdout__.flush()
 
         fig, axes = plt.subplots(dim, 1)
         for i, ax in enumerate(np.array(axes).flatten()):
@@ -279,15 +300,23 @@ class GraphAnalyser(object):
     ) -> plt.Axes:
         assert graph.has_previous()
 
+        print(f"Plotting error for {graph.to_unique()}..")
+
         if ax is None:
             _, ax = plt.subplots()
             ax.set_title('Error')
 
         subgraphs: tp.List[SubGraph] = graph.get_subgraphs()
+        size: int = len(subgraphs)
 
         data: PlotData = PlotData()
-        for _, subgraph in enumerate(subgraphs):
+        for i, subgraph in enumerate(subgraphs):
             data.append(subgraph.get_timestamp(), subgraph.get_error())
+
+            sys.__stdout__.write(f'\r{100 * i/size:.2f}%')
+            sys.__stdout__.flush()
+        sys.__stdout__.write(f'\rDone!\n')
+        sys.__stdout__.flush()
 
         ax.plot(*data.to_lists())
         ax.figure.show()
@@ -307,15 +336,23 @@ class GraphAnalyser(object):
     ) -> plt.Axes:
         assert graph.has_previous()
 
+        print(f"Plotting ATE for {graph.to_unique()}..")
+
         if ax is None:
             _, ax = plt.subplots()
             ax.set_title('ATE')
 
         subgraphs: tp.List[SubGraph] = graph.get_subgraphs()
+        size: int = len(subgraphs)
 
         data: PlotData = PlotData()
-        for _, subgraph in enumerate(subgraphs):
+        for i, subgraph in enumerate(subgraphs):
             data.append(subgraph.get_timestamp(), subgraph.get_ate())
+
+            sys.__stdout__.write(f'\r{100 * i / size:.2f}%')
+            sys.__stdout__.flush()
+        sys.__stdout__.write(f'\rDone!\n')
+        sys.__stdout__.flush()
 
         ax.plot(*data.to_lists())
         ax.figure.show()
@@ -335,15 +372,23 @@ class GraphAnalyser(object):
     ) -> plt.Axes:
         assert graph.has_previous()
 
+        print(f"Plotting RPE (translation) for {graph.to_unique()}..")
+
         if ax is None:
             _, ax = plt.subplots()
             ax.set_title('RPE (translation)')
 
         subgraphs: tp.List[SubGraph] = graph.get_subgraphs()
+        size: int = len(subgraphs)
 
         data: PlotData = PlotData()
-        for _, subgraph in enumerate(subgraphs):
+        for i, subgraph in enumerate(subgraphs):
             data.append(subgraph.get_timestamp(), subgraph.get_rpe_translation())
+
+            sys.__stdout__.write(f'\r{100 * i / size:.2f}%')
+            sys.__stdout__.flush()
+        sys.__stdout__.write(f'\rDone!\n')
+        sys.__stdout__.flush()
 
         ax.plot(*data.to_lists())
         ax.figure.show()
@@ -363,15 +408,23 @@ class GraphAnalyser(object):
     ) -> plt.Axes:
         assert graph.has_previous()
 
+        print(f"Plotting RPE (rotation) for {graph.to_unique()}..")
+
         if ax is None:
             _, ax = plt.subplots()
             ax.set_title('RPE (rotation)')
 
         subgraphs: tp.List[SubGraph] = graph.get_subgraphs()
+        size: int = len(subgraphs)
 
         data: PlotData = PlotData()
-        for _, subgraph in enumerate(subgraphs):
+        for i, subgraph in enumerate(subgraphs):
             data.append(subgraph.get_timestamp(), subgraph.get_rpe_rotation())
+
+            sys.__stdout__.write(f'\r{100 * i / size:.2f}%')
+            sys.__stdout__.flush()
+        sys.__stdout__.write(f'\rDone!\n')
+        sys.__stdout__.flush()
 
         ax.plot(*data.to_lists())
         ax.figure.show()

@@ -260,23 +260,23 @@ class BrowserTree(QtWidgets.QTreeWidget):
         parameter_names: tp.List[str] = graph.get_parameter_names()
         for parameter_name in parameter_names:
             if len(graph.get_of_name(parameter_name)) > 1:
-                commands[sub_analyse_parameter_dynamics.addAction(f"'{parameter_name}'")] = functools.partial(
+                commands[sub_analyse_plot_parameters.addAction(f"'{parameter_name}'")] = functools.partial(
                     self._tree.get_analyser().plot_parameter, graph, parameter_name
                 )
         sub_analyse_plot_parameters.setEnabled(bool(sub_analyse_plot_parameters.actions()))
         # analyse - plot edge variance
         sub_analyse_plot_edge_variance = sub_analyse.addMenu('Plot edge variance')
-        edge_names: tp.List[str] = graph.get_edge_names()
-        for edge_name in edge_names:
-            commands[sub_analyse_plot_edge_variance.addAction(f"'{edge_name}'")] = functools.partial(
-                self._tree.get_analyser().plot_edge_variance, graph, edge_name
-            )
+        if graph.has_previous():
+            edge_names: tp.List[str] = graph.get_edge_names()
+            for edge_name in edge_names:
+                commands[sub_analyse_plot_edge_variance.addAction(f"'{edge_name}'")] = functools.partial(
+                    self._tree.get_analyser().plot_edge_variance, graph, edge_name
+                )
         sub_analyse_plot_edge_variance.setEnabled(bool(sub_analyse_plot_edge_variance.actions()))
 
         # select action
         action = menu.exec_(self.mapToGlobal(point))
         if action in commands:
-            print(action.text())
             commands[action]()
         elif action == action_find_subgraphs:
             node.find_subgraphs()

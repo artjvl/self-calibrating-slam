@@ -54,6 +54,7 @@ class ParameterDelegate(QtWidgets.QItemDelegate):
 
 
 class ParameterTree(QtWidgets.QTreeWidget):
+    _config: tp.Optional[ConfigurationSet]
 
     # constructor
     def __init__(
@@ -68,7 +69,7 @@ class ParameterTree(QtWidgets.QTreeWidget):
         self.setAlternatingRowColors(True)
 
         # save parameters
-        self._parameters: tp.Optional[ConfigurationSet] = None
+        self._config = None
 
     def _handle_edit(
             self,
@@ -76,21 +77,21 @@ class ParameterTree(QtWidgets.QTreeWidget):
     ):
         key: str = self.topLevelItem(index).text(0)
         value: str = self.topLevelItem(index).text(1)
-        self._parameters[key] = value
+        self._config[key] = value
         print(f"Changed '{key}' to '{value}'.")
 
-    def construct_tree(self, parameters: ConfigurationSet):
+    def construct_tree(self, config: ConfigurationSet):
         # save parameters
-        self._parameters = parameters
+        self._config = config
 
         # set delegate
-        delegate = ParameterDelegate(parameters)
+        delegate = ParameterDelegate(config)
         delegate.signal_edit.connect(self._handle_edit)
         self.setItemDelegateForColumn(1, delegate)
 
         # fill tree
         self.clear()
-        for key, value in parameters.to_dict().items():
+        for key, value in config.to_dict().items():
             self._construct_parameter(self, key, value.get_value())
         self.resizeColumnToContents(0)
         self.resizeColumnToContents(1)
