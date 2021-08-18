@@ -1,3 +1,6 @@
+import pathlib
+import typing as tp
+
 from PyQt5 import QtWidgets
 from src.framework.graph.Graph import SubGraph
 from src.gui.menus.Menu import Menu
@@ -6,14 +9,15 @@ from src.gui.utils.PopUp import PopUp
 
 
 class FileMenu(Menu):
+    _tree: TopTreeNode
 
     # constructor
-    def __init__(self, container: TopTreeNode, *args, **kwargs):
+    def __init__(self, tree: TopTreeNode, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.setTitle('&File')
-        self._container = container
+        self._tree = tree
         self._construct_menu()
-        self._container.signal_update.connect(self._handle_signal)
+        self._tree.signal_update.connect(self._handle_signal)
 
     # helper-methods
     def _construct_menu(self):
@@ -23,22 +27,6 @@ class FileMenu(Menu):
             name='&Load',
             handler=self._handle_load
         )
-        # menu_remove = self.add_menu(
-        #     menu=self,
-        #     name='Remove'
-        # )
-        # if self._container.is_empty():
-        #     menu_remove.setEnabled(False)
-        # else:
-        #     for graph in self._container.get_graphs():
-        #         self.add_action(
-        #             menu=menu_remove,
-        #             name=graph.to_name(),
-        #             handler=partial(
-        #                 self._container.remove_graph,
-        #                 graph
-        #             )
-        #         )
         self.addSeparator()
         self.add_action(
             menu=self,
@@ -48,9 +36,12 @@ class FileMenu(Menu):
 
     # handler
     def _handle_load(self):
-        graph: SubGraph = PopUp.load_from_file()
-        if graph is not None:
-            self._container.add_graphs(None, graph)
+        load: tp.Optional[tp.Tuple[SubGraph, pathlib.Path]] = PopUp.load_from_file()
+        if load is not None:
+            graph: SubGraph
+            path: pathlib.Path
+            graph, path = load
+            self._tree.add_graph(graph, origin=path.name)
 
     def _handle_signal(self, signal):
         if signal >= 0:

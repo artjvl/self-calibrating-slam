@@ -42,4 +42,7 @@ class SimulationHandler(QObject):
     def simulate(self):
         print(f'gui/SimulationHandler: Simulating trajectory with {type(self._simulation).__name__}...')
         graph_truth, graph_perturbed = self._simulation.simulate()
-        self._tree.add_graph(graph_perturbed)
+        self._tree.add_graph(
+            graph_perturbed,
+            origin=self._simulation.__class__.__name__
+        )

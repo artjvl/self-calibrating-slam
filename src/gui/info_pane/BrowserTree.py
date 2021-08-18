@@ -183,8 +183,6 @@ class BrowserTree(QtWidgets.QTreeWidget):
         menu = QtWidgets.QMenu()
         action_load = QtWidgets.QAction('&Load', self)
         menu.addAction(action_load)
-        # action_load_truth = QtWidgets.QAction('Load truth', self)
-        # menu.addAction(action_load_truth)
         action_delete = QtWidgets.QAction('&Delete', self)
         menu.addAction(action_delete)
 
@@ -192,8 +190,6 @@ class BrowserTree(QtWidgets.QTreeWidget):
         action: QtWidgets.QAction = menu.exec_(self.mapToGlobal(point))
         if action == action_load:
             PopUp.load_with_callback(node.add_graph)
-        # elif action == action_load_truth:
-        #     PopUp.load_with_callback(node.add_truth_graph)
         elif action == action_delete:
             node.remove()
 

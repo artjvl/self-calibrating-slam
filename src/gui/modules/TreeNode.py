@@ -381,16 +381,19 @@ class TrajectoryTreeNode(GraphicsTreeNode, QtCore.QObject):
     """
 
     _id: int  # node id
+    _origin: tp.Optional[str]  # description of trajectory origin (e.g. file or simulation)
     _truth: tp.Optional[SubGraphContainer]  # 'true' (ground-truth) graph-container
 
     def __init__(
             self,
             parent: TopTreeNode,  # parent node
             types: tp.List[Type],  # supported types
-            id_: int  # node id
+            id_: int,  # node id
+            origin: tp.Optional[str] = None  # description of trajectory origin (e.g. file or simulation)
     ):
         super().__init__(parent)
         self._id = id_
+        self._origin = origin
 
         for type_ in types:
             self.add_toggle(type_)
@@ -482,7 +485,10 @@ class TrajectoryTreeNode(GraphicsTreeNode, QtCore.QObject):
         return str(self.get_id())
 
     def get_gui_name(self) -> str:
-        return f'Trajectory({self.get_id()})'
+        name: str = f'Trajectory({self.get_id()})'
+        if self._origin is not None:
+            name = f'{name} - {self._origin}'
+        return name
 
     def remove_key(self, key: str) -> None:
         super().remove_key(key)
@@ -534,16 +540,20 @@ class TopTreeNode(GraphicsTreeNode, QtCore.QObject):
             self._id_counter += 1
         return id_
 
-    def _add_trajectory(self) -> TrajectoryTreeNode:
-        node = TrajectoryTreeNode(self, self.get_types(), self.count_id(increment=True))
+    def _add_trajectory(
+            self,
+            origin: tp.Optional[str] = None
+    ) -> TrajectoryTreeNode:
+        node = TrajectoryTreeNode(self, self.get_types(), self.count_id(increment=True), origin=origin)
         self.add_child(node)
         return node
 
     def add_graph(
             self,
-            graph: SubGraph
+            graph: SubGraph,
+            origin: tp.Optional[str] = None
     ) -> None:
-        trajectory: TrajectoryTreeNode = self._add_trajectory()
+        trajectory: TrajectoryTreeNode = self._add_trajectory(origin=origin)
         trajectory.add_graph(graph)
 
     def clear(self) -> None:

@@ -1,3 +1,6 @@
+import pathlib
+import typing as tp
+
 from PyQt5 import QtCore, QtWidgets
 from src.framework.graph.Graph import SubGraph
 from src.gui.info_pane.BrowserTree import BrowserTree
@@ -10,7 +13,6 @@ from src.gui.viewer.Viewer import Viewer
 
 
 class InfoPane(QtWidgets.QWidget):
-
     _tree: TopTreeNode
 
     # constructor
@@ -72,6 +74,9 @@ class InfoPane(QtWidgets.QWidget):
         # print(self.sizes())
 
     def handle_load_graph(self) -> None:
-        graph: SubGraph = PopUp.load_from_file()
-        if graph is not None:
-            self._tree.add_graph(graph)
+        load: tp.Optional[tp.Tuple[SubGraph, pathlib.Path]] = PopUp.load_from_file()
+        if load is not None:
+            graph: SubGraph
+            path: pathlib.Path
+            graph, path = load
+            self._tree.add_graph(graph, origin=path.name)
