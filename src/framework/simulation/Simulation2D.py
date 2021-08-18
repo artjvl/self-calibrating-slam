@@ -190,9 +190,9 @@ class Simulation2D(GraphManager):
         else:
             # creates a shallow-copy of the graph to be used as a previous
             snapshot = copy.copy(graph)
-            graph.copy_meta_to(snapshot)
-            if graph.has_previous():
-                snapshot.set_previous(graph.get_previous())
+        graph.copy_meta_to(snapshot)
+        if graph.has_previous():
+            snapshot.set_previous(graph.get_previous())
         graph.set_previous(snapshot)
 
         self._has_closure = False
