@@ -70,3 +70,6 @@ class GraphManager(object):
 
     def increment_timestamp(self, delta: float) -> None:
         self.set_timestamp(self._timestamp + delta)
+
+    def get_timestamp(self) -> float:
+        return self._timestamp

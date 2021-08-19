@@ -87,16 +87,9 @@ class FactorGraph(BaseGraph):
 
     # copy
     def __copy__(self):
-        new = self.__class__()
+        new = super().__copy__()
 
-        # BaseElement
-        new.set_name(self.get_name())
-        # BaseGraph
-        for node in self.get_nodes():
-            new.add_node(node)
-        for edge in self.get_edges():
-            new.add_edge(edge)
-        # FactorGraph
+        # # FactorGraph
         # new._hessian = self._hessian
         # new._covariance = self._covariance
         return new
@@ -104,17 +97,10 @@ class FactorGraph(BaseGraph):
     def __deepcopy__(self, memo: tp.Optional[tp.Dict[int, tp.Any]] = None):
         if memo is None:
             memo = {}
-
-        new = self.__class__()
+        new = super().__deepcopy__(memo)
         memo[id(self)] = new
 
-        # BaseElement
-        new.set_name(self.get_name())
-        # BaseGraph
-        for node in self.get_nodes():
-            new.add_node(copy.deepcopy(node, memo))
-        for edge in self.get_edges():
-            new.add_edge(copy.deepcopy(edge, memo))
+        # # FactorGraph
         # new._hessian = copy.deepcopy(self._hessian, memo)
         # new._covariance = copy.deepcopy(self._covariance, memo)
         return new
@@ -211,16 +197,12 @@ class FactorNode(BaseNode, tp.Generic[T], DataContainer[T]):
 
     # copy
     def __copy__(self):
-        new = self.__class__()
+        new = super().__copy__()
 
-        # BaseElement
-        new.set_name(self.get_name())
-        # BaseNode
-        new.set_id(self.get_id())
-        # DataContainer
-        new.set_value(self.get_value())
         # FactorNode
         new._is_fixed = self._is_fixed
+        # DataContainer
+        new.set_value(self.get_value())
         return new
 
     def __deepcopy__(self, memo: tp.Optional[tp.Dict[int, tp.Any]] = None):
@@ -228,17 +210,13 @@ class FactorNode(BaseNode, tp.Generic[T], DataContainer[T]):
             memo = {}
 
         # class
-        new = self.__class__()
+        new = super().__deepcopy__(memo)
         memo[id(self)] = new
 
-        # BaseElement
-        new.set_name(self.get_name())
-        # BaseNode
-        new.set_id(self.get_id())
-        # DataContainer
-        new.set_value(copy.deepcopy(self.get_value()))
         # FactorNode
         new._is_fixed = self._is_fixed
+        # DataContainer
+        new.set_value(copy.deepcopy(self.get_value()))
         return new
 
 
@@ -391,13 +369,8 @@ class FactorEdge(BaseEdge, tp.Generic[T], DataContainer[T]):
 
     # copy
     def __copy__(self):
-        new = self.__class__()
+        new = super().__copy__()
 
-        # BaseElement
-        new.set_name(self.get_name())
-        # BaseEdge
-        for node in self.get_nodes():
-            new.add_node(node)
         # DataContainer
         new.set_value(self.get_value())
         # FactorEdge
@@ -411,14 +384,9 @@ class FactorEdge(BaseEdge, tp.Generic[T], DataContainer[T]):
         if memo is None:
             memo = {}
 
-        new = self.__class__()
+        new = super().__deepcopy__(memo)
         memo[id(self)] = new
 
-        # BaseElement
-        new.set_name(self.get_name())
-        # BaseEdge
-        for node in self.get_nodes():
-            new.add_node(copy.deepcopy(node, memo))
         # DataContainer
         new.set_value(copy.deepcopy(self.get_value(), memo))
         # FactorEdge

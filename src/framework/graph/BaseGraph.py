@@ -367,6 +367,33 @@ class BaseGraph(BaseElement, NodeContainer, EdgeContainer, Printable):
         """
         return graph.get_elements() == self.get_elements()
 
+    def __copy__(self):
+        new = self.__class__()
+
+        # BaseElement
+        new._name = self._name
+        # BaseGraph
+        new._nodes = copy.copy(self._nodes)
+        new._edges = copy.copy(self._edges)
+        new._by_type = {type_: copy.copy(elements) for (type_, elements) in self._by_type.items()}
+        new._by_name = {name: copy.copy(elements) for (name, elements) in self._by_name.items()}
+        return new
+
+    def __deepcopy__(self, memo: tp.Optional[tp.Dict[int, tp.Any]] = None):
+        if memo is None:
+            memo = {}
+        new = self.__class__()
+        memo[id(self)] = new
+
+        # BaseElement
+        new._name = self._name
+        # BaseGraph
+        new._nodes = copy.deepcopy(self._nodes, memo)
+        new._edges = copy.deepcopy(self._edges, memo)
+        new._by_type = {type_: copy.deepcopy(elements, memo) for (type_, elements) in self._by_type.items()}
+        new._by_name = {name: copy.deepcopy(elements, memo) for (name, elements) in self._by_name.items()}
+        return new
+
 
 class BaseNode(BaseElement, Printable):
     _id: tp.Optional[int]
@@ -400,6 +427,23 @@ class BaseNode(BaseElement, Printable):
     def to_id(self) -> str:
         return f'{self.get_id()}'
 
+    # copy
+    def __copy__(self):
+        new = self.__class__()
+
+        # BaseElement
+        new._name = self._name
+        # BaseNode
+        new._id = self._id
+        return new
+
+    def __deepcopy__(self, memo: tp.Optional[tp.Dict[int, tp.Any]] = None):
+        if memo is None:
+            memo = {}
+        new = self.__copy__()
+        memo[id(self)] = new
+        return new
+
 
 class BaseEdge(BaseElement, NodeContainer, Printable):
 
@@ -421,3 +465,25 @@ class BaseEdge(BaseElement, NodeContainer, Printable):
     # Printable
     def to_id(self) -> str:
         return '-'.join([f'{id_}' for id_ in self.get_node_ids()])
+
+    # copy
+    def __copy__(self):
+        new = self.__class__()
+
+        # BaseElement
+        new._name = self._name
+        # BaseEdge
+        new._nodes = copy.copy(self._nodes)
+        return new
+
+    def __deepcopy__(self, memo: tp.Optional[tp.Dict[int, tp.Any]] = None):
+        if memo is None:
+            memo = {}
+        new = self.__class__()
+        memo[id(self)] = new
+
+        # BaseElement
+        new._name = self._name
+        # BaseEdge
+        new._nodes = copy.deepcopy(self._nodes, memo)
+        return new

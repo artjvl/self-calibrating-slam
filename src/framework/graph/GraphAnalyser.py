@@ -191,10 +191,8 @@ class GraphAnalyser(object):
             for i in range(dim):
                 data[i].append(timestamp, vector[i])
 
-            sys.__stdout__.write(f'\r{100 * i / size:.2f}%')
-            sys.__stdout__.flush()
-        sys.__stdout__.write(f'\rDone!\n')
-        sys.__stdout__.flush()
+            print(f'\r{100 * i / size:.2f}%', end='')
+        print(f'\rDone!')
 
         fig, axes = plt.subplots(dim, 1)
         for i, ax in enumerate(np.array(axes).flatten()):
@@ -252,32 +250,30 @@ class GraphAnalyser(object):
             name: str,
             window: int = 50
     ) -> None:
-        assert graph.has_previous()
         assert name in graph.get_edge_names()
 
         print(f"Plotting edge variance of '{name}' for {graph.to_unique()}..")
 
         dim: int = graph.get_type_of_name(name).get_dim()
         data: tp.List[PlotData] = [PlotData() for _ in range(dim)]
-        subgraphs: tp.List[SubGraph] = graph.get_subgraphs()
-        size: int = len(subgraphs)
 
-        for i, subgraph in enumerate(subgraphs):
-            if name in subgraph.get_edge_names():
-                edges: tp.List[SubEdge] = subgraph.get_of_name(name)
-                if len(edges) > window:
-                    edges = edges[- (window + 1):]
+        edges: tp.List[SubEdge] = graph.get_of_name(name)
+        size = len(edges)
+        for i, edge in enumerate(edges):
+            edge_window: tp.List[edges]
+            if i <= window:
+                edge_window = edges[: i + 1]
+            else:
+                edge_window = edges[i - window: i + 1]
 
-                error_vectors: tp.List[SubVector] = [edge.get_error_vector() for edge in edges]
-                timestamp: float = subgraph.get_timestamp()
-                for i in range(dim):
-                    errors: tp.List[float] = [error_vector[i] for error_vector in error_vectors]
-                    data[i].append(timestamp, float(np.std(errors)))
+            error_vectors: tp.List[SubVector] = [edge.get_error_vector() for edge in edge_window]
+            timestamp: float = edge.get_timestamp()
+            for i in range(dim):
+                errors: tp.List[float] = [error_vector[i] for error_vector in error_vectors]
+                data[i].append(timestamp, float(np.std(errors)))
 
-            sys.__stdout__.write(f'\r{100 * i/size:.2f}%')
-            sys.__stdout__.flush()
-        sys.__stdout__.write(f'\rDone!\n')
-        sys.__stdout__.flush()
+            print(f'\r{100 * i / size:.2f}%', end='')
+        print(f'\rDone!')
 
         fig, axes = plt.subplots(dim, 1)
         for i, ax in enumerate(np.array(axes).flatten()):
@@ -313,10 +309,8 @@ class GraphAnalyser(object):
         for i, subgraph in enumerate(subgraphs):
             data.append(subgraph.get_timestamp(), subgraph.get_error())
 
-            sys.__stdout__.write(f'\r{100 * i/size:.2f}%')
-            sys.__stdout__.flush()
-        sys.__stdout__.write(f'\rDone!\n')
-        sys.__stdout__.flush()
+            print(f'\r{100 * i / size:.2f}%', end='')
+        print(f'\rDone!')
 
         ax.plot(*data.to_lists())
         ax.figure.show()
@@ -349,10 +343,8 @@ class GraphAnalyser(object):
         for i, subgraph in enumerate(subgraphs):
             data.append(subgraph.get_timestamp(), subgraph.get_ate())
 
-            sys.__stdout__.write(f'\r{100 * i / size:.2f}%')
-            sys.__stdout__.flush()
-        sys.__stdout__.write(f'\rDone!\n')
-        sys.__stdout__.flush()
+            print(f'\r{100 * i / size:.2f}%', end='')
+        print(f'\rDone!')
 
         ax.plot(*data.to_lists())
         ax.figure.show()
@@ -385,10 +377,8 @@ class GraphAnalyser(object):
         for i, subgraph in enumerate(subgraphs):
             data.append(subgraph.get_timestamp(), subgraph.get_rpe_translation())
 
-            sys.__stdout__.write(f'\r{100 * i / size:.2f}%')
-            sys.__stdout__.flush()
-        sys.__stdout__.write(f'\rDone!\n')
-        sys.__stdout__.flush()
+            print(f'\r{100 * i / size:.2f}%', end='')
+        print(f'\rDone!')
 
         ax.plot(*data.to_lists())
         ax.figure.show()
@@ -421,10 +411,8 @@ class GraphAnalyser(object):
         for i, subgraph in enumerate(subgraphs):
             data.append(subgraph.get_timestamp(), subgraph.get_rpe_rotation())
 
-            sys.__stdout__.write(f'\r{100 * i / size:.2f}%')
-            sys.__stdout__.flush()
-        sys.__stdout__.write(f'\rDone!\n')
-        sys.__stdout__.flush()
+            print(f'\r{100 * i / size:.2f}%', end='')
+        print(f'\rDone!')
 
         ax.plot(*data.to_lists())
         ax.figure.show()

@@ -315,6 +315,10 @@ class BiSimulation2D(object):
     def step(self, delta: float):
         truth_graph: 'SubGraph' = self._truth.step(delta)
         estimate_graph: 'SubGraph' = self._estimate.step(delta)
+        print(f'\rstep: {self.get_timestamp():.2f}', end='')
+
+    def get_timestamp(self) -> float:
+        return self._truth.get_timestamp()
 
     def fix(self):
         """ Fixes the current pose-node. """
@@ -389,6 +393,7 @@ class BiSimulation2D(object):
         self.init()
         self.loop()
 
+        print(f'\rSimulation done!')
         truth, perturbed = self.get_graphs()
         self.save()
         self.reset()

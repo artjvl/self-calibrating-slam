@@ -264,12 +264,11 @@ class BrowserTree(QtWidgets.QTreeWidget):
         sub_analyse_plot_parameters.setEnabled(bool(sub_analyse_plot_parameters.actions()))
         # analyse - plot edge variance
         sub_analyse_plot_edge_variance = sub_analyse.addMenu('Plot edge variance')
-        if graph.has_previous():
-            edge_names: tp.List[str] = graph.get_edge_names()
-            for edge_name in edge_names:
-                commands[sub_analyse_plot_edge_variance.addAction(f"'{edge_name}'")] = functools.partial(
-                    self._tree.get_analyser().plot_edge_variance, graph, edge_name
-                )
+        edge_names: tp.List[str] = graph.get_edge_names()
+        for edge_name in edge_names:
+            commands[sub_analyse_plot_edge_variance.addAction(f"'{edge_name}'")] = functools.partial(
+                self._tree.get_analyser().plot_edge_variance, graph, edge_name
+            )
         sub_analyse_plot_edge_variance.setEnabled(bool(sub_analyse_plot_edge_variance.actions()))
 
         # select action
