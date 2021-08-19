@@ -190,6 +190,10 @@ class CalibratingEdge(tp.Generic[T], Edge[T], ABC):
 
     def __copy__(self):
         new = super().__copy__()
+
+        # CalibratingEdge
+        new._endpoints = copy.copy(self._endpoints)
+        new._parameters = copy.copy(self._parameters)
         new._num_additional = self._num_additional
         return new
 
@@ -199,5 +203,8 @@ class CalibratingEdge(tp.Generic[T], Edge[T], ABC):
         new = super().__deepcopy__(memo)
         memo[id(self)] = new
 
+        # CalibratingEdge
+        new._endpoints = copy.deepcopy(self._endpoints, memo)
+        new._parameters = copy.deepcopy(self._parameters, memo)
         new._num_additional = self._num_additional
         return new

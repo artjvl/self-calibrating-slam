@@ -191,8 +191,10 @@ class GraphAnalyser(object):
             for i in range(dim):
                 data[i].append(timestamp, vector[i])
 
-            print(f'\r{100 * i / size:.2f}%', end='')
-        print(f'\rDone!')
+            sys.__stdout__.write(f'\r{100 * i / size:.2f}%')
+            sys.__stdout__.flush()
+        sys.__stdout__.write(f'\rDone!\n')
+        sys.__stdout__.flush()
 
         fig, axes = plt.subplots(dim, 1)
         for i, ax in enumerate(np.array(axes).flatten()):
@@ -272,8 +274,10 @@ class GraphAnalyser(object):
                 errors: tp.List[float] = [error_vector[i] for error_vector in error_vectors]
                 data[i].append(timestamp, float(np.std(errors)))
 
-            print(f'\r{100 * i / size:.2f}%', end='')
-        print(f'\rDone!')
+            sys.__stdout__.write(f'\r{100 * i / size:.2f}%')
+            sys.__stdout__.flush()
+        sys.__stdout__.write(f'\rDone!\n')
+        sys.__stdout__.flush()
 
         fig, axes = plt.subplots(dim, 1)
         for i, ax in enumerate(np.array(axes).flatten()):
@@ -309,8 +313,10 @@ class GraphAnalyser(object):
         for i, subgraph in enumerate(subgraphs):
             data.append(subgraph.get_timestamp(), subgraph.get_error())
 
-            print(f'\r{100 * i / size:.2f}%', end='')
-        print(f'\rDone!')
+            sys.__stdout__.write(f'\r{100 * i / size:.2f}%')
+            sys.__stdout__.flush()
+        sys.__stdout__.write(f'\rDone!\n')
+        sys.__stdout__.flush()
 
         ax.plot(*data.to_lists())
         ax.figure.show()
@@ -343,8 +349,10 @@ class GraphAnalyser(object):
         for i, subgraph in enumerate(subgraphs):
             data.append(subgraph.get_timestamp(), subgraph.get_ate())
 
-            print(f'\r{100 * i / size:.2f}%', end='')
-        print(f'\rDone!')
+            sys.__stdout__.write(f'\r{100 * i / size:.2f}%')
+            sys.__stdout__.flush()
+        sys.__stdout__.write(f'\rDone!\n')
+        sys.__stdout__.flush()
 
         ax.plot(*data.to_lists())
         ax.figure.show()
@@ -377,8 +385,10 @@ class GraphAnalyser(object):
         for i, subgraph in enumerate(subgraphs):
             data.append(subgraph.get_timestamp(), subgraph.get_rpe_translation())
 
-            print(f'\r{100 * i / size:.2f}%', end='')
-        print(f'\rDone!')
+            sys.__stdout__.write(f'\r{100 * i / size:.2f}%')
+            sys.__stdout__.flush()
+        sys.__stdout__.write(f'\rDone!\n')
+        sys.__stdout__.flush()
 
         ax.plot(*data.to_lists())
         ax.figure.show()
@@ -411,8 +421,10 @@ class GraphAnalyser(object):
         for i, subgraph in enumerate(subgraphs):
             data.append(subgraph.get_timestamp(), subgraph.get_rpe_rotation())
 
-            print(f'\r{100 * i / size:.2f}%', end='')
-        print(f'\rDone!')
+            sys.__stdout__.write(f'\r{100 * i / size:.2f}%')
+            sys.__stdout__.flush()
+        sys.__stdout__.write(f'\rDone!\n')
+        sys.__stdout__.flush()
 
         ax.plot(*data.to_lists())
         ax.figure.show()

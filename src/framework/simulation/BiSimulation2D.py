@@ -1,4 +1,5 @@
 import pathlib
+import sys
 import typing as tp
 from abc import abstractmethod
 from datetime import datetime
@@ -315,7 +316,8 @@ class BiSimulation2D(object):
     def step(self, delta: float):
         truth_graph: 'SubGraph' = self._truth.step(delta)
         estimate_graph: 'SubGraph' = self._estimate.step(delta)
-        print(f'\rstep: {self.get_timestamp():.2f}', end='')
+        sys.__stdout__.write(f'\rstep: {self.get_timestamp():.2f}')
+        sys.__stdout__.flush()
 
     def get_timestamp(self) -> float:
         return self._truth.get_timestamp()
@@ -393,7 +395,8 @@ class BiSimulation2D(object):
         self.init()
         self.loop()
 
-        print(f'\rSimulation done!')
+        sys.__stdout__.write(f"\rSimulation '{self.__class__.__name__}' done!")
+        sys.__stdout__.flush()
         truth, perturbed = self.get_graphs()
         self.save()
         self.reset()
