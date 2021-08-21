@@ -37,7 +37,10 @@ class Parameter(object):
         self._is_visible = is_visible
 
     @abstractmethod
-    def add_edge(self, edge: 'SubCalibratingEdge') -> None:
+    def add_edge(
+            self,
+            edge: 'SubCalibratingEdge'
+    ) -> None:
         pass
 
     def get_node(self) -> 'SubParameterNode':
@@ -48,6 +51,10 @@ class Parameter(object):
 
     def is_visible(self) -> bool:
         return self._is_visible
+
+    @abstractmethod
+    def receive_closure(self) -> None:
+        pass
 
     def compose(
             self,
@@ -72,7 +79,13 @@ class StaticParameter(Parameter):
         self._node = new
         return new
 
-    def add_edge(self, edge: 'SubCalibratingEdge') -> None:
+    def receive_closure(self) -> None:
+        pass
+
+    def add_edge(
+            self,
+            edge: 'SubCalibratingEdge'
+    ) -> None:
         node: SubParameterNode = self.get_node()
         if self.is_visible():
             edge.add_parameter(node)
@@ -81,8 +94,11 @@ class StaticParameter(Parameter):
 
 
 class SlidingParameter(Parameter):
-    _window: int
+    _window_size: int
+
     _in: tp.List['SubCalibratingEdge']
+    _is_closures: tp.List[bool]
+    _between: tp.List['SubCalibratingEdge']
     _out: tp.List['SubCalibratingEdge']
 
     def __init__(
@@ -98,22 +114,38 @@ class SlidingParameter(Parameter):
             index=index,
             is_visible=True
         )
-        self._window = window
+        self._window_size = window
+
         self._in = []
+        self._is_closures = []
+        self._between = []
         self._out = []
 
     def get_window(self) -> int:
-        return self._window
+        return self._window_size
 
-    def add_edge(self, edge: 'SubCalibratingEdge') -> None:
+    def receive_closure(self) -> None:
+        self._is_closures[-1] = True
+
+    def add_edge(
+            self,
+            edge: 'SubCalibratingEdge'
+    ) -> None:
         node: SubParameterNode = self.get_node()
-        # node.set_timestamp(edge.get_timestamp())
         edge.add_parameter(node)
-        self._in.append(edge)
 
-        if len(self._in) > self._window:
-            first: 'SubCalibratingEdge' = self._in[0]
-            first.remove_parameter_id(node.get_id())
-            first.set_measurement(node.compose(first.get_measurement(), is_inverse=False))
-            self._out.append(first)
-            self._in = self._in[1:]
+        if len(self._in) < self._window_size:
+            self._in.append(edge)  # append <node>
+            self._is_closures.append(False)  # append <is_closure>
+        else:
+            self._between = self._between + self._in[:1]  # push in first element of <_in>
+            self._in = self._in[1:] + [edge]  # push in <node> and push out first element
+            self._is_closures = self._is_closures[1:] + [False]  # push in <is_closure> and push out first element
+
+        # if any closures are present in the previously connected edges, the window size is reduced to its default value
+        if any(self._is_closures[:-1]):
+            for edge_ in self._between:
+                edge_.remove_parameter_id(node.get_id())
+                edge_.set_measurement(node.compose(edge_.get_measurement(), is_inverse=False))
+                self._out.append(edge_)
+            self._between = []

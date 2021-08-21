@@ -42,7 +42,7 @@ class ManhattanSimulation2D(BiSimulation2D, ABC):
         self._step_count += 1
 
         angle: float = 0.
-        if self._step_count == self._block_size - 1:
+        if self._step_count == self._block_size:
             angle = self.generate_new_angle()
             self._step_count = 0
 

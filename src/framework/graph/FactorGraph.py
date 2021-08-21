@@ -273,13 +273,13 @@ class FactorEdge(BaseEdge, tp.Generic[T], DataContainer[T]):
         """ Returns the information matrix of this edge. """
         return self._info_matrix.get_value()
 
-    def get_cov_matrix(self) -> SubSquare:
-        """ Returns the covariance matrix of this edge. """
-        return self._info_matrix.get_value().inverse()
-
     def set_info_matrix(self, info_matrix: SubSquare) -> None:
         """ Sets the information matrix of this edge. """
         self._info_matrix.set_value(info_matrix)
+
+    def get_cov_matrix(self) -> SubSquare:
+        """ Returns the covariance matrix of this edge. """
+        return self._info_matrix.get_value().inverse()
 
     def set_cov_matrix(self, cov_matrix: SubSquare) -> None:
         """ Sets the information matrix of this edge by providing the covariance matrix. """

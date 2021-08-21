@@ -2,7 +2,6 @@ import typing as tp
 from abc import abstractmethod
 
 import numpy as np
-from src.framework.graph.data import SubData
 from src.framework.graph.data.DataFactory import DataFactory
 from src.framework.graph.protocols.Measurement2D import Measurement2D
 from src.framework.math.lie.transformation import SE2
@@ -13,8 +12,9 @@ from src.framework.math.matrix.vector import Vector3
 from src.framework.simulation.Parameter import StaticParameter
 
 if tp.TYPE_CHECKING:
-    from src.framework.math.matrix.square import SubSquare
+    from src.framework.graph.data import SubData
     from src.framework.graph.data.DataFactory import Quantity
+    from src.framework.math.matrix.square import SubSquare
     from src.framework.simulation.Parameter import SubParameter
 
 T = tp.TypeVar('T')
@@ -48,7 +48,7 @@ class Sensor(tp.Generic[T]):
         return DataFactory.from_type(cls.get_type()).get_dim()
 
     @classmethod
-    def get_type(cls) -> tp.Type[SubData]:
+    def get_type(cls) -> tp.Type['SubData']:
         return cls._type
 
     # info
@@ -57,6 +57,12 @@ class Sensor(tp.Generic[T]):
 
     def get_info_matrix(self) -> 'SubSquare':
         return self._info_matrix
+
+    def set_cov_matrix(self, cov_matrix: 'SubSquare') -> None:
+        self._info_matrix = cov_matrix.inverse()
+
+    def get_cov_matrix(self) -> 'SubSquare':
+        return self._info_matrix.inverse()
 
     # noise
     def set_seed(self, seed: tp.Optional[int] = None):
@@ -124,6 +130,25 @@ class Sensor(tp.Generic[T]):
     def decompose(self, value: T) -> T:
         """ Decomposes the value by, in reverse order, subtracting all stored parameters. """
         pass
+
+    @classmethod
+    def from_info_matrix(
+            cls,
+            seed: tp.Optional[int] = None,
+            info_matrix: tp.Optional['SubSquare'] = None
+    ) -> SubSensor:
+        return cls(seed, info_matrix)
+
+    @classmethod
+    def from_cov_matrix(
+            cls,
+            seed: tp.Optional[int] = None,
+            cov_matrix: tp.Optional['SubSquare'] = None
+    ) -> SubSensor:
+        info_matrix: tp.Optional['SubSquare'] = None
+        if cov_matrix is not None:
+            info_matrix = cov_matrix.inverse()
+        return cls(seed, info_matrix)
 
 
 class SensorSE2(Sensor[SE2]):

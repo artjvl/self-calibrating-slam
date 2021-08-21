@@ -66,7 +66,15 @@ class BiSimulation2D(object):
             info_matrix_truth: 'SubSquare',
             info_matrix_estimate: 'SubSquare'
     ) -> None:
-        """ Adds a sensor with <sensor_name>. """
+        self.add_sensor_with_info_matrix(sensor_name, type_, info_matrix_truth, info_matrix_estimate)
+
+    def add_sensor_with_info_matrix(
+            self,
+            sensor_name: str,
+            type_: tp.Type['Quantity'],
+            info_matrix_truth: 'SubSquare',
+            info_matrix_estimate: 'SubSquare'
+    ) -> None:
         self._truth.add_sensor(
             sensor_name, SensorFactory.from_value(
                 type_,
@@ -82,12 +90,32 @@ class BiSimulation2D(object):
             )
         )
 
+    def add_sensor_with_cov_matrix(
+            self,
+            sensor_name: str,
+            type_: tp.Type['Quantity'],
+            cov_matrix_truth: 'SubSquare',
+            cov_matrix_estimate: 'SubSquare'
+    ) -> None:
+        self.add_sensor_with_info_matrix(sensor_name, type_, cov_matrix_truth.inverse(), cov_matrix_estimate.inverse())
+
     def has_sensor(self, sensor_name: str) -> bool:
         return self._truth.has_sensor(sensor_name)
 
+    def get_truth_sensor(self, sensor_name: str) -> 'SubSensor':
+        return self._truth.get_sensor(sensor_name)
+
+    def get_estimate_sensor(self, sensor_name: str) -> 'SubSensor':
+        return self._estimate.get_sensor(sensor_name)
+
+    def set_truth_info_matrix(self, sensor_name: str, info_matrix: 'SubSquare') -> None:
+        self.get_truth_sensor(sensor_name).set_info_matrix(info_matrix)
+
+    def set_truth_cov_matrix(self, sensor_name: str, cov_matrix: 'SubSquare') -> None:
+        self.get_truth_sensor(sensor_name).set_cov_matrix(cov_matrix)
+
     def get_sensors(self, sensor_name: str) -> tp.Tuple['SubSensor', 'SubSensor']:
-        assert self.has_sensor(sensor_name)
-        return self._truth.get_sensor(sensor_name), self._estimate.get_sensor(sensor_name)
+        return self.get_truth_sensor(sensor_name), self.get_estimate_sensor(sensor_name)
 
     # parameters
     def add_truth_parameter(

@@ -26,7 +26,7 @@ class EdgePose2DV2(CalibratingEdgeV2, DrawEdge):
             nodes.append(node)
         super().__init__(
             name=name,
-            node=nodes,
+            nodes=nodes,
             measurement=measurement,
             info_matrix=info_matrix
         )
