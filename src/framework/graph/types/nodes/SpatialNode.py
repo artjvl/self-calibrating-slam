@@ -3,11 +3,15 @@ from abc import abstractmethod
 
 from src.framework.graph.Graph import Node
 from src.framework.graph.data.DataFactory import Quantity
+from src.framework.graph.protocols.Measurement import Measurement2D
 from src.framework.graph.protocols.Visualisable import DrawPoint, DrawAxis
 from src.framework.math.lie.transformation import SE2
 from src.framework.math.lie.transformation import SE3
 from src.framework.math.matrix.vector import Vector2
 from src.framework.math.matrix.vector import Vector3
+
+if tp.TYPE_CHECKING:
+    from src.framework.graph.protocols.Measurement import SubMeasurement
 
 SubSpatialNode = tp.TypeVar('SubSpatialNode', bound='SpatialNode')
 T = tp.TypeVar('T')
@@ -19,6 +23,17 @@ class SpatialNode(tp.Generic[T], Node[T]):
     def get_translation(self) -> Vector2:
         pass
 
+    def has_measurement(self) -> bool:
+        return super().has_value()
+
+    @abstractmethod
+    def get_measurement(self) -> 'SubMeasurement':
+        pass
+
+    @abstractmethod
+    def set_measurement(self, measurement: 'SubMeasurement') -> None:
+        pass
+
 
 class NodeV2(SpatialNode[Vector2], DrawPoint):
     _type = Vector2
@@ -26,6 +41,12 @@ class NodeV2(SpatialNode[Vector2], DrawPoint):
     def get_translation(self) -> Vector2:
         assert self.has_value()
         return self.get_value()
+
+    def get_measurement(self) -> Measurement2D:
+        return Measurement2D.from_translation(self.get_value())
+
+    def set_measurement(self, measurement: Measurement2D) -> None:
+        self.set_value(measurement.translation())
 
     def draw_point(self) -> Vector3:
         return self.get_value().to_vector3()
@@ -37,6 +58,16 @@ class NodeSE2(SpatialNode[SE2], DrawAxis):
     def get_translation(self) -> Vector2:
         assert self.has_value()
         return self.get_value().translation()
+
+    def has_measurement(self) -> bool:
+        return super().has_value()
+
+    def get_measurement(self) -> Measurement2D:
+        assert self.has_measurement()
+        return Measurement2D.from_transformation(self.get_value())
+
+    def set_measurement(self, measurement: Measurement2D) -> None:
+        self.set_value(measurement.transformation())
 
     def draw_pose(self) -> SE3:
         return self.get_value().to_se3()

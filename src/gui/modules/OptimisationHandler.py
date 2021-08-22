@@ -1,5 +1,7 @@
+import copy
 import typing as tp
 
+import numpy as np
 from PyQt5 import QtCore
 from src.framework.graph.Graph import SubGraph, Graph
 from src.framework.optimiser.Optimiser import Optimiser
@@ -58,12 +60,24 @@ class OptimisationHandler(QtCore.QObject):
             subgraphs = graph.get_subgraphs()
 
         subsolutions: tp.List[SubGraph] = []
+        error: float = 0.
         for subgraph in subgraphs:
-            print(f"gui/OptimisationHandler: Optimising '{subgraph.to_unique()}'...")
-            subsolution: SubGraph = self._optimiser.instance_optimise(subgraph, compute_marginals=False)
+            subgraph_error: float = subgraph.compute_error()
+            subsolution: SubGraph
+            if not np.isclose(subgraph_error, error, atol=1e-6):
+                print(f"gui/OptimisationHandler: Optimising '{subgraph.to_unique()}'...")
+                subsolution = self._optimiser.instance_optimise(subgraph, compute_marginals=False)
+                error = subgraph_error
+            else:
+                subsolution = copy.deepcopy(subgraph)
+                subgraph.copy_meta_to(subsolution)
+                if subsolutions:
+                    previous: SubGraph = subsolutions[-1]
+                    subsolution.from_vector(previous.to_vector())
             if subsolutions:
                 subsolution.set_previous(subsolutions[-1])
             subsolutions.append(subsolution)
+
         solution: SubGraph = Graph.from_subgraphs(subsolutions)
 
         trajectory_node: TrajectoryTreeNode = self._graph_node.get_parent()

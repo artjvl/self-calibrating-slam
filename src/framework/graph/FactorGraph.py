@@ -46,17 +46,12 @@ class FactorGraph(BaseGraph):
     def from_vector(self, vector: 'SubVector') -> None:
         graph_dim: int = sum([node.get_dim() for node in self.get_nodes()])
         vector_dim = vector.get_length()
-        assert vector_dim <= graph_dim
+        assert vector_dim == graph_dim
         list_: tp.List[float] = vector.to_list()
 
         index: int = 0
-        node_iter: iter = iter(self.get_nodes())
         node: SubFactorNode
-
-        while index < vector_dim:
-            node = next(node_iter, None)
-            assert node is not None
-
+        for node in self.get_nodes():
             dim = node.get_dim()
             segment: tp.List[float] = list_[index: index + dim]
             assert len(segment) == dim

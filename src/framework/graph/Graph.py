@@ -356,6 +356,11 @@ class Edge(tp.Generic[T], FactorEdge[T], ABC):
         """ Returns the measurement encoded in this edge. """
         pass
 
+    @abstractmethod
+    def set_measurement(self, measurement: 'SubMeasurement') -> None:
+        """ Sets the measurement encoded in this edge. """
+        pass
+
     # error
     def compute_rpe_translation2(self) -> tp.Optional[float]:
         return None
