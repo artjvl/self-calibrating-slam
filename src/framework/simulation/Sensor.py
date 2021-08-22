@@ -3,7 +3,7 @@ from abc import abstractmethod
 
 import numpy as np
 from src.framework.graph.data.DataFactory import DataFactory
-from src.framework.graph.protocols.Measurement2D import Measurement2D
+from src.framework.graph.protocols.Measurement import Measurement2D
 from src.framework.math.lie.transformation import SE2
 from src.framework.math.matrix.square import SquareFactory
 from src.framework.math.matrix.vector import SubVector, VectorFactory

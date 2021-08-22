@@ -1,4 +1,3 @@
-import copy
 import pathlib
 import typing as tp
 from abc import ABC, abstractmethod
@@ -6,7 +5,10 @@ from datetime import datetime
 
 import numpy as np
 from src.framework.graph.FactorGraph import FactorGraph, FactorNode, FactorEdge
-from src.framework.math.matrix.square import SubSquare
+
+if tp.TYPE_CHECKING:
+    from src.framework.graph.protocols.Measurement import SubMeasurement
+    from src.framework.math.matrix.square import SubSquare
 
 SubGraph = tp.TypeVar('SubGraph', bound='Graph')
 SubNode = tp.TypeVar('SubNode', bound='Node')
@@ -339,7 +341,7 @@ class Edge(tp.Generic[T], FactorEdge[T], ABC):
             name: tp.Optional[str] = None,
             nodes: tp.Optional[tp.List[SubEdge]] = None,
             measurement: tp.Optional[T] = None,
-            info_matrix: tp.Optional[SubSquare] = None
+            info_matrix: tp.Optional['SubSquare'] = None
     ):
         super().__init__(name=name, nodes=nodes, measurement=measurement, info_matrix=info_matrix)
         self._truth = None
@@ -350,7 +352,7 @@ class Edge(tp.Generic[T], FactorEdge[T], ABC):
         return super().has_value()
 
     @abstractmethod
-    def get_measurement(self) -> T:
+    def get_measurement(self) -> 'SubMeasurement':
         """ Returns the measurement encoded in this edge. """
         pass
 

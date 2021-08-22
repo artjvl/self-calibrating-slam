@@ -2,12 +2,12 @@ import typing as tp
 from abc import ABC
 
 from src.framework.graph.CalibratingGraph import CalibratingEdge
-from src.framework.graph.protocols.Measurement2D import Measurement2D
+from src.framework.graph.protocols.Measurement import Measurement2D
 from src.framework.math.lie.transformation import SE2
 
 if tp.TYPE_CHECKING:
     from src.framework.math.matrix.vector import Vector3
-    from src.framework.graph.protocols.Measurement2D import SubMeasurement2D
+    from src.framework.graph.protocols.Measurement import SubMeasurement2D
 
 
 class CalibratingEdgeSE2(CalibratingEdge[SE2], ABC):

@@ -10,7 +10,7 @@ from utils.TwoWayDict import TwoWayDict
 
 if tp.TYPE_CHECKING:
     from src.framework.graph.data.DataFactory import Quantity
-    from src.framework.graph.protocols.Measurement2D import SubMeasurement2D
+    from src.framework.graph.protocols.Measurement import SubMeasurement2D
 
 SubParameterNode = tp.TypeVar('SubParameterNode', bound='ParameterNode')
 

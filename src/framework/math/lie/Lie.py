@@ -3,8 +3,12 @@ from abc import abstractmethod
 
 import numpy as np
 from src.framework.math.Dimensional import Dimensional
-from src.framework.math.matrix.square import SubSquare, SquareFactory
-from src.framework.math.matrix.vector import SubVector
+from src.framework.math.matrix.square import SquareFactory
+from src.framework.math.matrix.vector import VectorFactory
+
+if tp.TYPE_CHECKING:
+    from src.framework.math.matrix.vector.Vector import SubSizeVector
+    from src.framework.math.matrix.square import SubSquare
 
 SubLie = tp.TypeVar('SubLie', bound='Lie')
 
@@ -35,19 +39,19 @@ class Lie(Dimensional):
     def get_size(cls) -> int:
         pass
 
-    def algebra(self) -> SubSquare:
+    def algebra(self) -> 'SubSquare':
         return type(self)._vector_to_algebra(self.vector())
 
     # alternative representations
     @abstractmethod
-    def matrix(self) -> SubSquare:
+    def matrix(self) -> 'SubSquare':
         pass
 
     def array(self) -> np.ndarray:
         return self.matrix().array()
 
     @abstractmethod
-    def vector(self) -> SubVector:
+    def vector(self) -> 'SubSizeVector':
         pass
 
     @abstractmethod
@@ -57,13 +61,13 @@ class Lie(Dimensional):
     # alternative constructors
     @classmethod
     @abstractmethod
-    def from_matrix(cls, matrix: SubSquare) -> SubLie:
+    def from_matrix(cls, matrix: 'SubSquare') -> SubLie:
         """ generates group element from matrix """
         pass
 
     @classmethod
     @abstractmethod
-    def from_vector(cls, vector: SubVector) -> SubLie:
+    def from_vector(cls, vector: 'SubSizeVector') -> SubLie:
         """ generates group element from vector """
         pass
 
@@ -73,16 +77,21 @@ class Lie(Dimensional):
         """ generates group element from vector elements """
         pass
 
+    @classmethod
+    @abstractmethod
+    def from_zeros(cls) -> SubLie:
+        return cls.from_vector(VectorFactory.from_dim(cls.get_dof()).zeros())
+
     # helper-methods
     @staticmethod
     @abstractmethod
-    def _vector_to_algebra(vector: SubVector) -> SubSquare:
+    def _vector_to_algebra(vector: 'SubSizeVector') -> 'SubSquare':
         """ returns the algebra corresponding to the vector """
         pass
 
     @staticmethod
     @abstractmethod
-    def _algebra_to_vector(algebra: SubSquare) -> SubVector:
+    def _algebra_to_vector(algebra: 'SubSquare') -> 'SubSizeVector':
         """ returns the vector corresponding to the algebra """
         pass
 
