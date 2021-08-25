@@ -105,6 +105,7 @@ def compose_bias(
     measurement.mask(transformation * parameter)
     return measurement
 
+
 def compose_offset(
         measurement: 'SubMeasurement2D',
         parameter: SE2,
@@ -116,6 +117,7 @@ def compose_offset(
     transformation: SE2 = measurement.transformation()
     measurement.mask(parameter * transformation * parameter.inverse())
     return measurement
+
 
 def compose_scale(
         measurement: 'SubMeasurement2D',
@@ -271,12 +273,12 @@ class ParameterNodeV1(ParameterNode[Vector1]):
 
     # read/write
     def read(self, words: tp.List[str]) -> tp.List[str]:
-        words = super().read(words)
-        self._index = int(words[0])
-        return words[1:]
+        self.set_specification(ParameterDict.from_string(words[0]))
+        self._index = int(words[1])
+        return self._data.read_rest(words[2:])
 
     def write(self) -> tp.List[str]:
-        words: tp.List[str] = super().write() + [str(self._index)]
+        words: tp.List[str] = [ParameterDict.from_specification(self._specification), str(self._index)] + self._data.write()
         return words
 
 
@@ -351,6 +353,15 @@ class ParameterNodeV2(ParameterNode[Vector2]):
     ) -> 'SubMeasurement2D':
         scale = self.to_vector3(filler=1.)
         return compose_scale(measurement, scale, is_inverse)
+
+    def read(self, words: tp.List[str]) -> tp.List[str]:
+        self.set_specification(ParameterDict.from_string(words[0]))
+        self._index = int(words[1])
+        return self._data.read_rest(words[2:])
+
+    def write(self) -> tp.List[str]:
+        words: tp.List[str] = [ParameterDict.from_specification(self._specification), str(self._index)] + self._data.write()
+        return words
 
 
 class ParameterNodeV3(ParameterNode[Vector3]):
