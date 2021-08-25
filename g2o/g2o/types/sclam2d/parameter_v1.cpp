@@ -5,17 +5,18 @@
 #include "parameter_v1.h"
 
 namespace g2o {
-    ParameterV1::ParameterV1() : NodeV1(), Param() {
+    ParameterV1::ParameterV1() : NodeV1(), Param(), _index(0) {
 
     }
     bool ParameterV1::read(std::istream& is) {
         std::string interpretation;
         is >> interpretation;
         setInterpretation(interpretation);
+        is >> _index;
         return NodeV1::read(is);
     }
     bool ParameterV1::write(std::ostream& os) const {
-        os << interpretation() << " ";
+        os << interpretation() << " " << _index << " ";
         return NodeV1::write(os);
     }
     Vector3 ParameterV1::toVector3(bool inverse) const {

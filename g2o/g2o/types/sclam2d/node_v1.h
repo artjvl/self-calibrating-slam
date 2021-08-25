@@ -39,9 +39,6 @@ namespace g2o {
         }
         virtual bool read(std::istream& is);
         virtual bool write(std::ostream& os) const;
-
-    protected:
-        int _index;
     };
 }
 

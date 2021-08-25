@@ -5,16 +5,15 @@
 #include "node_v1.h"
 
 namespace g2o {
-    NodeV1::NodeV1() : BaseVertex<1, number_t>(), _index(0) {
+    NodeV1::NodeV1() : BaseVertex<1, number_t>() {
         _estimate = 0.0;
     }
     bool NodeV1::read(std::istream& is) {
         is >> _estimate;
-        is >> _index;
         return is.good() || is.eof();
     }
     bool NodeV1::write(std::ostream& os) const {
-        os << _estimate << " " << _index << " ";
+        os << _estimate << " ";
         return os.good();
     }
 }

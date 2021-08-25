@@ -18,6 +18,8 @@ namespace g2o {
         virtual Vector3 toVector3() const {
             return toVector3(false);
         }
+    protected:
+        int _index;
     };
 }
 
