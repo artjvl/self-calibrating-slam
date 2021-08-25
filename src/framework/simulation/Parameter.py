@@ -3,6 +3,7 @@ from abc import abstractmethod
 
 from src.framework.graph.types.nodes.ParameterNode import ParameterNodeFactory, ParameterNodeV1, \
     ParameterNodeV2
+from src.utils import GeoHash2D
 
 if tp.TYPE_CHECKING:
     from src.framework.graph.CalibratingGraph import SubCalibratingEdge
@@ -105,7 +106,7 @@ class SlidingParameter(Parameter):
             self,
             value: 'Quantity',
             specification: 'ParameterSpecification',
-            window: int,
+            window_size: int,
             index: int = 0
     ):
         super().__init__(
@@ -114,7 +115,7 @@ class SlidingParameter(Parameter):
             index=index,
             is_visible=True
         )
-        self._window_size = window
+        self._window_size = window_size
 
         self._in = []
         self._is_closures = []
@@ -131,7 +132,7 @@ class SlidingParameter(Parameter):
             self,
             edge: 'SubCalibratingEdge'
     ) -> None:
-        node: SubParameterNode = self.get_node()
+        node: 'SubParameterNode' = self.get_node()
         edge.add_parameter(node)
 
         if len(self._in) < self._window_size:
@@ -149,3 +150,49 @@ class SlidingParameter(Parameter):
                 edge_.set_measurement(node.compose(edge_.get_measurement(), is_inverse=False))
                 self._out.append(edge_)
             self._between = []
+
+
+class OldSlidingParameter(Parameter):
+    _window_size: int
+
+    _in: tp.List['SubCalibratingEdge']
+    _out: tp.List['SubCalibratingEdge']
+
+    def __init__(
+            self,
+            value: 'Quantity',
+            specification: 'ParameterSpecification',
+            window_size: int,
+            index: int = 0
+    ):
+        super().__init__(
+            value=value,
+            specification=specification,
+            index=index,
+            is_visible=True
+        )
+        self._window_size = window_size
+
+        self._in = []
+        self._out = []
+
+    def get_window(self) -> int:
+        return self._window_size
+
+    def receive_closure(self) -> None:
+        pass
+
+    def add_edge(
+            self,
+            edge: 'SubCalibratingEdge'
+    ) -> None:
+        node: 'SubParameterNode' = self.get_node()
+        edge.add_parameter(node)
+
+        self._in.append(edge)
+        if len(self._in) > self._window_size:
+            first: 'SubCalibratingEdge' = self._in[0]
+            first.remove_parameter_id(node.get_id())
+            first.set_measurement(node.compose(first.get_measurement(), is_inverse=False))
+            self._in = self._in[1:]
+

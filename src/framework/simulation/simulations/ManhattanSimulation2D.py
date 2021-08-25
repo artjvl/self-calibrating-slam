@@ -3,7 +3,9 @@ from abc import ABC
 
 import numpy as np
 from src.framework.math.lie.transformation import SE2
+from src.framework.optimiser.Optimiser import Optimiser
 from src.framework.simulation.BiSimulation2D import BiSimulation2D
+from src.framework.simulation.SubSimulation2D import SubSubSimulation2D
 
 if tp.TYPE_CHECKING:
     from src.framework.math.matrix.vector import Vector2
@@ -15,8 +17,21 @@ class ManhattanSimulation2D(BiSimulation2D, ABC):
     _domain: float
     _step_count: int
 
-    def __init__(self):
-        super().__init__()
+    def __init__(
+            self,
+            sim_type: tp.Type['SubSubSimulation2D'] = None,
+            optimiser: tp.Optional[Optimiser] = None,
+            path_seed: tp.Optional[int] = None,
+            constraint_seed: tp.Optional[int] = None,
+            sensor_seed: tp.Optional[int] = None
+    ):
+        super().__init__(
+            sim_type=sim_type,
+            optimiser=optimiser,
+            path_seed=path_seed,
+            constraint_seed=constraint_seed,
+            sensor_seed=sensor_seed
+        )
         self._block_size = 4
         self._step_size = 1.
         self._domain = 50.
@@ -50,7 +65,7 @@ class ManhattanSimulation2D(BiSimulation2D, ABC):
         self.add_odometry(sensor_name, pose)
 
     def generate_new_angle(self) -> float:
-        angle = np.deg2rad(self.get_rng().choice([90., -90.]))
+        angle = np.deg2rad(self.get_path_rng().choice([90., -90.]))
         translation: Vector2 = self.get_current_pose().translation()
         if np.max(np.abs(translation.array())) > self._domain - self._step_count:
             proposed: SE2 = self.get_current_pose() * \

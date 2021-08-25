@@ -7,10 +7,11 @@ from datetime import datetime
 import numpy as np
 from src.framework.graph.GraphParser import GraphParser
 from src.framework.math.lie.transformation import SE2
+from src.framework.optimiser.Optimiser import Optimiser
 from src.framework.simulation.ConfigurationSet import ConfigurationSet
-from src.framework.simulation.Parameter import StaticParameter, SlidingParameter
+from src.framework.simulation.Parameter import StaticParameter, SlidingParameter, OldSlidingParameter
 from src.framework.simulation.Sensor import SensorFactory
-from src.framework.simulation.Simulation2D import Simulation2D
+from src.framework.simulation.SubSimulation2D import SubSubSimulation2D, SubSimulation2D, PlainSubSimulation2D
 from src.utils import GeoHash2D
 
 if tp.TYPE_CHECKING:
@@ -22,41 +23,62 @@ if tp.TYPE_CHECKING:
     from src.framework.graph.types.nodes.SpatialNode import NodeSE2
     from src.framework.simulation.Parameter import SubParameter
     from src.framework.simulation.Sensor import SubSensor
-    from src.framework.simulation.Simulation2D import SubSimulation2D
+    from src.framework.simulation.SubSimulation2D import SubSubSimulation2D
+
+SubBiSimulation2D = tp.TypeVar('SubBiSimulation2D', bound='BiSimulation2D')
 
 
 class BiSimulation2D(object):
+    _optimiser: tp.Optional[Optimiser]
+    _sim_type: tp.Type['SubSubSimulation2D']
 
     # rng
     _sensor_seed: tp.Optional[int]
-    _rng: np.random.RandomState
+    _path_rng: np.random.RandomState
+    _constraint_rng: np.random.RandomState
 
     # data
-    _sim: tp.Type['SubSimulation2D']
     _geo: GeoHash2D[int]
-    _truth: 'SubSimulation2D'
-    _estimate: 'SubSimulation2D'
+    _truth: 'SubSubSimulation2D'
+    _estimate: 'SubSubSimulation2D'
 
     # parameters
     _config: tp.Optional[ConfigurationSet]
 
-    def __init__(self):
+    def __init__(
+            self,
+            sim_type: tp.Type['SubSubSimulation2D'] = None,
+            optimiser: tp.Optional[Optimiser] = None,
+            path_seed: tp.Optional[int] = None,
+            constraint_seed: tp.Optional[int] = None,
+            sensor_seed: tp.Optional[int] = None
+    ):
+        self._sim_type = sim_type
+        self._optimiser = optimiser
+
         # rng
-        self._sensor_seed = None
-        self.set_path_rng(None)
-        self.reset()
+        self.set_path_rng(path_seed)
+        self.set_constraint_rng(constraint_seed)
+        self._sensor_seed = sensor_seed
 
         # parameters
         self._config = None
 
     def reset(self) -> None:
-        self._truth = Simulation2D()
-        self._estimate = Simulation2D()
+        self._truth = PlainSubSimulation2D()
+        self._estimate = self._sim_type(optimiser=self._optimiser)
         self._estimate.get_graph().assign_truth(self._truth.get_graph())
 
         self._geo = GeoHash2D[int]()
         translation: 'Vector2' = self._truth.get_current().get_value().translation()
         self._geo.add(translation[0], translation[1], self.get_current_id())
+
+    def set_sim_type(self, sim_type: tp.Type['SubSubSimulation2D']):
+        self._sim_type = sim_type
+        self.reset()
+
+    def has_sim_type(self) -> bool:
+        return self._sim_type is not None
 
     # sensors
     def add_sensor(
@@ -155,7 +177,24 @@ class BiSimulation2D(object):
         parameter: 'SubParameter' = SlidingParameter(
             value=value,
             specification=specification,
-            window=window,
+            window_size=window,
+            index=index
+        )
+        self._estimate.add_parameter(sensor_name, parameter_name, parameter)
+
+    def add_old_sliding_estimate_parameter(
+            self,
+            sensor_name: str,
+            parameter_name: str,
+            value: 'Quantity',
+            specification: 'ParameterSpecification',
+            window: int,
+            index: int = 0
+    ) -> None:
+        parameter: 'SubParameter' = OldSlidingParameter(
+            value=value,
+            specification=specification,
+            window_size=window,
             index=index
         )
         self._estimate.add_parameter(sensor_name, parameter_name, parameter)
@@ -200,11 +239,12 @@ class BiSimulation2D(object):
 
         # add new 'truth' edge
         truth_measurement: 'Quantity' = truth_sensor.decompose(value)
-        truth_edge: 'SubEdge' = self._truth.add_edge_from_value(sensor_name, ids, truth_measurement, is_closure=True)
+        truth_edge: 'SubEdge' = self._truth.add_edge_from_value(sensor_name, ids, truth_measurement)
 
         # add new 'perturbed' edge
         estimate_measurement: 'Quantity' = truth_sensor.measure(truth_measurement)
-        estimate_edge: 'SubEdge' = self._estimate.add_edge_from_value(sensor_name, ids, estimate_measurement, is_closure=True)
+        estimate_edge: 'SubEdge' = self._estimate.add_edge_from_value(sensor_name, ids, estimate_measurement)
+        self._estimate.report_closure()
         estimate_edge.assign_truth(truth_edge)
 
     def add_poses_edge(
@@ -274,7 +314,7 @@ class BiSimulation2D(object):
     ) -> None:
         """ Creates a loop-closure constraint with probability <threshold>. """
 
-        if self._rng.uniform(0, 1) >= threshold:
+        if self._constraint_rng.uniform(0, 1) >= threshold:
             self.try_closure(sensor_name, distance, separation)
 
     def try_closure(
@@ -314,7 +354,7 @@ class BiSimulation2D(object):
     ) -> None:
         """ Creates a proximity constraint with probability <threshold>. """
 
-        if self._rng.uniform(0, 1) >= threshold:
+        if self._constraint_rng.uniform(0, 1) >= threshold:
             self.try_proximity(sensor_name, steps)
 
     def try_proximity(
@@ -340,12 +380,6 @@ class BiSimulation2D(object):
         id_ = max(self._truth.get_id(), self._estimate.get_id())
         self._truth.set_count(id_)
         self._estimate.set_count(id_)
-
-    def step(self, delta: float):
-        truth_graph: 'SubGraph' = self._truth.step(delta)
-        estimate_graph: 'SubGraph' = self._estimate.step(delta)
-        sys.__stdout__.write(f'\rstep: {self.get_timestamp():.2f}')
-        sys.__stdout__.flush()
 
     def get_timestamp(self) -> float:
         return self._truth.get_timestamp()
@@ -405,25 +439,32 @@ class BiSimulation2D(object):
         return self._config
 
     # seed
-    def get_rng(self) -> np.random.RandomState:
-        return self._rng
+    def get_path_rng(self) -> np.random.RandomState:
+        return self._path_rng
 
     def set_path_rng(self, seed: tp.Optional[int] = None) -> None:
-        """
-        Sets the seed for the RNG of this simulation. In order for the seed to propagate to the Sensors, set the
-        seed before adding the Sensors!
-        """
-        self._rng = np.random.RandomState(seed)
+        self._path_rng = np.random.RandomState(seed)
+
+    def set_constraint_rng(self, seed: tp.Optional[int] = None) -> None:
+        self._constraint_rng = np.random.RandomState(seed)
 
     def set_sensor_seed(self, seed: tp.Optional[int] = None) -> None:
         self._sensor_seed = seed
 
     # simulation
+    def step(self, delta: float):
+        truth_graph: 'SubGraph' = self._truth.step(delta)
+        estimate_graph: 'SubGraph' = self._estimate.step(delta)
+        sys.__stdout__.write(f'\rstep: {self.get_timestamp():.2f}')
+        sys.__stdout__.flush()
+
     def simulate(self) -> tp.Tuple['SubGraph', 'SubGraph']:
         self.init()
+        assert self.has_sim_type()
+
         self.loop()
 
-        sys.__stdout__.write(f"\rSimulation '{self.__class__.__name__}' done!")
+        sys.__stdout__.write(f"\rSimulation '{self.__class__.__name__}' done!\n")
         sys.__stdout__.flush()
         truth, perturbed = self.get_graphs()
         self.save()

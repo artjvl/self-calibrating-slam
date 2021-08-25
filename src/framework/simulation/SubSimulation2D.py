@@ -1,46 +1,35 @@
 import copy
 import typing as tp
-from abc import abstractmethod
+from abc import abstractmethod, ABC
 
 from src.framework.graph.CalibratingGraph import CalibratingGraph
 from src.framework.graph.GraphManager import GraphManager
-from src.framework.graph.data.DataFactory import Quantity
 from src.framework.graph.types.edges.EdgeFactory import EdgeFactory
 from src.framework.graph.types.nodes.SpatialNode import NodeSE2, SpatialNodeFactory
 from src.framework.math.lie.transformation import SE2
 from src.framework.optimiser.Optimiser import Optimiser
-from src.framework.simulation.Parameter import SlidingParameter
 
 if tp.TYPE_CHECKING:
+    from src.framework.graph.data.DataFactory import Quantity
     from src.framework.graph.CalibratingGraph import SubCalibratingEdge, SubCalibratingGraph
     from src.framework.graph.Graph import SubGraph, SubNode, SubEdge
     from src.framework.simulation.Parameter import SubParameter
     from src.framework.simulation.Sensor import SubSensor
 
-SubSimulation2D = tp.TypeVar('SubSimulation2D', bound='Simulation2D')
+SubSubSimulation2D = tp.TypeVar('SubSimulation2D', bound='Simulation2D')
 
 
-class Simulation2D(GraphManager):
-    # sensors
-    _sensors: tp.Dict[str, 'SubSensor']
+class SubSimulation2D(GraphManager):
+    _sensors: tp.Dict[str, 'SubSensor']  # sensors
+    _pose_ids: tp.List[int]  # list of pose-ids
+    _current: NodeSE2  # current pose-node
 
-    _optimiser: Optimiser
-    _is_sliding: bool
-    _is_closure: bool
-
-    # poses
-    _pose_ids: tp.List[int]
-    _current: NodeSE2
-
-    def __init__(self, optimiser: tp.Optional[Optimiser] = None):
+    def __init__(
+            self,
+            **kwargs
+    ):
         super().__init__(CalibratingGraph())
         self._sensors = {}
-
-        if optimiser is None:
-            optimiser = Optimiser()
-        self._optimiser = optimiser
-        self._is_sliding = False
-        self._is_closure = False
 
         # poses
         self._pose_ids = []
@@ -80,8 +69,6 @@ class Simulation2D(GraphManager):
             parameter: 'SubParameter'
     ) -> None:
         assert self.has_sensor(sensor_name), f'{sensor_name}'
-        if isinstance(parameter, SlidingParameter):
-            self._is_sliding = True
         self._sensors[sensor_name].add_parameter(parameter_name, parameter)
         self.add_node(parameter.get_node())
 
@@ -99,7 +86,7 @@ class Simulation2D(GraphManager):
     # add elements
     def add_node_from_value(
             self,
-            value: Quantity
+            value: 'Quantity'
     ) -> 'SubNode':
         """ Creates and adds a new node with <value>. """
         return self.add_node(SpatialNodeFactory.from_value(value))
@@ -119,8 +106,7 @@ class Simulation2D(GraphManager):
             self,
             sensor_name: str,
             ids: tp.List[int],
-            measurement: Quantity,
-            is_closure: bool = False
+            measurement: 'Quantity'
     ) -> 'SubEdge':
         """ Creates and adds a new edge between <ids> with <measurement>, as measurement by <sensor_name>. """
         sensor: 'SubSensor' = self.get_sensor(sensor_name)
@@ -138,11 +124,6 @@ class Simulation2D(GraphManager):
         # add parameter(s) to edge
         for parameter in sensor.get_parameters():
             parameter.add_edge(edge)
-
-        # broadcast potential closure to parameters
-        if is_closure:
-            self._is_closure = True
-            self.broadcast_closure()
 
         # add edge to graph
         return self.add_edge(edge)
@@ -163,15 +144,12 @@ class Simulation2D(GraphManager):
         edge: 'SubCalibratingEdge' = self.add_edge_from_value(
             sensor_name,
             [current.get_id(), new.get_id()],
-            measurement,
-            is_closure=False
+            measurement
         )
         return new, edge
 
-    def broadcast_closure(self) -> None:
-        for sensor in self.get_sensors():
-            for parameter in sensor.get_parameters():
-                parameter.receive_closure()
+    def report_closure(self) -> None:
+        pass
 
     # nodes
     def get_node(self, id_: int) -> 'SubNode':
@@ -188,27 +166,92 @@ class Simulation2D(GraphManager):
 
     @abstractmethod
     def step(self, delta: float) -> 'SubGraph':
+        pass
+
+
+class PlainSubSimulation2D(SubSimulation2D):
+
+    def step(self, delta: float) -> 'SubGraph':
         graph: 'SubCalibratingGraph' = self.get_graph()
 
-        snapshot: 'SubCalibratingGraph'
-        if self._is_sliding:
-            if self._is_closure:
-                # optimises the graph if a loop-closure was made
-                solution = self._optimiser.instance_optimise(graph)
-            else:
-                solution = copy.deepcopy(graph)
-
-            graph.from_vector(solution.to_vector())
-            snapshot = copy.copy(solution)
-        else:
-            # creates a shallow-copy of the graph to be used as a previous
-            snapshot = copy.copy(graph)
-
+        snapshot: 'SubCalibratingGraph' = copy.copy(graph)
         graph.copy_meta_to(snapshot)
         if graph.has_previous():
             snapshot.set_previous(graph.get_previous())
         graph.set_previous(snapshot)
 
-        self._is_closure = False
         self.increment_timestamp(delta)
         return snapshot
+
+
+class OptimisingSubSimulation2D(SubSimulation2D, ABC):
+    _optimiser: Optimiser  # optimiser
+    _is_closure: bool  # indicates whether a closure has occurred at this step
+
+    def __init__(self, optimiser: tp.Optional[Optimiser] = None):
+        super().__init__()
+        if optimiser is None:
+            optimiser = Optimiser()
+        self._optimiser = optimiser
+        self._is_closure = False
+
+    def set_optimiser(self, optimiser: Optimiser) -> None:
+        self._optimiser = optimiser
+
+    def add_odometry(
+            self,
+            sensor_name: str,
+            measurement: SE2
+    ) -> tp.Tuple['SubNode', 'SubEdge']:
+        self._is_closure = False
+        return super().add_odometry(sensor_name, measurement)
+
+    def report_closure(self) -> None:
+        self._is_closure = True
+        for sensor in self.get_sensors():
+            for parameter in sensor.get_parameters():
+                parameter.receive_closure()
+
+
+class IncrementalSubSimulation2D(OptimisingSubSimulation2D):
+
+    def step(self, delta: float) -> 'SubGraph':
+        graph: 'SubCalibratingGraph' = self.get_graph()
+
+        solution: CalibratingGraph
+        if self._is_closure:
+            # optimises the graph if a loop-closure was made
+            solution = self._optimiser.instance_optimise(graph)
+            graph.from_vector(solution.to_vector())
+        else:
+            solution = copy.copy(graph)
+
+        graph.copy_meta_to(solution)
+        if graph.has_previous():
+            solution.set_previous(graph.get_previous())
+        graph.set_previous(solution)
+
+        self.increment_timestamp(delta)
+        return solution
+
+
+class SlidingSubSimulation2D(OptimisingSubSimulation2D):
+
+    def step(self, delta: float) -> 'SubGraph':
+        graph: 'SubCalibratingGraph' = self.get_graph()
+
+        solution: CalibratingGraph
+        if self._is_closure:
+            # optimises the graph if a loop-closure was made
+            solution = self._optimiser.instance_optimise(graph)
+            graph.from_vector(solution.to_vector())
+        else:
+            solution = copy.deepcopy(graph)
+
+        graph.copy_meta_to(solution)
+        if graph.has_previous():
+            solution.set_previous(graph.get_previous())
+        graph.set_previous(solution)
+
+        self.increment_timestamp(delta)
+        return solution

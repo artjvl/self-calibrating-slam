@@ -3,18 +3,13 @@ import typing as tp
 from abc import ABC, abstractmethod
 
 from src.framework.graph.Graph import Edge, Graph
-from src.framework.graph.protocols.Measurement import Measurement2D
 from src.framework.graph.types.nodes.ParameterNode import ParameterNode
-from src.framework.graph.types.nodes.SpatialNode import SpatialNode, NodeSE2
-from src.framework.math.lie.transformation import SE2
-from src.framework.math.matrix.vector import VectorFactory
+from src.framework.graph.types.nodes.SpatialNode import SpatialNode
 
 if tp.TYPE_CHECKING:
     from src.framework.graph.Graph import SubNode
     from src.framework.graph.types.nodes.SpatialNode import SubSpatialNode
     from src.framework.graph.types.nodes.ParameterNode import SubParameterNode
-    from src.framework.math.matrix.vector import SubVector
-    from src.framework.math.matrix.vector.Vector import SubSizeVector
     from src.framework.math.matrix.square import SubSquare
 
 SubCalibratingGraph = tp.TypeVar('SubCalibratingGraph', bound='CalibratingGraph')
@@ -71,45 +66,6 @@ class CalibratingGraph(Graph):
 
     def get_parameter_names(self) -> tp.List[str]:
         return self._parameter_names
-
-    def from_vector(self, vector: 'SubVector') -> None:
-        graph_dim: int = sum([node.get_dim() for node in self.get_nodes()])
-        vector_dim = vector.get_length()
-        assert vector_dim <= graph_dim
-        list_: tp.List[float] = vector.to_list()
-
-        index: int = 0
-        before: SE2 = SE2.from_zeros()
-        after: SE2 = SE2.from_zeros()
-
-        nodes: tp.List['SubNode'] = self.get_nodes()
-        node_set: tp.Set['SubNode'] = set()
-        node_iter: iter = iter(nodes)
-        node: 'SubNode'
-        while index < vector_dim:
-            node = next(node_iter, None)
-            assert node is not None
-
-            dim = node.get_dim()
-            segment: tp.List[float] = list_[index: index + dim]
-            assert len(segment) == dim
-
-            vector: 'SubSizeVector' = VectorFactory.from_list(segment)
-            if isinstance(node, NodeSE2):
-                before: SE2 = node.get_value()
-                node.from_vector(vector)
-                after: SE2 = node.get_value()
-            else:
-                node.from_vector(vector)
-
-            index += dim
-            node_set.add(node)
-        assert index == len(list_)
-
-        spatial: 'SubSpatialNode'
-        for spatial in (set(self.get_endpoints()) - node_set):
-            measurement: Measurement2D = spatial.get_measurement()
-            spatial.set_measurement(Measurement2D.from_transformation(after + (measurement.transformation() - before)))
 
     def __copy__(self):
         new = super().__copy__()
