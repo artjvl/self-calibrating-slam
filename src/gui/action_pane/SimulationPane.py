@@ -7,23 +7,27 @@ from src.gui.modules.SimulationHandler import SimulationHandler
 
 
 class SimulationPane(QtWidgets.QWidget):
+    _tree: TopTreeNode
 
     # constructor
     def __init__(
             self,
-            container: TopTreeNode,
-            *args, **kwargs
+            tree: TopTreeNode,
+            **kwargs
     ):
-        super().__init__(*args, **kwargs)
-        self._container = container
-        tree = ConfigurationTree(self)
-        self._simulation_handler = SimulationHandler(container, tree)
+        super().__init__(**kwargs)
 
+        # attributes
+        self._tree = tree
+        config = ConfigurationTree(self)
+        self._simulation_handler = SimulationHandler(tree, config)
+
+        # layout
         layout = QtWidgets.QVBoxLayout()
         self.setLayout(layout)
 
         # graph simulation
-        simulator_box = SimulationBox(self._simulation_handler, self)
+        simulator_box = SimulationBox(self._simulation_handler, parent=self)
         simulator_box_label = QtWidgets.QLabel(simulator_box)
         simulator_box_label.setText('Choose a simulation:')
         layout.addWidget(simulator_box_label)
@@ -34,7 +38,7 @@ class SimulationPane(QtWidgets.QWidget):
         button_simulate.clicked.connect(self._simulation_handler.simulate)
         layout.addWidget(button_simulate)
 
-        tree_label = QtWidgets.QLabel(tree)
+        tree_label = QtWidgets.QLabel(config)
         tree_label.setText('Simulation parameters')
         layout.addWidget(tree_label)
-        layout.addWidget(tree)
+        layout.addWidget(config)

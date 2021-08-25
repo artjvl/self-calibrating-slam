@@ -1,7 +1,5 @@
-import copy
 import typing as tp
 
-import numpy as np
 from PyQt5 import QtCore
 from src.framework.graph.Graph import SubGraph, Graph
 from src.framework.optimiser.Optimiser import Optimiser
@@ -14,17 +12,24 @@ class OptimisationHandler(QtCore.QObject):
     _graph_node: tp.Optional[GraphTreeNode]
     _include_history: bool
 
+    _signal_filled: int = 1
+    _signal_empty: int = 0
     signal_update = QtCore.pyqtSignal(int)
 
     # constructor
-    def __init__(
-            self,
-            *args, **kwargs
-    ):
-        super().__init__(*args, **kwargs)
-        self._optimiser = Optimiser()
+    def __init__(self, optimiser: Optimiser):
+        super().__init__()
+        self._optimiser = optimiser
         self._graph_node = None
         self._include_history = False
+
+    @classmethod
+    def get_signal_filled(cls) -> int:
+        return cls._signal_filled
+
+    @classmethod
+    def get_signal_empty(cls) -> int:
+        return cls._signal_empty
 
     def set_graph(
             self,
@@ -38,12 +43,9 @@ class OptimisationHandler(QtCore.QObject):
                     graph_node.get_gui_name()
                 )
             )
-            self.signal_update.emit(0)
+            self.signal_update.emit(self._signal_filled)
         else:
-            self.signal_update.emit(-1)
-
-    def get_optimiser(self) -> Optimiser:
-        return self._optimiser
+            self.signal_update.emit(self._signal_empty)
 
     def set_include_history(self, include_history: bool = True) -> None:
         self._include_history = include_history
@@ -60,20 +62,9 @@ class OptimisationHandler(QtCore.QObject):
             subgraphs = graph.get_subgraphs()
 
         subsolutions: tp.List[SubGraph] = []
-        error: float = 0.
         for subgraph in subgraphs:
-            subgraph_error: float = subgraph.compute_error()
-            subsolution: SubGraph
-            if not np.isclose(subgraph_error, error, atol=1e-6):
-                print(f"gui/OptimisationHandler: Optimising '{subgraph.to_unique()}'...")
-                subsolution = self._optimiser.instance_optimise(subgraph, compute_marginals=False)
-                error = subgraph_error
-            else:
-                subsolution = copy.deepcopy(subgraph)
-                subgraph.copy_meta_to(subsolution)
-                if subsolutions:
-                    previous: SubGraph = subsolutions[-1]
-                    subsolution.from_vector(previous.to_vector())
+            print(f"gui/OptimisationHandler: Optimising '{subgraph.to_unique()}'...")
+            subsolution: SubGraph = self._optimiser.instance_optimise(subgraph, compute_marginals=False)
             if subsolutions:
                 subsolution.set_previous(subsolutions[-1])
             subsolutions.append(subsolution)

@@ -1,8 +1,6 @@
 import typing as tp
-from enum import Enum
 
-from framework.simulation.Simulation2D import SubSimulation2D
-from src.framework.simulation.BiSimulation2D import BiSimulation2D
+from src.framework.simulation.simulations.ManhattanSimulation2D import ManhattanSimulation2D
 from src.simulation.calibration.ReturnTripSim import ReturnTripSim
 from src.simulation.calibration.SingleTripSim import SingleTripSim
 from src.simulation.dataset.IntelDatasetSim import IntelDatasetSim, IntelDatasetSimWithConstant, \
@@ -11,31 +9,52 @@ from src.simulation.dataset.MitDatasetSimulation import MitDatasetSimulation
 from src.simulation.manhattan.ManhattanSim import ManhattanSim, ManhattanSimWithConstant, ManhattanSimWithSliding
 from src.simulation.manhattan.ManhattanSimTest import ManhattanSimTest
 
+SimType = tp.Type['SubSimulation2D']
+
 
 class SimulationList(object):
-    _simulations: tp.List[tp.Type['SubSimulation2D']]
+    _simulations: tp.Dict[str, tp.List[SimType]]
 
-    def add(self, simulation: tp.Type['SubSimulation2D']):
-        self._simulations.append(simulation)
+    def __init__(self):
+        self._simulations = {}
 
-    def list(self) -> tp.List[tp.Type['SubSimulation2D']]:
-        return self._simulations
+    def sections(self) -> tp.List[str]:
+        return list(self._simulations.keys())
+
+    def add(
+            self,
+            section: str,
+            simulation: SimType
+    ):
+        if section not in self._simulations:
+            self._simulations[section] = []
+        self._simulations[section].append(simulation)
+
+    def list(
+            self,
+            section: str
+    ) -> tp.List[SimType]:
+        assert section in self._simulations
+        return self._simulations[section]
 
 
 simulations = SimulationList()
 
-simulations.add(ManhattanSim)
+manhattan_section: str = ManhattanSimulation2D.__name__
+simulations.add(manhattan_section, ManhattanSim)
+simulations.add(manhattan_section, ManhattanSimWithConstant)
+simulations.add(manhattan_section, ManhattanSimWithSliding)
+simulations.add(manhattan_section, ManhattanSimTest)
 
+intel_section: str = 'Intel'
+simulations.add(intel_section, IntelDatasetSim)
+simulations.add(intel_section, IntelDatasetSimWithConstant)
+simulations.add(intel_section, IntelDatasetSimWithSliding)
+simulations.add(intel_section, IntelDatasetSimWithOldSliding)
 
-class Simulation(Enum):
-    MANHATTAN_SIM: tp.Type[BiSimulation2D] = ManhattanSim
-    MANHATTAN_SIM_CONSTANT: tp.Type[BiSimulation2D] = ManhattanSimWithConstant
-    MANHATTAN_SIM_SLIDING: tp.Type[BiSimulation2D] = ManhattanSimWithSliding
-    MANHATTAN_SIM_TEST: tp.Type[BiSimulation2D] = ManhattanSimTest
-    INTEL_SIM: tp.Type[BiSimulation2D] = IntelDatasetSim
-    INTEL_SIM_CONSTANT: tp.Type[BiSimulation2D] = IntelDatasetSimWithConstant
-    INTEL_SIM_SLIDING: tp.Type[BiSimulation2D] = IntelDatasetSimWithSliding
-    INTEL_SIM_OLD_SLIDING: tp.Type[BiSimulation2D] = IntelDatasetSimWithOldSliding
-    MIT: tp.Type[BiSimulation2D] = MitDatasetSimulation
-    SINGLE_TRIP: tp.Type[BiSimulation2D] = SingleTripSim
-    RETURN_TRIP: tp.Type[BiSimulation2D] = ReturnTripSim
+mit_section: str = 'MIT'
+simulations.add(mit_section, MitDatasetSimulation)
+
+other_section: str = 'Other'
+simulations.add(other_section, SingleTripSim)
+simulations.add(other_section, ReturnTripSim)

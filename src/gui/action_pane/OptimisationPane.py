@@ -16,27 +16,27 @@ class OptimisationPane(QtWidgets.QWidget):
     def __init__(
             self,
             tree: TopTreeNode,
-            *args, **kwargs
+            **kwargs
     ):
-        super().__init__(*args, **kwargs)
+        super().__init__(**kwargs)
         self._tree = tree
-        self._optimisation_handler = OptimisationHandler(tree)
+        self._optimisation_handler = OptimisationHandler(tree.get_optimiser())
 
         layout = QtWidgets.QVBoxLayout()
         self.setLayout(layout)
 
         # graph-selection box
-        graph_box = GraphBox(tree, self._optimisation_handler, self)
-        history_checkbox = HistoryCheckbox(self._optimisation_handler)
+        graph_box = GraphBox(tree, self._optimisation_handler, parent=self)
+        history_checkbox = HistoryCheckbox(self._optimisation_handler, parent=self)
         layout.addWidget(LabelPane(graph_box, 'Choose a graph:'))
         layout.addWidget(history_checkbox)
 
         # solver box
-        solver_box = SolverBox(self._optimisation_handler.get_optimiser(), self)
+        solver_box = SolverBox(tree.get_optimiser(), parent=self)
         layout.addWidget(LabelPane(solver_box, 'Choose a Library/Solver:'))
 
         # optimise button
-        self._button_optimise = QtWidgets.QPushButton(self)
+        self._button_optimise = QtWidgets.QPushButton(parent=self)
         self._button_optimise.setText('Optimise graph')
         self._button_optimise.clicked.connect(self._optimisation_handler.optimise)
         self._button_optimise.setEnabled(False)
@@ -44,4 +44,4 @@ class OptimisationPane(QtWidgets.QWidget):
         layout.addWidget(self._button_optimise)
 
     def _handle_graph_selection_update(self, signal: int):
-        self._button_optimise.setEnabled(True if signal >= 0 else False)
+        self._button_optimise.setEnabled(True if signal == self._optimisation_handler.get_signal_filled() else False)

@@ -1,6 +1,5 @@
 import typing as tp
 
-from PyQt5 import QtCore
 from src.framework.graph.Graph import SubGraph
 from src.gui.modules.OptimisationHandler import OptimisationHandler
 from src.gui.modules.TreeNode import TopTreeNode, TrajectoryTreeNode, GraphTreeNode
@@ -9,52 +8,54 @@ from src.gui.utils.GroupComboBox import GroupItem, GroupComboBox
 
 class GraphBox(GroupComboBox):
 
-    signal_update = QtCore.pyqtSignal(int)
-
     # constructor
     def __init__(
             self,
             tree: TopTreeNode,
             optimisation_handler: OptimisationHandler,
-            *args, **kwargs
+            **kwargs
     ):
-        super().__init__(*args, **kwargs)
+        super().__init__(**kwargs)
+
+        # attributes
         self._tree = tree
-        self._tree.signal_update.connect(self._handle_graph_update)
         self._optimisation_handler = optimisation_handler
+        self._elements: tp.List[tp.Optional[GraphTreeNode]] = []
+
+        # handlers
+        self._tree.signal_update.connect(self._handle_tree_update)
         self.currentIndexChanged.connect(self._handle_index_change)
 
-        self._elements: tp.List[tp.Optional[GraphTreeNode]] = []
-        # self._current_text: str = ''
+        # actions
+        self._construct()
+        self.setCurrentIndex(1)
+
+    def _construct(self) -> None:
+        self._elements = []
+
+        self.blockSignals(True)
+        self.clear()
+
+        trajectory_node: TrajectoryTreeNode
+        for trajectory_node in self._tree.get_children():
+            group: GroupItem = self.add_group(trajectory_node.get_gui_name())
+            self._elements.append(None)
+
+            graph_node: GraphTreeNode
+            for graph_node in trajectory_node.get_children():
+                graph: SubGraph = graph_node.get_graph()
+                if graph.is_perturbed():
+                    group.add_child(graph_node.get_gui_name())
+                    self._elements.append(graph_node)
+        self.blockSignals(False)
 
     # handlers
-    def _handle_graph_update(self, signal: int):
+    def _handle_tree_update(self, signal: int):
         if signal == self._tree.get_signal_change() or signal == self._tree.get_signal_remove():
             if self._tree.is_empty():
                 self.clear()
             else:
-                self._current_text: str = self.currentText()
-                self._elements = []
-
-                self.blockSignals(True)
-                self.clear()
-                trajectory_node: TrajectoryTreeNode
-                for trajectory_node in self._tree.get_children():
-                    group: GroupItem = self.add_group(trajectory_node.get_gui_name())
-                    self._elements.append(None)
-
-                    graph_node: GraphTreeNode
-                    for graph_node in trajectory_node.get_children():
-                        graph: SubGraph = graph_node.get_graph()
-                        if graph.is_perturbed():
-                            group.add_child(graph_node.get_gui_name())
-                            self._elements.append(graph_node)
-                self.setCurrentIndex(-1)
-                # index: int = self.findText(self._current_text, QtCore.Qt.MatchFixedString)
-                # if index >= 0:
-                #     self.setCurrentIndex(index)
-                # else:
-                self.blockSignals(False)
+                self._construct()
                 self.setCurrentIndex(1)
 
     def _handle_index_change(self, index):

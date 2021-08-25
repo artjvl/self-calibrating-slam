@@ -7,6 +7,7 @@ from PyQt5 import QtCore
 from src.framework.graph.Graph import SubGraph, SubElement
 from src.framework.graph.GraphAnalyser import GraphAnalyser
 from src.framework.graph.GraphContainer import SubGraphContainer, GraphContainer
+from src.framework.optimiser.Optimiser import Optimiser
 from src.gui.viewer.items import Items
 from src.gui.viewer.items.GraphicsItem import SubGraphicsItem
 
@@ -518,6 +519,7 @@ class TopTreeNode(GraphicsTreeNode, QtCore.QObject):
     """
 
     _id_counter: int
+    _optimiser: Optimiser
     _analyser: GraphAnalyser
 
     signal_update = QtCore.pyqtSignal(int)
@@ -526,9 +528,11 @@ class TopTreeNode(GraphicsTreeNode, QtCore.QObject):
         super().__init__()
         self._id_counter = 1
         self._analyser = GraphAnalyser()
+        self._optimiser = Optimiser()
 
         for item in Items:
             self.add_toggle(item.value)
+        self.get_toggle(Items.AXES.value).set_checked(False)
 
     def get_key(self) -> str:
         return ''
@@ -564,6 +568,9 @@ class TopTreeNode(GraphicsTreeNode, QtCore.QObject):
 
     def get_analyser(self) -> GraphAnalyser:
         return self._analyser
+
+    def get_optimiser(self) -> Optimiser:
+        return self._optimiser
 
     def get_graphs(self) -> tp.List[SubGraph]:
         graphs: tp.List[SubGraph] = []
