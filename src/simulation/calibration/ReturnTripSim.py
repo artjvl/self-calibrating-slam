@@ -2,14 +2,17 @@ import numpy as np
 from src.framework.graph.types.nodes.ParameterNode import ParameterSpecification
 from src.framework.math.lie.transformation import SE2
 from src.framework.math.matrix.square import Square3
-from src.framework.simulation.BiSimulation2D import BiSimulation2D
+from src.framework.simulation.Model2D import Model2D
 
 
-class ReturnTripSim(BiSimulation2D):
+class ReturnTripSim(Model2D):
 
-    def init(self) -> None:
-        info_matrix3 = Square3([[8000., 0., 0.], [0., 6000., 0.], [0., 0., 4000.]])
-        self.add_sensor('lidar', SE2, info_matrix3, info_matrix3)
+    def pre(self) -> None:
+        self.add_sensor(
+            'lidar', SE2,
+            Square3.from_diagonal([800., 600., 400.]),
+            Square3.from_diagonal([800., 600., 400.])
+        )
         self.add_truth_parameter(
             'lidar', 'bias',
             SE2.from_translation_angle_elements(0., 0., 0.), ParameterSpecification.BIAS
@@ -20,10 +23,10 @@ class ReturnTripSim(BiSimulation2D):
         )
 
     def loop(self) -> None:
-        num = 10
+        num: int = 10
+        angle: float = 0.
         for _ in range(2):
             for __ in range(num):
-                angle: float = np.deg2rad(180.) if __ == num - 1 else 0.
                 motion = SE2.from_translation_angle_elements(1.0, 0, angle)
                 self.add_odometry('lidar', motion)
-            self.try_closure('lidar', 1.)
+            angle += np.deg2rad(180)

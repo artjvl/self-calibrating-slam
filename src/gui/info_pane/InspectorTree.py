@@ -53,6 +53,13 @@ class InspectorTree(QtWidgets.QTreeWidget):
         self._construct_tree_property(root, 'name', f'{graph.get_name()}')
         self._construct_tree_property(root, 'address', f'{hex(id(graph))}')
 
+        # graph
+        sub_graph = self._construct_tree_property(root, 'Graph', '', bold=True, is_expanded=True)
+        self._construct_tree_property(sub_graph, 'timestamp', f'{graph.get_timestamp():.2f}')
+        if graph.has_previous():
+            self._construct_tree_property(sub_graph, 'previous', f'{graph.get_previous().to_unique()}')
+        # self._construct_tree_property(sub_properties, 'path', str(graph.get_path()))
+
         # sub-elements
         sub_elements = self._construct_tree_property(root, 'Elements', '', bold=True, is_expanded=True)
         element_type: tp.Type[SubElement]
@@ -68,29 +75,21 @@ class InspectorTree(QtWidgets.QTreeWidget):
 
         # metrics
         if graph.has_truth():
-            sub_metrics = self._construct_tree_property(root, 'Metrics', '', bold=True)
+            sub_metrics = self._construct_tree_property(root, 'Metrics', '', bold=True, is_expanded=True)
             truth: SubGraph = graph.get_truth()
             sub_truth = self._construct_tree_property(sub_metrics, 'truth', f'{truth.to_unique()}')
             sub_truth.obj = Indicator.TRUE
             self._construct_tree_property(sub_metrics, 'ate', f'{graph.get_ate()}')
             self._construct_tree_property(sub_metrics, 'rpe_translation', f'{graph.get_rpe_translation()}')
             self._construct_tree_property(sub_metrics, 'rpe_rotation', f'{graph.get_rpe_rotation()}')
-            sub_metrics.setExpanded(True)
 
         # jacobian/hessian
-        sub_linearisation = self._construct_tree_property(root, 'Linearisation', '', bold=True)
+        sub_linearisation = self._construct_tree_property(root, 'Linearisation', '', bold=True, is_expanded=True)
         sub_hessian = self._construct_tree_property(sub_linearisation, 'Hessian', '(...)')
         sub_hessian.obj = Indicator.HESSIAN
         sub_marginal = self._construct_tree_property(sub_linearisation, 'Marginal', '(...)')
         sub_marginal.obj = Indicator.MARGINAL
-        sub_linearisation.setExpanded(True)
 
-        # properties
-        sub_properties = self._construct_tree_property(root, 'Properties', '', bold=True)
-        if graph.has_previous():
-            self._construct_tree_property(sub_properties, 'previous', f'{graph.get_previous().to_unique()}')
-        # self._construct_tree_property(sub_properties, 'path', str(graph.get_path()))
-        sub_properties.setExpanded(True)
         return root
 
     def _construct_hessian(self, item: QtWidgets.QTreeWidgetItem, graph: SubGraph) -> None:

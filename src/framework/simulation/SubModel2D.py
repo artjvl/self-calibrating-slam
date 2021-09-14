@@ -14,27 +14,35 @@ if tp.TYPE_CHECKING:
     from src.framework.graph.CalibratingGraph import SubCalibratingEdge, SubCalibratingGraph
     from src.framework.graph.Graph import SubGraph, SubNode, SubEdge
     from src.framework.simulation.Parameter import SubParameter
+    from src.framework.simulation.PostAnalyser import SubPostAnalyser
     from src.framework.simulation.Sensor import SubSensor
 
-SubSubSimulation2D = tp.TypeVar('SubSimulation2D', bound='Simulation2D')
+SubSubSimulation2D = tp.TypeVar('SubSubSimulation2D', bound='Simulation2D')
 
 
-class SubSimulation2D(GraphManager):
+class SubModel2D(GraphManager):
     _sensors: tp.Dict[str, 'SubSensor']  # sensors
+    _optimiser: Optimiser  # optimiser
+
     _pose_ids: tp.List[int]  # list of pose-ids
-    _current: NodeSE2  # current pose-node
+    _current_node: NodeSE2  # current pose-node
+    _last_graph: 'SubGraph'  # last saved instance of the graph
 
-    def __init__(
-            self,
-            **kwargs
-    ):
-        super().__init__(CalibratingGraph())
+    def __init__(self, optimiser: tp.Optional[Optimiser] = None):
+        super().__init__()
+        if optimiser is None:
+            optimiser = Optimiser()
+        self._optimiser = optimiser
         self._sensors = {}
+        self.reset()
 
-        # poses
+    def reset(self) -> None:
+        super().reset()
+
         self._pose_ids = []
-        self._current = self.add_pose(SE2.from_translation_angle_elements(0, 0, 0))
-        self._current.fix()
+        self._current_node = self.add_pose(SE2.from_translation_angle_elements(0, 0, 0))
+        self._current_node.fix()
+        self._last_graph = super().graph()
 
     # sensors
     def add_sensor(
@@ -99,7 +107,7 @@ class SubSimulation2D(GraphManager):
 
         node: NodeSE2 = self.add_node_from_value(pose)
         self._pose_ids.append(node.get_id())
-        self._current = node
+        self._current_node = node
         return node
 
     def add_edge_from_value(
@@ -110,7 +118,7 @@ class SubSimulation2D(GraphManager):
     ) -> 'SubEdge':
         """ Creates and adds a new edge between <ids> with <measurement>, as measurement by <sensor_name>. """
         sensor: 'SubSensor' = self.get_sensor(sensor_name)
-        graph: 'SubGraph' = self.get_graph()
+        graph: 'SubGraph' = self.graph()
 
         # create edge
         nodes: tp.List['SubNode'] = [graph.get_node(id_) for id_ in ids]
@@ -138,7 +146,7 @@ class SubSimulation2D(GraphManager):
         sensor: 'SubSensor' = self.get_sensor(sensor_name)
         transformation: SE2 = sensor.compose(measurement)
 
-        current: NodeSE2 = self._current
+        current: NodeSE2 = self._current_node
         position: SE2 = current.get_value() + transformation
         new: NodeSE2 = self.add_pose(position)
         edge: 'SubCalibratingEdge' = self.add_edge_from_value(
@@ -158,7 +166,7 @@ class SubSimulation2D(GraphManager):
 
     def get_current(self) -> NodeSE2:
         """ Returns the current pose-node. """
-        return self._current
+        return self._current_node
 
     def get_pose_ids(self) -> tp.List[int]:
         """ Returns the pose-node id history. """
@@ -168,35 +176,60 @@ class SubSimulation2D(GraphManager):
     def step(self, delta: float) -> 'SubGraph':
         pass
 
+    # optimiser
+    def set_optimiser(self, optimiser: Optimiser) -> None:
+        self._optimiser = optimiser
 
-class PlainSubSimulation2D(SubSimulation2D):
+    def has_optimiser(self) -> bool:
+        return self._optimiser is not None
+
+    def get_optimiser(self) -> Optimiser:
+        assert self.has_optimiser()
+        return self._optimiser
+
+    def optimise(self) -> 'SubGraph':
+        graph: 'SubCalibratingGraph' = self.graph()
+        solution: 'SubCalibratingGraph' = self.get_optimiser().instance_optimise(graph)
+        graph.copy_meta_to(solution)
+        if graph.has_previous():
+            solution.set_previous(graph.get_previous())
+        graph.from_vector(solution.to_vector())
+        return solution
+
+    def copy(self, copy_: 'SubGraph') -> 'SubCalibratingGraph':
+        graph: 'SubCalibratingGraph' = self.graph()
+        graph.copy_meta_to(copy_)
+        if graph.has_previous():
+            copy_.set_previous(graph.get_previous())
+        return copy_
+
+    def set_previous(self, previous: 'SubGraph') -> None:
+        graph: 'SubGraph' = self.graph()
+        graph.set_previous(previous)
+        self._last_graph = previous
+
+
+class PlainSubModel2D(SubModel2D):
+
+    def __init__(self, optimiser: tp.Optional[Optimiser] = None):
+        super().__init__(optimiser=optimiser)
+        self.set_timestamp()
 
     def step(self, delta: float) -> 'SubGraph':
-        graph: 'SubCalibratingGraph' = self.get_graph()
-
-        snapshot: 'SubCalibratingGraph' = copy.copy(graph)
-        graph.copy_meta_to(snapshot)
-        if graph.has_previous():
-            snapshot.set_previous(graph.get_previous())
-        graph.set_previous(snapshot)
+        snapshot: 'SubCalibratingGraph' = self.copy(copy.copy(self.graph()))
+        self.set_previous(snapshot)
 
         self.increment_timestamp(delta)
         return snapshot
 
 
-class OptimisingSubSimulation2D(SubSimulation2D, ABC):
-    _optimiser: Optimiser  # optimiser
+class OptimisingSubModel2D(SubModel2D, ABC):
     _is_closure: bool  # indicates whether a closure has occurred at this step
 
     def __init__(self, optimiser: tp.Optional[Optimiser] = None):
-        super().__init__()
-        if optimiser is None:
-            optimiser = Optimiser()
-        self._optimiser = optimiser
+        super().__init__(optimiser=optimiser)
         self._is_closure = False
-
-    def set_optimiser(self, optimiser: Optimiser) -> None:
-        self._optimiser = optimiser
+        self.set_timestamp()
 
     def add_odometry(
             self,
@@ -213,45 +246,80 @@ class OptimisingSubSimulation2D(SubSimulation2D, ABC):
                 parameter.receive_closure()
 
 
-class IncrementalSubSimulation2D(OptimisingSubSimulation2D):
+class IncrementalSubModel2D(OptimisingSubModel2D):
 
     def step(self, delta: float) -> 'SubGraph':
-        graph: 'SubCalibratingGraph' = self.get_graph()
-
-        solution: CalibratingGraph
+        solution: 'SubGraph'
         if self._is_closure:
-            # optimises the graph if a loop-closure was made
-            solution = self._optimiser.instance_optimise(graph)
-            graph.from_vector(solution.to_vector())
+            solution = self.optimise()
         else:
-            solution = copy.copy(graph)
-
-        graph.copy_meta_to(solution)
-        if graph.has_previous():
-            solution.set_previous(graph.get_previous())
-        graph.set_previous(solution)
+            solution = self.copy(copy.copy(self.graph()))
+        self.set_previous(solution)
 
         self.increment_timestamp(delta)
         return solution
 
 
-class SlidingSubSimulation2D(OptimisingSubSimulation2D):
+class SlidingSubModel2D(OptimisingSubModel2D):
 
     def step(self, delta: float) -> 'SubGraph':
-        graph: 'SubCalibratingGraph' = self.get_graph()
-
-        solution: CalibratingGraph
+        solution: 'SubGraph'
         if self._is_closure:
-            # optimises the graph if a loop-closure was made
-            solution = self._optimiser.instance_optimise(graph)
-            graph.from_vector(solution.to_vector())
+            solution = self.optimise()
         else:
-            solution = copy.deepcopy(graph)
-
-        graph.copy_meta_to(solution)
-        if graph.has_previous():
-            solution.set_previous(graph.get_previous())
-        graph.set_previous(solution)
+            solution = self.copy(copy.deepcopy(self.graph()))
+        self.set_previous(solution)
 
         self.increment_timestamp(delta)
         return solution
+
+
+class PostSubModel2D(OptimisingSubModel2D):
+    _analyser: tp.Optional['SubPostAnalyser']
+    _sensor_name: tp.Optional[str]
+
+    def __init__(self, optimiser: tp.Optional[Optimiser] = None):
+        super().__init__(optimiser=optimiser)
+        self._analyser = None
+        self._sensor_name = None
+
+    def has_analyser(self) -> bool:
+        return self._analyser is not None
+
+    def get_analyser(self) -> 'SubPostAnalyser':
+        return self._analyser
+
+    def add_analyser(
+            self,
+            sensor_name: str,
+            analyser: 'SubPostAnalyser'
+    ) -> None:
+        self._analyser = analyser
+        self._sensor_name = sensor_name
+
+    def add_edge_from_value(
+            self,
+            sensor_name: str,
+            ids: tp.List[int],
+            measurement: 'Quantity'
+    ) -> 'SubEdge':
+        edge: 'SubEdge' = super().add_edge_from_value(sensor_name, ids, measurement)
+        if sensor_name == self._sensor_name:
+            self._analyser.add_edge(edge)
+        return edge
+
+    def step(self, delta: float) -> 'SubGraph':
+        pass
+
+    def post_process(
+            self,
+            steps: int = 1
+    ) -> None:
+        assert self.has_analyser()
+        analyser: SubPostAnalyser = self.get_analyser()
+
+        previous: 'SubGraph' = self.optimise()
+        for _ in range(steps):
+            self.set_previous(previous)
+            analyser.post_process()
+            previous = self.optimise()

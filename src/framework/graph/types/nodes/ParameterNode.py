@@ -42,31 +42,38 @@ class ParameterDict(object):
 
 class ParameterNode(tp.Generic[T], Node[T]):
     _specification: ParameterSpecification
+    _index: int
 
     def __init__(
             self,
-            name: tp.Optional[str] = None,
-            id_: tp.Optional[int] = None,
-            value: tp.Optional[T] = None,
-            timestamp: tp.Optional[float] = None,
-            specification: ParameterSpecification = ParameterSpecification.BIAS
+            name: tp.Optional[str] = None,  # BaseNode
+            id_: tp.Optional[int] = None,  # BaseNode
+            value: tp.Optional[T] = None,  # FactorNode
+            timestamp: tp.Optional[float] = None,  # FactorNode
+            specification: ParameterSpecification = ParameterSpecification.BIAS,  # ParameterNode
+            index: int = 0  # ParameterNode
     ):
+        # node-name
         if name is None:
             name = f'{self.__class__.__name__}({ParameterDict.from_specification(specification)})'
         super().__init__(name=name, id_=id_, value=value, timestamp=timestamp)
 
+        # attributes
         self.set_specification(specification)
+        self._index = index
 
+    # specification
     def get_specification(self) -> ParameterSpecification:
         return self._specification
 
     def set_specification(self, specification: ParameterSpecification) -> None:
         self._specification = specification
 
-    @abstractmethod
-    def to_list3(self, filler: tp.Optional[float] = None) -> tp.List[tp.Optional[float]]:
-        pass
+    # index
+    def get_index(self) -> int:
+        return self._index
 
+    # composition
     @abstractmethod
     def to_vector3(self, filler: float = 0.) -> Vector3:
         pass
@@ -181,22 +188,6 @@ class ParameterNodeV1(ParameterNode[Vector1]):
     _type = Vector1
     _index: int
 
-    def __init__(
-            self,
-            name: tp.Optional[str] = None,
-            id_: tp.Optional[int] = None,
-            value: tp.Optional[Vector1] = None,
-            index: tp.Optional[int] = 0,
-            timestamp: tp.Optional[float] = None,
-            specification: ParameterSpecification = ParameterSpecification.BIAS
-    ):
-        super().__init__(name=name, id_=id_, value=value, timestamp=timestamp, specification=specification)
-        self.set_index(index)
-
-    def set_index(self, index: int):
-        assert index < 3
-        self._index = index
-
     def get_float(self) -> float:
         return self.get_value()[0]
 
@@ -284,23 +275,6 @@ class ParameterNodeV1(ParameterNode[Vector1]):
 
 class ParameterNodeV2(ParameterNode[Vector2]):
     _type = Vector2
-    _index: int
-
-    def __init__(
-            self,
-            name: tp.Optional[str] = None,
-            id_: tp.Optional[int] = None,
-            value: tp.Optional[Vector1] = None,
-            index: tp.Optional[int] = 0,
-            timestamp: tp.Optional[float] = None,
-            specification: ParameterSpecification = ParameterSpecification.BIAS
-    ):
-        super().__init__(name=name, id_=id_, value=value, timestamp=timestamp, specification=specification)
-        self.set_index(index)
-
-    def set_index(self, index: int):
-        assert index < 3
-        self._index = index
 
     # specification
     def set_specification(self, specification: ParameterSpecification) -> None:
@@ -416,16 +390,18 @@ class ParameterNodeFactory(object):
     def from_value(
             cls,
             value: 'Quantity',
-            specification: ParameterSpecification = ParameterSpecification.BIAS,
             name: tp.Optional[str] = None,
             id_: tp.Optional[int] = None,
-            timestamp: tp.Optional[float] = None
+            index: int = 0,
+            timestamp: tp.Optional[float] = None,
+            specification: ParameterSpecification = ParameterSpecification.BIAS
     ) -> SubParameterNode:
         node_type: tp.Type[SubParameterNode] = cls.from_value_type(type(value))
         node: SubParameterNode = node_type(
             name=name,
             id_=id_,
             value=value,
+            index=index,
             timestamp=timestamp,
             specification=specification
         )

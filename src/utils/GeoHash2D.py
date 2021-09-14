@@ -26,6 +26,9 @@ class GeoHash2D(Generic[T]):
         self._hash: Dict[int, Dict[int, List[Element[T]]]] = {}
 
     # public methods
+    def reset(self) -> None:
+        self._hash = {}
+
     def get(
             self,
             a: int,

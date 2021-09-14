@@ -3,13 +3,13 @@ from src.framework.math.lie.transformation import SE2
 from src.framework.math.matrix.square import Square2
 from src.framework.math.matrix.square import Square3
 from src.framework.math.matrix.vector import Vector2
-from src.framework.simulation.BiSimulation2D import BiSimulation2D
+from src.framework.simulation.Model2D import Model2D
 
 
-class SingleTripSim(BiSimulation2D):
+class SingleTripSim(Model2D):
 
-    def init(self) -> None:
-        info_matrix3 = Square3([[8000., 0., 0.], [0., 6000., 0.], [0., 0., 4000.]])
+    def pre(self) -> None:
+        info_matrix3 = Square3.from_diagonal([800., 600., 400.])
         self.add_sensor('wheel', SE2, info_matrix3, info_matrix3)
         self.add_truth_parameter(
             'wheel', 'bias',

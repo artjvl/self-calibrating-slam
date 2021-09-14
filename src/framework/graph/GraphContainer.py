@@ -17,7 +17,8 @@ class GraphContainer(object):
     def index_graph(self) -> None:
         subgraphs: tp.List[SubGraph] = self._graph.get_subgraphs()
         keys: tp.List[tp.Optional[float]] = [subgraph.get_timestamp() for subgraph in subgraphs]
-        if any(timestamp is None for timestamp in keys):
+        if any(timestamp is None for timestamp in keys) or \
+                (len(keys) > 1 and len(set(keys)) == 1):
             keys = list(range(len(keys)))
 
         self._graphs = {keys[i]: subgraph for i, subgraph in enumerate(subgraphs)}

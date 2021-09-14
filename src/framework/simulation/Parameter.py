@@ -3,7 +3,7 @@ from abc import abstractmethod
 
 from src.framework.graph.types.nodes.ParameterNode import ParameterNodeFactory, ParameterNodeV1, \
     ParameterNodeV2
-from src.utils import GeoHash2D
+from src.framework.simulation.PostAnalyser import PostAnalyser
 
 if tp.TYPE_CHECKING:
     from src.framework.graph.CalibratingGraph import SubCalibratingEdge
@@ -27,11 +27,10 @@ class Parameter(object):
     ):
         # create node
         node: SubParameterNode = ParameterNodeFactory.from_value(
-            value=value,
+            value,
+            index=index,
             specification=specification
         )
-        if isinstance(node, (ParameterNodeV1, ParameterNodeV2)):
-            node.set_index(index)
         self._node = node
 
         # metadata
@@ -74,8 +73,9 @@ class StaticParameter(Parameter):
         old: 'SubParameterNode' = self._node
         new: 'SubParameterNode' = old.__class__(
             value=value,
-            specification=old.get_specification(),
-            name=old.get_name()
+            name=old.get_name(),
+            index=old.get_index(),
+            specification=old.get_specification()
         )
         self._node = new
         return new
@@ -144,7 +144,7 @@ class SlidingParameter(Parameter):
             self._is_closures = self._is_closures[1:] + [False]  # push in <is_closure> and push out first element
 
         # if any closures are present in the previously connected edges, the window size is reduced to its default value
-        if any(self._is_closures[:-1]):
+        if self._is_closures[-2]:
             for edge_ in self._between:
                 edge_.remove_parameter_id(node.get_id())
                 edge_.set_measurement(node.compose(edge_.get_measurement(), is_inverse=False))
@@ -195,4 +195,3 @@ class OldSlidingParameter(Parameter):
             first.remove_parameter_id(node.get_id())
             first.set_measurement(node.compose(first.get_measurement(), is_inverse=False))
             self._in = self._in[1:]
-

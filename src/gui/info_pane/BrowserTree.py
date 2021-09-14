@@ -263,11 +263,19 @@ class BrowserTree(QtWidgets.QTreeWidget):
                 )
         sub_analyse_plot_parameters.setEnabled(bool(sub_analyse_plot_parameters.actions()))
         # analyse - plot edge variance
-        sub_analyse_plot_edge_variance = sub_analyse.addMenu('Plot edge variance')
+        sub_analyse_plot_edge_estimate_variance = sub_analyse.addMenu('Plot ESTIMATED edge variance')
+        edge_names: tp.List[str] = graph.get_edge_names()
+        for edge_name in edge_names:
+            commands[sub_analyse_plot_edge_estimate_variance.addAction(f"'{edge_name}'")] = functools.partial(
+                self._tree.get_analyser().instance_plot_edge_estimate_variance, graph, edge_name
+            )
+        sub_analyse_plot_edge_estimate_variance.setEnabled(bool(sub_analyse_plot_edge_estimate_variance.actions()))
+        # analyse - plot edge estimate variance
+        sub_analyse_plot_edge_variance = sub_analyse.addMenu('Plot TRUE edge variance')
         edge_names: tp.List[str] = graph.get_edge_names()
         for edge_name in edge_names:
             commands[sub_analyse_plot_edge_variance.addAction(f"'{edge_name}'")] = functools.partial(
-                self._tree.get_analyser().plot_edge_variance, graph, edge_name
+                self._tree.get_analyser().instance_plot_edge_variance, graph, edge_name
             )
         sub_analyse_plot_edge_variance.setEnabled(bool(sub_analyse_plot_edge_variance.actions()))
 

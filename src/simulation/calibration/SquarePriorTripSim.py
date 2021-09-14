@@ -4,12 +4,12 @@ from src.framework.math.lie.transformation import SE2
 from src.framework.math.matrix.square import Square2
 from src.framework.math.matrix.square import Square3
 from src.framework.math.matrix.vector import Vector2
-from src.framework.simulation.BiSimulation2D import BiSimulation2D
+from src.framework.simulation.Model2D import Model2D
 
 
-class SquarePriorTripSim(BiSimulation2D):
+class SquarePriorTripSim(Model2D):
 
-    def init(self) -> None:
+    def pre(self) -> None:
         info_matrix3 = Square3([[8000., 0., 0.], [0., 6000., 0.], [0., 0., 4000.]])
         self.add_sensor('lidar', SE2, info_matrix3, info_matrix3)
         self.add_truth_parameter(

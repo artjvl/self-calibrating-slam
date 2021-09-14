@@ -1,4 +1,6 @@
 import typing as tp
+
+from src.framework.graph.CalibratingGraph import CalibratingGraph
 from src.framework.graph.Graph import SubGraph, SubNode, SubEdge
 
 SubGraphManager = tp.TypeVar('SubGraphManager', bound='GraphManager')
@@ -14,9 +16,11 @@ class GraphManager(object):
     _id_set: tp.Set[int]
     _timestamp: float
 
-    def __init__(self, graph: SubGraph):
-        # graph
-        self._graph = graph
+    def __init__(self):
+        self.reset()
+
+    def reset(self) -> None:
+        self._graph = CalibratingGraph()
 
         # counters
         self._id_counter = 0
@@ -24,7 +28,7 @@ class GraphManager(object):
         self._timestamp = 0.
 
     # graph
-    def get_graph(self) -> SubGraph:
+    def graph(self) -> SubGraph:
         return self._graph
 
     # elements
@@ -64,8 +68,8 @@ class GraphManager(object):
         self._id_counter = count
 
     # timestamp
-    def set_timestamp(self, timestamp: float) -> None:
-        assert timestamp > self._timestamp
+    def set_timestamp(self, timestamp: float = 0.) -> None:
+        assert timestamp >= self._timestamp
         self._timestamp = timestamp
 
     def increment_timestamp(self, delta: float) -> None:
