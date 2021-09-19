@@ -2,18 +2,19 @@ import functools
 import pathlib
 import typing as tp
 from PyQt5 import QtWidgets
+
 from src.gui.menus.Menu import Menu
-from src.framework.graph.GraphAnalyser import FigureParser
+from src.framework.graph.Analyser import FigureParser
 if tp.TYPE_CHECKING:
-    from src.framework.graph.GraphAnalyser import GraphAnalyser
+    from src.framework.graph.Analyser import Analyser
 
 class AnalyserMenu(Menu):
-    _analyser: 'GraphAnalyser'
+    _analyser: 'Analyser'
 
     # constructor
     def __init__(
             self,
-            analyser: 'GraphAnalyser',
+            analyser: 'Analyser',
             **kwargs
     ):
         super().__init__(**kwargs)
@@ -41,7 +42,7 @@ class AnalyserMenu(Menu):
         )
 
     def _handle_save(self):
-        self._analyser.save_last()
+        self._analyser.save_fig()
 
     def _handle_save_as(self):
         filename: tp.Optional[str]
@@ -54,4 +55,4 @@ class AnalyserMenu(Menu):
             if not filename.endswith('.pickle'):
                 filename += '.pickle'
             path: pathlib.Path = pathlib.Path(filename)
-            self._analyser.save_last(path.name)
+            self._analyser.save_fig(path.name)

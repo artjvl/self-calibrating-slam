@@ -104,14 +104,14 @@ class Optimiser(object):
     def instance_optimise(
             self,
             graph,
-            verbose: bool = True,
+            should_print: bool = False,
             compute_marginals: bool = False
     ) -> tp.Optional[SubGraph]:
         return self.optimise(
             graph,
             self._library,
             self._solver,
-            verbose=verbose,
+            should_print=should_print,
             compute_marginals=compute_marginals
         )
 
@@ -121,12 +121,12 @@ class Optimiser(object):
             graph: SubGraph,
             library: Library = Library.CHOLMOD,
             solver: Solver = Solver.GN,
-            verbose: bool = True,
+            should_print: bool = False,
             compute_marginals: bool = False
     ) -> tp.Optional[SubGraph]:
         root: Path = get_project_root()
         relative_to: str = 'graphs/temp'
-        GraphParser.save_path_folder(graph, relative_to, 'before')
+        GraphParser.save_path_folder(graph, relative_to, 'before', should_print=should_print)
 
         path_g2o_bin: Path = (root / 'g2o/bin/g2o_d').resolve()
         path_input: Path = (root / (relative_to + '/before.g2o')).resolve()
@@ -140,17 +140,20 @@ class Optimiser(object):
             '-solver', solver_string,
             '-o', str(path_output)
         ]
-        if verbose:
+        if should_print:
             commands.append('-v')
         if compute_marginals:
             commands.append('-computeMarginals')
         commands.append(str(path_input))
 
-        print(f"framework/Optimiser: Issuing command '{' '.join(commands)}'")
-        process = subprocess.run(commands)
+        if should_print:
+            print(f"framework/Optimiser: Issuing command '{' '.join(commands)}'")
+            process = subprocess.run(commands)
+        else:
+            process = subprocess.run(commands, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
 
         if path_output.exists():
-            solution: SubCalibratingGraph = GraphParser.load(path_output, reference=graph)
+            solution: SubCalibratingGraph = GraphParser.load(path_output, reference=graph, should_print=should_print)
             graph.copy_meta_to(solution)
             solution.assign_pre(graph)
             return solution

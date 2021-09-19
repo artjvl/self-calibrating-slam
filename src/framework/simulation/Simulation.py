@@ -13,7 +13,7 @@ if tp.TYPE_CHECKING:
     from src.framework.optimiser.Optimiser import Optimiser
     from src.framework.math.matrix.vector import Vector2
 
-SubSimulationManager = tp.TypeVar('SubSimulationManager', bound='SimulationManager')
+SubSimulation = tp.TypeVar('SubSimulation', bound='Simulation')
 
 
 class Simulation(object):
@@ -30,16 +30,26 @@ class Simulation(object):
         self.configure()
 
     def name(self) -> str:
+        """ Returns the name. """
         return self._name
 
     def set_optimiser(self, optimiser: 'Optimiser'):
-        self._model.estimate_sim().set_optimiser(optimiser)
+        """ Sets the optimiser for the estimate sub-model. """
+        self._model.estimate_model().set_optimiser(optimiser)
 
     def model(self) -> 'SubModel2D':
+        """ Returns the model. """
         return self._model
+
+    def reset(self):
+        self._model.reset()
 
     @abstractmethod
     def configure(self) -> None:
+        pass
+
+    @abstractmethod
+    def initialise(self) -> None:
         pass
 
     @abstractmethod
@@ -50,12 +60,26 @@ class Simulation(object):
     def finalise(self) -> None:
         pass
 
-    def run(self) -> tp.Tuple['SubGraph', 'SubGraph']:
+    def run(self) -> 'SubGraph':
+        self.reset()
+        self.initialise()
         self.simulate()
+        print('\nFinalising...')
         self.finalise()
 
         self._model.save()
-        return self._model.truth_graph(), self._model.estimate_graph()
+        return self._model.estimate_graph()
+
+    def monte_carlo(
+            self,
+            num: int
+    ) -> tp.List['SubGraph']:
+        graphs: tp.List['SubGraph'] = []
+        for i in range(num):
+            self._model.set_sensor_seed(i)
+            estimate = self.run()
+            graphs.append(estimate)
+        return graphs
 
 
 class ManhattanSimulation2D(Simulation, ABC):
@@ -134,8 +158,8 @@ class InputSimulation2D(Simulation, ABC):
         self._counter = 1
 
     def reset(self) -> None:
+        super().reset()
         self._counter = 1
-        self.model().reset()
 
     def has_next(self) -> bool:
         return self._poses is not None and self._counter < len(self._poses)
@@ -173,7 +197,6 @@ class InputSimulation2D(Simulation, ABC):
         assert self.has_path()
         self.set_input_graph(GraphParser.load(self._path))
 
-    def run(self) -> tp.Tuple['SubGraph', 'SubGraph']:
-        if self.has_path():
-            self.load_path()
+    def run(self) -> 'SubGraph':
+        self.load_path()
         return super().run()

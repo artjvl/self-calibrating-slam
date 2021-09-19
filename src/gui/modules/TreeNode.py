@@ -4,14 +4,16 @@ import typing as tp
 from abc import abstractmethod
 
 from PyQt5 import QtCore
-from src.framework.graph.Graph import SubGraph, SubElement
-from src.framework.graph.GraphAnalyser import GraphAnalyser
-from src.framework.graph.GraphContainer import SubGraphContainer, GraphContainer
+from src.framework.graph.Analyser import Analyser
+from src.framework.graph.GraphContainer import GraphContainer
 from src.framework.optimiser.Optimiser import Optimiser
 from src.gui.viewer.items import Items
-from src.gui.viewer.items.GraphicsItem import SubGraphicsItem
+if tp.TYPE_CHECKING:
+    from src.framework.graph.Graph import SubElement, SubGraph
+    from src.framework.graph.GraphContainer import SubGraphContainer
+    from src.gui.viewer.items.GraphicsItem import SubGraphicsItem
 
-Type = tp.Type[SubGraphicsItem]
+Type = tp.Type['SubGraphicsItem']
 SubToggle = tp.TypeVar('SubToggle', bound='Toggle')
 SubTreeNode = tp.TypeVar('SubTreeNode', bound='TreeNode')
 SubGraphicsTreeNode = tp.TypeVar('SubGraphicsTreeNode', bound='GraphicsTreeNode')
@@ -150,12 +152,12 @@ class GraphicsTreeNode(TreeNode, Toggle):
         """ Returns whether this tree-element is comprised of this graphic-item-type. """
         return type_ in self._toggles
 
-    def get_graphic(self, type_: Type) -> tp.List[SubGraphicsItem]:
+    def get_graphic(self, type_: Type) -> tp.List['SubGraphicsItem']:
         """ Returns the list of all graphics-items that comprise this tree-element of a given graphics-item-type. """
 
-        graphics: tp.List[SubGraphicsItem] = []
+        graphics: tp.List['SubGraphicsItem'] = []
         if self.is_checked() and self.contains_graphic(type_) and self._toggles[type_].is_checked():
-            child: SubGraphicsTreeNode
+            child: 'SubGraphicsTreeNode'
             for child in self.get_children():
                 graphics += child.get_graphic(type_)
         return graphics
@@ -216,14 +218,14 @@ class ElementTreeNode(GraphicsTreeNode):
     A tree-element that represents a graph-element-type that comprises graphics-items of the given types.
     """
 
-    _elements: tp.List[SubElement]  # list of graph-elements stored in this node
-    _graphics: tp.Dict[Type, SubGraphicsItem]  # graphics-item for each supported graphics-type
+    _elements: tp.List['SubElement']  # list of graph-elements stored in this node
+    _graphics: tp.Dict[Type, 'SubGraphicsItem']  # graphics-item for each supported graphics-type
 
     def __init__(
             self,
             parent: GraphTreeNode,  # parent-node
             types: tp.List[Type],  # supported graphics-types
-            elements: tp.List[SubElement]  # graph-elements
+            elements: tp.List['SubElement']  # graph-elements
     ):
         super().__init__(parent)
         self._elements = elements
@@ -231,22 +233,22 @@ class ElementTreeNode(GraphicsTreeNode):
 
         # for all of the given graphics-item-types
         element_type = self.get_element_type()
-        type_: tp.Type[SubGraphicsItem]
+        type_: tp.Type['SubGraphicsItem']
         for type_ in types:
 
             # if a graphics-item-type is defined for the element-type
             if type_.check(element_type):
                 # create the graphics-item
-                graphic: SubGraphicsItem = type_.from_elements(elements)
+                graphic: 'SubGraphicsItem' = type_.from_elements(elements)
 
                 self.add_toggle(type_)
                 self._graphics[type_] = graphic
 
-    def get_element_type(self) -> tp.Type[SubElement]:
+    def get_element_type(self) -> tp.Type['SubElement']:
         """ Returns graph-element-type of stored elements. """
         return type(self._elements[0])
 
-    def get_elements(self) -> tp.List[SubElement]:
+    def get_elements(self) -> tp.List['SubElement']:
         """ Returns list of stored graph-elements. """
         return self._elements
 
@@ -258,8 +260,8 @@ class ElementTreeNode(GraphicsTreeNode):
         return str(self.get_element_type().__name__)
 
     # GraphicsTreeNode
-    def get_graphic(self, type_: Type) -> tp.List[SubGraphicsItem]:
-        graphics: tp.List[SubGraphicsItem] = []
+    def get_graphic(self, type_: Type) -> tp.List['SubGraphicsItem']:
+        graphics: tp.List['SubGraphicsItem'] = []
         if self.is_checked() and self.contains_graphic(type_) and self.get_toggle(type_).is_checked():
             graphics.append(self._graphics[type_])
         return graphics
@@ -272,7 +274,7 @@ class GraphTreeNode(GraphicsTreeNode):
 
     _id: int  # node id
     _types: tp.List[Type]  # supported
-    _graph_container: SubGraphContainer  # graph-container
+    _graph_container: 'SubGraphContainer'  # graph-container
     _timestamp: tp.Optional[float]  # current time-stamp
 
     def __init__(
@@ -280,7 +282,7 @@ class GraphTreeNode(GraphicsTreeNode):
             parent: TrajectoryTreeNode,  # parent-node
             types: tp.List[Type],  # supported types
             id_: int,  # node id
-            graph_container: SubGraphContainer  # graph-container
+            graph_container: 'SubGraphContainer'  # graph-container
     ):
         super().__init__(parent)
         self._id = id_
@@ -291,7 +293,7 @@ class GraphTreeNode(GraphicsTreeNode):
             self._timestamp = graph_container.get_timestamps()[-1]
         self.init_graph(self._graph_container.get_graph())
 
-    def init_graph(self, graph: SubGraph):
+    def init_graph(self, graph: 'SubGraph'):
         # for all of the given graphics-item-types
         type_: Type
         for type_ in self._types:
@@ -304,7 +306,7 @@ class GraphTreeNode(GraphicsTreeNode):
                 if type_.check(graph.get_type_of_name(name)):
 
                     # create a subtree-element for each graph-element
-                    elements: tp.List[SubElement] = graph.get_of_name(name)
+                    elements: tp.List['SubElement'] = graph.get_of_name(name)
                     node: ElementTreeNode = ElementTreeNode(self, self._types, elements)
                     self.add_child(node)
 
@@ -326,18 +328,18 @@ class GraphTreeNode(GraphicsTreeNode):
         return self._timestamp
 
     # graphs
-    def get_graph(self, is_final: bool = False) -> SubGraph:
+    def get_graph(self, is_final: bool = False) -> 'SubGraph':
         """ Returns the graph that this tree-element represents. """
         timestamp: tp.Optional[float] = None
         if not is_final:
             timestamp = self._timestamp
         return self._graph_container.get_graph(timestamp)
 
-    def get_graph_container(self) -> SubGraphContainer:
+    def get_graph_container(self) -> 'SubGraphContainer':
         return self._graph_container
 
     # truth
-    def set_truth(self, graph_container: SubGraphContainer):
+    def set_truth(self, graph_container: 'SubGraphContainer'):
         timestamp: float = self._graph_container.get_timestamps()[-1]
         self._graph_container.get_graph(timestamp).assign_truth(graph_container.get_graph(timestamp))
 
@@ -365,7 +367,7 @@ class GraphTreeNode(GraphicsTreeNode):
         return str(self.get_id())
 
     def get_gui_name(self) -> str:
-        graph: SubGraph = self.get_graph()
+        graph: 'SubGraph' = self.get_graph()
         return f'Graph({self.get_id()})[{graph.to_id()}]'
 
     def remove(
@@ -383,7 +385,7 @@ class TrajectoryTreeNode(GraphicsTreeNode, QtCore.QObject):
 
     _id: int  # node id
     _origin: tp.Optional[str]  # description of trajectory origin (e.g. file or simulation)
-    _truth: tp.Optional[SubGraphContainer]  # 'true' (ground-truth) graph-container
+    _truth: tp.Optional['SubGraphContainer']  # 'true' (ground-truth) graph-container
 
     def __init__(
             self,
@@ -413,7 +415,7 @@ class TrajectoryTreeNode(GraphicsTreeNode, QtCore.QObject):
 
     def _add_graph(
             self,
-            graph_container: SubGraphContainer
+            graph_container: 'SubGraphContainer'
     ) -> GraphTreeNode:
         node = GraphTreeNode(self, self.get_types(), self.count_id(increment=True), graph_container)
         self.add_child(node)
@@ -424,18 +426,18 @@ class TrajectoryTreeNode(GraphicsTreeNode, QtCore.QObject):
 
     def add_graph(
             self,
-            graph: SubGraph,
+            graph: 'SubGraph',
             should_broadcast: bool = True
     ) -> None:
-        graph_container: SubGraphContainer = GraphContainer(graph)
+        graph_container: 'SubGraphContainer' = GraphContainer(graph)
         if self.has_children():
             first_child: GraphTreeNode = self.get_children()[0]
             assert first_child.get_graph_container().is_superset_similar(graph_container)
 
         if graph.has_truth():
-            truth_container: SubGraphContainer = GraphContainer(graph.get_truth())
+            truth_container: 'SubGraphContainer' = GraphContainer(graph.get_truth())
             if self.has_truth():
-                assert self._truth.is_superset_equal(truth_container)
+                assert self._truth.is_superset_equivalent(truth_container)
             else:
                 assert self.is_eligible_for_truth(truth_container)
                 self._add_graph(truth_container)
@@ -450,7 +452,7 @@ class TrajectoryTreeNode(GraphicsTreeNode, QtCore.QObject):
 
     def set_as_truth(
             self,
-            graph_container: SubGraphContainer,
+            graph_container: 'SubGraphContainer',
             should_broadcast: bool = True
     ) -> None:
         assert self.is_eligible_for_truth(graph_container)
@@ -461,7 +463,7 @@ class TrajectoryTreeNode(GraphicsTreeNode, QtCore.QObject):
         if should_broadcast:
             self.broadcast(self.get_signal_change())
 
-    def is_eligible_for_truth(self, graph_container: SubGraphContainer) -> bool:
+    def is_eligible_for_truth(self, graph_container: 'SubGraphContainer') -> bool:
         if self.has_truth():
             return False
         if graph_container.get_graph().is_perturbed():
@@ -474,12 +476,15 @@ class TrajectoryTreeNode(GraphicsTreeNode, QtCore.QObject):
     def has_truth(self) -> bool:
         return self._truth is not None
 
-    def get_truth(self) -> SubGraphContainer:
+    def get_truth(self) -> 'SubGraphContainer':
         assert self.has_truth()
         return self._truth
 
-    def get_graphs(self) -> tp.List[SubGraph]:
+    def get_graphs(self) -> tp.List['SubGraph']:
         return [child.get_graph() for child in self.get_children()]
+
+    def get_selected_graphs(self) -> tp.List['SubGraph']:
+        return [child.get_graph() for child in self.get_children() if child.is_checked()]
 
     # TreeNode
     def get_key(self) -> str:
@@ -520,14 +525,14 @@ class TopTreeNode(GraphicsTreeNode, QtCore.QObject):
 
     _id_counter: int
     _optimiser: Optimiser
-    _analyser: GraphAnalyser
+    _analyser: Analyser
 
     signal_update = QtCore.pyqtSignal(int)
 
     def __init__(self):
         super().__init__()
         self._id_counter = 1
-        self._analyser = GraphAnalyser()
+        self._analyser = Analyser()
         self._optimiser = Optimiser()
 
         for item in Items:
@@ -554,26 +559,35 @@ class TopTreeNode(GraphicsTreeNode, QtCore.QObject):
 
     def add_graph(
             self,
-            graph: SubGraph,
+            graph: 'SubGraph',
             origin: tp.Optional[str] = None
     ) -> None:
         trajectory: TrajectoryTreeNode = self._add_trajectory(origin=origin)
         trajectory.add_graph(graph)
 
+    def add_graphs(
+            self,
+            graphs: tp.List['SubGraph'],
+            origin: tp.Optional[str] = None
+    ) -> None:
+        trajectory: TrajectoryTreeNode = self._add_trajectory(origin=origin)
+        for graph in graphs:
+            trajectory.add_graph(graph)
+
     def clear(self) -> None:
-        child: SubGraphicsTreeNode
+        child: 'SubGraphicsTreeNode'
         for child in self.get_children():
             child.remove(should_broadcast=False)
         self.signal_update.emit(self.get_signal_remove())
 
-    def get_analyser(self) -> GraphAnalyser:
+    def analyser(self) -> Analyser:
         return self._analyser
 
-    def get_optimiser(self) -> Optimiser:
+    def optimiser(self) -> Optimiser:
         return self._optimiser
 
-    def get_graphs(self) -> tp.List[SubGraph]:
-        graphs: tp.List[SubGraph] = []
+    def get_graphs(self) -> tp.List['SubGraph']:
+        graphs: tp.List['SubGraph'] = []
         child: TrajectoryTreeNode
         for child in self.get_children():
             graphs += child.get_graphs()
@@ -583,16 +597,16 @@ class TopTreeNode(GraphicsTreeNode, QtCore.QObject):
         return len(self.get_children()) == 0
 
     # graphics
-    def get_graphic(self, type_: Type) -> tp.List[SubGraphicsItem]:
-        graphics: tp.List[SubGraphicsItem] = []
+    def get_graphic(self, type_: Type) -> tp.List['SubGraphicsItem']:
+        graphics: tp.List['SubGraphicsItem'] = []
         if self.contains_graphic(type_) and self._toggles[type_].is_checked():
             child: TrajectoryTreeNode
             for child in self.get_children():
                 graphics += child.get_graphic(type_)
         return graphics
 
-    def get_graphics(self) -> tp.List[SubGraphicsItem]:
-        graphics: tp.List[SubGraphicsItem] = []
+    def get_graphics(self) -> tp.List['SubGraphicsItem']:
+        graphics: tp.List['SubGraphicsItem'] = []
         for type_ in self.get_types():
             graphics += self.get_graphic(type_)
         return graphics

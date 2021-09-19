@@ -2,13 +2,13 @@ import typing as tp
 
 from src.gui.modules.SimulationHandler import SimulationHandler
 from src.gui.utils.GroupComboBox import GroupComboBox, GroupItem
-from framework.simulation.Simulation import SubSimulationManager
+from framework.simulation.Simulation import SubSimulation
 from src.simulation.simulations import simulations
 
 
 class SimulationBox(GroupComboBox):
     _sim_handler: SimulationHandler
-    _elements: tp.List[tp.Optional['SubSimulationManager']]
+    _elements: tp.List[tp.Optional['SubSimulation']]
 
     # constructor
     def __init__(
@@ -48,5 +48,5 @@ class SimulationBox(GroupComboBox):
     # handlers
     def _handle_index_change(self, index):
         if index >= 0:
-            simulation: 'SubSimulationManager' = self._elements[index]
+            simulation: 'SubSimulation' = self._elements[index]
             self._sim_handler.set_simulation(simulation)

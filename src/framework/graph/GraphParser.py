@@ -17,11 +17,11 @@ class GraphParser(object):
     def save(
             cls,
             graph: SubGraph,
-            file: pathlib.Path
+            file: pathlib.Path,
+            should_print: bool = True
     ) -> None:
-        print(
-            f"framework/GraphParser: Saving '{graph.to_unique()}' to:\n    '{file}'"
-        )
+        if should_print:
+            print(f"framework/GraphParser: Saving '{graph.to_unique()}' to:\n    '{file}'")
         graph.set_path(file)
 
         writer: tp.TextIO = file.open('w')
@@ -49,7 +49,8 @@ class GraphParser(object):
             folder: str,
             name: tp.Optional[str] = None,
             relative_to_root: bool = True,
-            add_date: bool = False
+            add_date: bool = False,
+            should_print: bool = True
     ) -> None:
 
         # path
@@ -69,18 +70,19 @@ class GraphParser(object):
         file: pathlib.Path = (path / f'{name}.g2o').resolve()
 
         # save
-        cls.save(graph, file)
+        cls.save(graph, file, should_print=should_print)
 
     @classmethod
     def load(
             cls,
             file: pathlib.Path,
             reference: tp.Optional[SubCalibratingGraph] = None,
-            should_sort: bool = False
+            should_sort: bool = False,
+            should_print: bool = True
     ) -> SubGraph:
         nodes: tp.Dict[int, SubNode]
         edges: tp.List[SubCalibratingEdge]
-        nodes, edges = cls.read_graph(file)
+        nodes, edges = cls.read_graph(file, should_print=should_print)
 
         graph: SubCalibratingGraph = CalibratingGraph()
         graph.set_path(file)
@@ -124,14 +126,14 @@ class GraphParser(object):
     @classmethod
     def read_graph(
             cls,
-            file: pathlib.Path
+            file: pathlib.Path,
+            should_print: bool = True
     ) -> tp.Tuple[tp.Dict[int, SubNode], tp.List[SubCalibratingEdge]]:
+        if should_print:
+            print(f"framework/GraphParser: Reading:\n    '{file}'")
+
         nodes: tp.Dict[int, SubNode] = {}
         edges: tp.List[SubCalibratingEdge] = []
-
-        print(
-            f"framework/GraphParser: Reading:\n    '{file}'"
-        )
 
         reader: tp.TextIO = file.open('r')
         lines: tp.List[str] = reader.readlines()
@@ -180,14 +182,3 @@ class GraphParser(object):
                     # add edge
                     edges.append(edge)
         return nodes, edges
-
-    @classmethod
-    def copy(
-            cls,
-            graph: SubGraph
-    ) -> SubGraph:
-        root: pathlib.Path = get_project_root()
-        path: pathlib.Path = (root / 'graphs/temp/copy.g2o').resolve()
-        cls.save(graph, path)
-        copy: SubGraph = cls.load(path, reference=graph)
-        return copy

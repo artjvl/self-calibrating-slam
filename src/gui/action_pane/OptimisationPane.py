@@ -20,7 +20,7 @@ class OptimisationPane(QtWidgets.QWidget):
     ):
         super().__init__(**kwargs)
         self._tree = tree
-        self._optimisation_handler = OptimisationHandler(tree.get_optimiser())
+        self._optimisation_handler = OptimisationHandler(tree.optimiser())
 
         layout = QtWidgets.QVBoxLayout()
         self.setLayout(layout)
@@ -32,7 +32,7 @@ class OptimisationPane(QtWidgets.QWidget):
         layout.addWidget(history_checkbox)
 
         # solver box
-        solver_box = SolverBox(tree.get_optimiser(), parent=self)
+        solver_box = SolverBox(tree.optimiser(), parent=self)
         layout.addWidget(LabelPane(solver_box, 'Choose a Library/Solver:'))
 
         # optimise button

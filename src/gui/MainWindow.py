@@ -102,7 +102,7 @@ class MainWindow(QMainWindow):
         menubar = self.menuBar()
         menubar.addMenu(FileMenu(tree, parent=self))
         menubar.addMenu(ViewMenu(tree, viewer, parent=self))
-        menubar.addMenu(AnalyserMenu(tree.get_analyser(), parent=self))
+        menubar.addMenu(AnalyserMenu(tree.analyser(), parent=self))
         menubar.addMenu(AboutMenu(parent=self))
         return menubar
 

@@ -17,7 +17,7 @@ if tp.TYPE_CHECKING:
     from src.framework.simulation.PostAnalyser import SubPostAnalyser
     from src.framework.simulation.Sensor import SubSensor
 
-SubSubSimulation2D = tp.TypeVar('SubSubSimulation2D', bound='Simulation2D')
+SubSubModel2D = tp.TypeVar('SubSubModel2D', bound='SubModel2D')
 
 
 class SubModel2D(GraphManager):
@@ -33,14 +33,17 @@ class SubModel2D(GraphManager):
         if optimiser is None:
             optimiser = Optimiser()
         self._optimiser = optimiser
-        self._sensors = {}
         self.reset()
 
     def reset(self) -> None:
         super().reset()
 
+        # reset sensors
+        self._sensors = {}
+
+        # reset graph
         self._pose_ids = []
-        self._current_node = self.add_pose(SE2.from_translation_angle_elements(0, 0, 0))
+        self._current_node = self.add_pose_node(SE2.from_translation_angle_elements(0, 0, 0))
         self._current_node.fix()
         self._last_graph = super().graph()
 
@@ -50,23 +53,28 @@ class SubModel2D(GraphManager):
             sensor_name: str,
             sensor: 'SubSensor'
     ) -> None:
+        """ Adds a sensor. """
         assert sensor_name not in self._sensors
         self._sensors[sensor_name] = sensor
 
     def has_sensor(self, sensor_name: str) -> bool:
+        """ Returns whether a sensor is present. """
         return sensor_name in self._sensors
 
     def get_sensor(
             self,
             sensor_name: str
     ) -> 'SubSensor':
+        """ Returns a sensor. """
         assert self.has_sensor(sensor_name), sensor_name
         return self._sensors[sensor_name]
 
     def get_sensor_names(self) -> tp.List[str]:
+        """ Returns all sensor names. """
         return list(self._sensors.keys())
 
     def get_sensors(self) -> tp.List['SubSensor']:
+        """ Returns all sensors. """
         return list(self._sensors.values())
 
     # parameters
@@ -76,6 +84,7 @@ class SubModel2D(GraphManager):
             parameter_name: str,
             parameter: 'SubParameter'
     ) -> None:
+        """ Adds a parameter to a sensor. """
         assert self.has_sensor(sensor_name), f'{sensor_name}'
         self._sensors[sensor_name].add_parameter(parameter_name, parameter)
         self.add_node(parameter.get_node())
@@ -86,6 +95,7 @@ class SubModel2D(GraphManager):
             parameter_name: str,
             value: 'Quantity'
     ) -> None:
+        """ Updates a parameter with a given value. """
         sensor: 'SubSensor' = self.get_sensor(sensor_name)
         sensor.update_parameter(parameter_name, value)
         parameter: 'SubParameter' = sensor.get_parameter(parameter_name)
@@ -96,15 +106,14 @@ class SubModel2D(GraphManager):
             self,
             value: 'Quantity'
     ) -> 'SubNode':
-        """ Creates and adds a new node with <value>. """
+        """ Creates and adds a new node from a given value. """
         return self.add_node(SpatialNodeFactory.from_value(value))
 
-    def add_pose(
+    def add_pose_node(
             self,
             pose: SE2
     ) -> NodeSE2:
-        """ Creates and adds a new pose-node (i.e., NodeSE2) with <value>. """
-
+        """ Creates and adds a new node from a given pose. """
         node: NodeSE2 = self.add_node_from_value(pose)
         self._pose_ids.append(node.get_id())
         self._current_node = node
@@ -116,7 +125,7 @@ class SubModel2D(GraphManager):
             ids: tp.List[int],
             measurement: 'Quantity'
     ) -> 'SubEdge':
-        """ Creates and adds a new edge between <ids> with <measurement>, as measurement by <sensor_name>. """
+        """ Creates and adds a new edge between given nodes with a measurement from a sensor. """
         sensor: 'SubSensor' = self.get_sensor(sensor_name)
         graph: 'SubGraph' = self.graph()
 
@@ -141,14 +150,13 @@ class SubModel2D(GraphManager):
             sensor_name: str,
             measurement: SE2
     ) -> tp.Tuple['SubNode', 'SubEdge']:
-        """ Creates and adds a new pose and edge with <measurement>, as measured by <sensor_name>. """
-
+        """ Creates and adds a new node and edge with a measurement from a sensor. """
         sensor: 'SubSensor' = self.get_sensor(sensor_name)
         transformation: SE2 = sensor.compose(measurement)
 
         current: NodeSE2 = self._current_node
         position: SE2 = current.get_value() + transformation
-        new: NodeSE2 = self.add_pose(position)
+        new: NodeSE2 = self.add_pose_node(position)
         edge: 'SubCalibratingEdge' = self.add_edge_from_value(
             sensor_name,
             [current.get_id(), new.get_id()],
@@ -157,55 +165,69 @@ class SubModel2D(GraphManager):
         return new, edge
 
     def report_closure(self) -> None:
+        """ Registers the addition of a loop closure constraint. """
         pass
 
     # nodes
     def get_node(self, id_: int) -> 'SubNode':
-        """ Returns the node with <id_>. """
+        """ Returns a node. """
         return self._graph.get_node(id_)
 
-    def get_current(self) -> NodeSE2:
+    def current(self) -> NodeSE2:
         """ Returns the current pose-node. """
         return self._current_node
 
-    def get_pose_ids(self) -> tp.List[int]:
-        """ Returns the pose-node id history. """
+    def pose_ids(self) -> tp.List[int]:
+        """ Returns all previous pose-node ids. """
         return self._pose_ids
 
     @abstractmethod
     def step(self, delta: float) -> 'SubGraph':
+        """ Progresses (steps forward in time) the model. """
         pass
 
     # optimiser
     def set_optimiser(self, optimiser: Optimiser) -> None:
+        """ Sets the optimiser. """
         self._optimiser = optimiser
 
     def has_optimiser(self) -> bool:
+        """ Returns whether an optimiser has been set. """
         return self._optimiser is not None
 
     def get_optimiser(self) -> Optimiser:
+        """ Returns the optimiser. """
         assert self.has_optimiser()
         return self._optimiser
 
     def optimise(self) -> 'SubGraph':
-        graph: 'SubCalibratingGraph' = self.graph()
-        solution: 'SubCalibratingGraph' = self.get_optimiser().instance_optimise(graph)
+        """ Optimises the graph and returns a copy. """
+        graph: 'SubGraph' = self.graph()
+
+        # find solution and copy meta/previous
+        solution: 'SubGraph' = self.get_optimiser().instance_optimise(graph)
         graph.copy_meta_to(solution)
         if graph.has_previous():
             solution.set_previous(graph.get_previous())
+
+        # set graph to match solution
         graph.from_vector(solution.to_vector())
         return solution
 
-    def copy(self, copy_: 'SubGraph') -> 'SubCalibratingGraph':
-        graph: 'SubCalibratingGraph' = self.graph()
+    def copy(self, is_shallow: bool = False) -> 'SubGraph':
+        """ Copies the graph. """
+        graph: 'SubGraph' = self.graph()
+
+        # create copy and copy meta/previous
+        copy_: 'SubGraph' = copy.copy(graph) if is_shallow else copy.deepcopy(graph)
         graph.copy_meta_to(copy_)
         if graph.has_previous():
             copy_.set_previous(graph.get_previous())
         return copy_
 
     def set_previous(self, previous: 'SubGraph') -> None:
-        graph: 'SubGraph' = self.graph()
-        graph.set_previous(previous)
+        """ Sets a previous graph. """
+        self.graph().set_previous(previous)
         self._last_graph = previous
 
 
@@ -216,7 +238,7 @@ class PlainSubModel2D(SubModel2D):
         self.set_timestamp()
 
     def step(self, delta: float) -> 'SubGraph':
-        snapshot: 'SubCalibratingGraph' = self.copy(copy.copy(self.graph()))
+        snapshot: 'SubGraph' = self.copy(is_shallow=True)
         self.set_previous(snapshot)
 
         self.increment_timestamp(delta)
@@ -253,7 +275,7 @@ class IncrementalSubModel2D(OptimisingSubModel2D):
         if self._is_closure:
             solution = self.optimise()
         else:
-            solution = self.copy(copy.copy(self.graph()))
+            solution = self.copy()
         self.set_previous(solution)
 
         self.increment_timestamp(delta)
@@ -267,7 +289,7 @@ class SlidingSubModel2D(OptimisingSubModel2D):
         if self._is_closure:
             solution = self.optimise()
         else:
-            solution = self.copy(copy.deepcopy(self.graph()))
+            solution = self.copy()
         self.set_previous(solution)
 
         self.increment_timestamp(delta)

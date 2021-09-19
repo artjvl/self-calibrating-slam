@@ -1,9 +1,9 @@
 from PyQt5 import QtWidgets
-
 from src.gui.action_pane.ConfigurationTree import ConfigurationTree
 from src.gui.action_pane.SimulationBox import SimulationBox
-from src.gui.modules.TreeNode import TopTreeNode
 from src.gui.modules.SimulationHandler import SimulationHandler
+from src.gui.modules.TreeNode import TopTreeNode
+from src.gui.utils.LabelPane import LabelPane
 
 
 class SimulationPane(QtWidgets.QWidget):
@@ -28,17 +28,19 @@ class SimulationPane(QtWidgets.QWidget):
 
         # graph simulation
         simulator_box = SimulationBox(self._simulation_handler, parent=self)
-        simulator_box_label = QtWidgets.QLabel(simulator_box)
-        simulator_box_label.setText('Choose a simulation:')
-        layout.addWidget(simulator_box_label)
-        layout.addWidget(simulator_box)
+        layout.addWidget(LabelPane(simulator_box, 'Choose a simulation:'))
 
         button_simulate = QtWidgets.QPushButton(self)
         button_simulate.setText('Simulate graph')
         button_simulate.clicked.connect(self._simulation_handler.simulate)
         layout.addWidget(button_simulate)
 
-        tree_label = QtWidgets.QLabel(config)
-        tree_label.setText('Simulation parameters')
-        layout.addWidget(tree_label)
-        layout.addWidget(config)
+        button_mc = QtWidgets.QPushButton(self)
+        button_mc.setText('Monte Carlo simulation')
+        button_mc.clicked.connect(self._handle_mc)
+        layout.addWidget(button_mc)
+
+        layout.addWidget(LabelPane(config, 'Simulation parameters:'))
+
+    def _handle_mc(self) -> None:
+        return self._simulation_handler.monte_carlo(10)

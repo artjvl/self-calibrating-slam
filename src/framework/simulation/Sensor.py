@@ -6,15 +6,14 @@ from src.framework.graph.data.DataFactory import DataFactory
 from src.framework.graph.protocols.Measurement import Measurement2D
 from src.framework.math.lie.transformation import SE2
 from src.framework.math.matrix.square import SquareFactory
-from src.framework.math.matrix.vector import SubVector, VectorFactory
-from src.framework.math.matrix.vector import Vector2
-from src.framework.math.matrix.vector import Vector3
+from src.framework.math.matrix.vector import VectorFactory, Vector2, Vector3
 from src.framework.simulation.Parameter import StaticParameter
 
 if tp.TYPE_CHECKING:
     from src.framework.graph.data import SubData
     from src.framework.graph.data.DataFactory import Quantity
     from src.framework.math.matrix.square import SubSquare
+    from src.framework.math.matrix.vector.Vector import SubSizeVector
     from src.framework.simulation.Parameter import SubParameter
 
 T = tp.TypeVar('T')
@@ -68,9 +67,9 @@ class Sensor(tp.Generic[T]):
     def set_seed(self, seed: tp.Optional[int] = None):
         self._rng = np.random.RandomState(seed)
 
-    def generate_noise(self) -> SubVector:
+    def generate_noise(self) -> 'SubSizeVector':
         dim: int = self.get_dim()
-        vector_type: tp.Type[SubVector] = VectorFactory.from_dim(dim)
+        vector_type: tp.Type['SubSizeVector'] = VectorFactory.from_dim(dim)
         return vector_type(
             self._rng.multivariate_normal(
                 mean=[0] * dim,

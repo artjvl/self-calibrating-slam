@@ -4,13 +4,16 @@ from PyQt5.QtCore import QObject, pyqtSignal
 from src.framework.simulation.Model2D import Model2D
 from src.gui.action_pane.ConfigurationTree import ConfigurationTree
 from src.gui.modules.TreeNode import TopTreeNode
-from framework.simulation.Simulation import SubSimulationManager
+
+if tp.TYPE_CHECKING:
+    from src.framework.graph.Graph import SubGraph
+    from src.framework.simulation.Simulation import SubSimulation
 
 
 class SimulationHandler(QObject):
     _tree: TopTreeNode
     _config: ConfigurationTree
-    _simulation: tp.Optional['SubSimulationManager']
+    _simulation: tp.Optional['SubSimulation']
 
     signal_update = pyqtSignal(int)
 
@@ -19,15 +22,15 @@ class SimulationHandler(QObject):
             self,
             tree: TopTreeNode,
             config: ConfigurationTree,
-            *args, **kwargs
+            **kwargs
     ):
-        super().__init__(*args, **kwargs)
+        super().__init__(**kwargs)
         self._tree = tree
         self._config = config
         self._simulation = None
 
-    def set_simulation(self, simulation: 'SubSimulationManager'):
-        simulation.set_optimiser(self._tree.get_optimiser())
+    def set_simulation(self, simulation: 'SubSimulation'):
+        simulation.set_optimiser(self._tree.optimiser())
         self._simulation = simulation
 
         # if self._simulation.has_config():
@@ -41,10 +44,15 @@ class SimulationHandler(QObject):
     def get_simulation(self) -> Model2D:
         return self._simulation
 
-    def simulate(self):
+    def simulate(self) -> None:
         print(f'gui/SimulationHandler: Simulating trajectory with {self._simulation.name()}...')
-        graph_truth, graph_estimate = self._simulation.run()
+        graph_estimate: 'SubGraph' = self._simulation.run()
         self._tree.add_graph(
             graph_estimate,
             origin=self._simulation.name()
         )
+
+    def monte_carlo(self, num) -> None:
+        print(f'gui/SimulationHandler: Monte Carlo simulation with {self._simulation.name()}...')
+        graphs: tp.List['SubGraph'] = self._simulation.monte_carlo(num)
+        self._tree.add_graphs(graphs, self._simulation.name())

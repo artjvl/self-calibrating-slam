@@ -12,7 +12,7 @@ from src.framework.simulation.ConfigurationSet import ConfigurationSet
 from src.framework.simulation.Parameter import StaticParameter, SlidingParameter, OldSlidingParameter
 from src.framework.simulation.PostAnalyser import VarianceAnalyser
 from src.framework.simulation.Sensor import SensorFactory
-from src.framework.simulation.SubModel2D import SubSubSimulation2D, PlainSubModel2D, PostSubModel2D, \
+from src.framework.simulation.SubModel2D import SubSubModel2D, PlainSubModel2D, PostSubModel2D, \
     SlidingSubModel2D, IncrementalSubModel2D
 from src.utils import GeoHash2D
 
@@ -26,7 +26,7 @@ if tp.TYPE_CHECKING:
     from src.framework.simulation.Parameter import SubParameter
     from src.framework.simulation.PostAnalyser import SubPostAnalyser
     from src.framework.simulation.Sensor import SubSensor
-    from src.framework.simulation.SubModel2D import SubSubSimulation2D
+    from src.framework.simulation.SubModel2D import SubSubModel2D
 
 SubModel2D = tp.TypeVar('SubModel2D', bound='Model2D')
 
@@ -35,8 +35,6 @@ class BaseModel2D(object):
 
     # simulation
     _geo: GeoHash2D[int]
-    _truth_sim: 'SubSubSimulation2D'
-    _estimate_sim: tp.Optional['SubSubSimulation2D']
 
     # rng
     _path_rng: np.random.RandomState
@@ -63,25 +61,25 @@ class BaseModel2D(object):
         self.reset()
 
     @abstractmethod
-    def truth_sim(self) -> 'SubSubSimulation2D':
+    def truth_model(self) -> 'SubSubModel2D':
         pass
 
     @abstractmethod
-    def estimate_sim(self) -> 'SubSubSimulation2D':
+    def estimate_model(self) -> 'SubSubModel2D':
         pass
 
     def reset(self) -> None:
-        truth_sim: 'SubSubSimulation2D' = self.truth_sim()
-        estimate_sim: 'SubSubSimulation2D' = self.estimate_sim()
+        truth_model: 'SubSubModel2D' = self.truth_model()
+        estimate_model: 'SubSubModel2D' = self.estimate_model()
 
         # reset graphs
-        truth_sim.reset()
-        estimate_sim.reset()
-        estimate_sim.graph().assign_truth(truth_sim.graph())
+        truth_model.reset()
+        estimate_model.reset()
+        estimate_model.graph().assign_truth(truth_model.graph())
 
         # geo
         self._geo.reset()
-        translation: 'Vector2' = truth_sim.get_current().get_value().translation()
+        translation: 'Vector2' = truth_model.current().get_value().translation()
         self._geo.add(translation[0], translation[1], self.get_current_id())
 
     # sensors
@@ -101,14 +99,14 @@ class BaseModel2D(object):
             info_matrix_truth: 'SubSquare',
             info_matrix_estimate: 'SubSquare'
     ) -> None:
-        self.truth_sim().add_sensor(
+        self.truth_model().add_sensor(
             sensor_name, SensorFactory.from_value(
                 type_,
                 info_matrix=info_matrix_truth,
                 seed=self._sensor_seed
             )
         )
-        self.estimate_sim().add_sensor(
+        self.estimate_model().add_sensor(
             sensor_name, SensorFactory.from_value(
                 type_,
                 info_matrix=info_matrix_estimate,
@@ -126,13 +124,13 @@ class BaseModel2D(object):
         self.add_sensor_with_info_matrix(sensor_name, type_, cov_matrix_truth.inverse(), cov_matrix_estimate.inverse())
 
     def has_sensor(self, sensor_name: str) -> bool:
-        return self.truth_sim().has_sensor(sensor_name)
+        return self.truth_model().has_sensor(sensor_name)
 
     def get_truth_sensor(self, sensor_name: str) -> 'SubSensor':
-        return self.truth_sim().get_sensor(sensor_name)
+        return self.truth_model().get_sensor(sensor_name)
 
     def get_estimate_sensor(self, sensor_name: str) -> 'SubSensor':
-        return self.estimate_sim().get_sensor(sensor_name)
+        return self.estimate_model().get_sensor(sensor_name)
 
     def set_truth_info_matrix(self, sensor_name: str, info_matrix: 'SubSquare') -> None:
         self.get_truth_sensor(sensor_name).set_info_matrix(info_matrix)
@@ -159,7 +157,7 @@ class BaseModel2D(object):
             index=index,
             is_visible=is_visible
         )
-        self.truth_sim().add_parameter(sensor_name, parameter_name, parameter)
+        self.truth_model().add_parameter(sensor_name, parameter_name, parameter)
 
     def update_truth_parameter(
             self,
@@ -167,7 +165,33 @@ class BaseModel2D(object):
             parameter_name: str,
             value: 'Quantity'
     ) -> None:
-        self.truth_sim().update_parameter(sensor_name, parameter_name, value)
+        self.truth_model().update_parameter(sensor_name, parameter_name, value)
+
+    def add_constant_estimate_parameter(
+            self,
+            sensor_name: str,
+            parameter_name: str,
+            value: 'Quantity',
+            specification: 'ParameterSpecification',
+            index: int = 0
+    ) -> None:
+        parameter: 'SubParameter' = StaticParameter(
+            value=value,
+            specification=specification,
+            index=index,
+            is_visible=True
+        )
+        self.estimate_model().add_parameter(sensor_name, parameter_name, parameter)
+
+    def update_constant_estimate_parameter(
+            self,
+            sensor_name: str,
+            parameter_name: str,
+            value: 'Quantity'
+    ) -> None:
+        assert self.has_sensor(sensor_name)
+        sensor: 'SubSensor' = self.estimate_model().get_sensor(sensor_name)
+        assert sensor.update_parameter(parameter_name, value)
 
     # edges
     def add_edge(
@@ -178,8 +202,8 @@ class BaseModel2D(object):
     ) -> None:
         """ Adds a new edge between <ids> with <value>, as measured by <sensor_name>. """
 
-        truth_sim: 'SubSubSimulation2D' = self.truth_sim()
-        estimate_sim: 'SubSubSimulation2D' = self.estimate_sim()
+        truth_sim: 'SubSubModel2D' = self.truth_model()
+        estimate_sim: 'SubSubModel2D' = self.estimate_model()
         self.align_ids()
 
         # add new 'truth' edge
@@ -201,7 +225,7 @@ class BaseModel2D(object):
     ) -> None:
         """ Adds an edge between <from_id> and <to_id> with the 'truth' transformation, as measured by <sensor_name>. """
 
-        truth_sim: 'SubSubSimulation2D' = self.truth_sim()
+        truth_sim: 'SubSubModel2D' = self.truth_model()
         transformation: SE2 = truth_sim.get_node(to_id).get_value() - truth_sim.get_node(from_id).get_value()
         self.add_edge(sensor_name, [from_id, to_id], transformation)
 
@@ -214,8 +238,8 @@ class BaseModel2D(object):
         """ Adds a new pose-node and edge with <transformation>, as measured by <sensor_name>. """
 
         self.align_ids()
-        truth_sim: 'SubSubSimulation2D' = self.truth_sim()
-        estimate_sim: 'SubSubSimulation2D' = self.estimate_sim()
+        truth_sim: 'SubSubModel2D' = self.truth_model()
+        estimate_sim: 'SubSubModel2D' = self.estimate_model()
 
         # add new 'truth' pose and edge
         truth_sensor: 'SubSensor' = truth_sim.get_sensor(sensor_name)
@@ -223,8 +247,8 @@ class BaseModel2D(object):
         truth_node, truth_edge = truth_sim.add_odometry(sensor_name, truth_measurement)
 
         # store new 'truth' pose in geo-hashmap
-        translation: 'Vector2' = truth_sim.get_current().get_value().translation()
-        self._geo.add(translation[0], translation[1], truth_sim.get_current().get_id())
+        translation: 'Vector2' = truth_sim.current().get_value().translation()
+        self._geo.add(translation[0], translation[1], truth_sim.current().get_id())
 
         # add new 'perturbed' pose and edge
         estimate_measurement: SE2 = truth_sensor.measure(truth_measurement)
@@ -278,11 +302,11 @@ class BaseModel2D(object):
         <separation> ids, with the 'truth' transformation, as measurement by <sensor_name>.
         """
 
-        truth_sim: 'SubSubSimulation2D' = self.truth_sim()
+        truth_sim: 'SubSubModel2D' = self.truth_model()
 
-        pose_ids: tp.List[int] = truth_sim.get_pose_ids()
+        pose_ids: tp.List[int] = truth_sim.pose_ids()
         if len(pose_ids) > separation:
-            current: 'NodeSE2' = truth_sim.get_current()
+            current: 'NodeSE2' = truth_sim.current()
             location: 'Vector2' = current.get_value().translation()
 
             closures: tp.List[int] = self._geo.find_within(location[0], location[1], distance)
@@ -319,11 +343,11 @@ class BaseModel2D(object):
         as measurement by <sensor_name>.
         """
 
-        truth_sim: 'SubSubSimulation2D' = self.truth_sim()
+        truth_sim: 'SubSubModel2D' = self.truth_model()
 
-        pose_ids: tp.List[int] = truth_sim.get_pose_ids()
+        pose_ids: tp.List[int] = truth_sim.pose_ids()
         if len(pose_ids) > steps:
-            current_id: int = truth_sim.get_current().get_id()
+            current_id: int = truth_sim.current().get_id()
             proximity_id: int = pose_ids[-1 - steps]
             self.add_poses_edge(sensor_name, proximity_id, current_id)
 
@@ -331,29 +355,29 @@ class BaseModel2D(object):
     def align_ids(self) -> None:
         """ Aligns the current-pose-id of each simulation. """
 
-        truth_sim: 'SubSubSimulation2D' = self.truth_sim()
-        estimate_sim: 'SubSubSimulation2D' = self.estimate_sim()
+        truth_sim: 'SubSubModel2D' = self.truth_model()
+        estimate_sim: 'SubSubModel2D' = self.estimate_model()
         id_ = max(truth_sim.get_id(), estimate_sim.get_id())
         truth_sim.set_count(id_)
         estimate_sim.set_count(id_)
 
-    def get_timestamp(self) -> float:
-        return self.truth_sim().get_timestamp()
+    def timestamp(self) -> float:
+        return self.truth_model().get_timestamp()
 
     def step(self, delta: float) -> None:
-        self.truth_sim().step(delta)
-        self.estimate_sim().step(delta)
-        self.print(f'step: {self.get_timestamp():.2f}')
+        self.truth_model().step(delta)
+        self.estimate_model().step(delta)
+        self.print(f'step: {self.timestamp():.2f}')
 
     def fix(self) -> None:
         """ Fixes the current pose-node. """
 
-        self.truth_sim().get_current().fix()
-        self.estimate_sim().get_current().fix()
+        self.truth_model().current().fix()
+        self.estimate_model().current().fix()
 
     # current
     def get_current_node(self) -> 'NodeSE2':
-        return self.truth_sim().get_current()
+        return self.truth_model().current()
 
     def get_current_pose(self) -> SE2:
         return self.get_current_node().get_value()
@@ -395,17 +419,17 @@ class BaseModel2D(object):
         GraphParser.save_path_folder(self.estimate_graph(), folder, name=f'{name}_perturbed')
 
     def truth_graph(self) -> 'SubGraph':
-        return self.truth_sim().graph()
+        return self.truth_model().graph()
 
     def estimate_graph(self) -> 'SubGraph':
-        return self.estimate_sim().graph()
+        return self.estimate_model().graph()
 
 
 class Model2D(BaseModel2D):
 
     def __init__(
             self,
-            sim_type: tp.Type['SubSubSimulation2D'],
+            sim_type: tp.Type['SubSubModel2D'],
             optimiser: tp.Optional[Optimiser] = None,
             path_seed: tp.Optional[int] = None,
             constraint_seed: tp.Optional[int] = None,
@@ -413,8 +437,8 @@ class Model2D(BaseModel2D):
     ):
 
         # simulation
-        self._truth_sim = PlainSubModel2D()
-        self._estimate_sim = sim_type(optimiser=optimiser)
+        self._truth_model = PlainSubModel2D()
+        self._estimate_model = sim_type(optimiser=optimiser)
 
         super().__init__(
             path_seed=path_seed,
@@ -425,11 +449,11 @@ class Model2D(BaseModel2D):
         # parameters
         self._config = None
 
-    def truth_sim(self) -> 'SubSubSimulation2D':
-        return self._truth_sim
+    def truth_model(self) -> 'SubSubModel2D':
+        return self._truth_model
 
-    def estimate_sim(self) -> 'SubSubSimulation2D':
-        return self._estimate_sim
+    def estimate_model(self) -> 'SubSubModel2D':
+        return self._estimate_model
 
     # config
     def set_config(self, config: ConfigurationSet) -> None:
@@ -478,32 +502,6 @@ class IncrementalModel2D(Model2D, ABC):
             sensor_seed=sensor_seed
         )
 
-    def add_constant_estimate_parameter(
-            self,
-            sensor_name: str,
-            parameter_name: str,
-            value: 'Quantity',
-            specification: 'ParameterSpecification',
-            index: int = 0
-    ) -> None:
-        parameter: 'SubParameter' = StaticParameter(
-            value=value,
-            specification=specification,
-            index=index,
-            is_visible=True
-        )
-        self.estimate_sim().add_parameter(sensor_name, parameter_name, parameter)
-
-    def update_constant_estimate_parameter(
-            self,
-            sensor_name: str,
-            parameter_name: str,
-            value: 'Quantity'
-    ) -> None:
-        assert self.has_sensor(sensor_name)
-        sensor: 'SubSensor' = self.estimate_sim().get_sensor(sensor_name)
-        assert sensor.update_parameter(parameter_name, value)
-
 
 class SlidingModel2D(Model2D, ABC):
 
@@ -537,7 +535,7 @@ class SlidingModel2D(Model2D, ABC):
             window_size=window,
             index=index
         )
-        self.estimate_sim().add_parameter(sensor_name, parameter_name, parameter)
+        self.estimate_model().add_parameter(sensor_name, parameter_name, parameter)
 
     def add_old_sliding_estimate_parameter(
             self,
@@ -554,7 +552,7 @@ class SlidingModel2D(Model2D, ABC):
             window_size=window_size,
             index=index
         )
-        self.estimate_sim().add_parameter(sensor_name, parameter_name, parameter)
+        self.estimate_model().add_parameter(sensor_name, parameter_name, parameter)
 
 
 class PostModel2D(Model2D, ABC):
@@ -591,11 +589,11 @@ class PostModel2D(Model2D, ABC):
             window_size: int
     ) -> None:
         analyser: 'SubPostAnalyser' = VarianceAnalyser(window_size)
-        self.estimate_sim().add_analyser(sensor_name, analyser)
+        self.estimate_model().add_analyser(sensor_name, analyser)
 
     def post_process(self) -> None:
-        assert self.estimate_sim().has_analyser()
-        self.estimate_sim().post_process(steps=2)
+        assert self.estimate_model().has_analyser()
+        self.estimate_model().post_process(steps=2)
 
     def step(self, delta: float) -> None:
         pass
