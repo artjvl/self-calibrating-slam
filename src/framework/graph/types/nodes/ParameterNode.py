@@ -43,6 +43,7 @@ class ParameterDict(object):
 class ParameterNode(tp.Generic[T], Node[T]):
     _specification: ParameterSpecification
     _index: int
+    _translation: tp.Optional[Vector2]
 
     def __init__(
             self,
@@ -61,6 +62,7 @@ class ParameterNode(tp.Generic[T], Node[T]):
         # attributes
         self.set_specification(specification)
         self._index = index
+        self._translation = None
 
     # specification
     def get_specification(self) -> ParameterSpecification:
@@ -72,6 +74,17 @@ class ParameterNode(tp.Generic[T], Node[T]):
     # index
     def get_index(self) -> int:
         return self._index
+
+    # translation
+    def has_translation(self) -> bool:
+        return self._translation is not None
+
+    def set_translation(self, translation: Vector2) -> None:
+        self._translation = translation
+
+    def get_translation(self) -> Vector2:
+        assert self.has_translation()
+        return self._translation
 
     # composition
     @abstractmethod
@@ -392,17 +405,17 @@ class ParameterNodeFactory(object):
             value: 'Quantity',
             name: tp.Optional[str] = None,
             id_: tp.Optional[int] = None,
-            index: int = 0,
             timestamp: tp.Optional[float] = None,
-            specification: ParameterSpecification = ParameterSpecification.BIAS
+            specification: ParameterSpecification = ParameterSpecification.BIAS,
+            index: int = 0
     ) -> SubParameterNode:
         node_type: tp.Type[SubParameterNode] = cls.from_value_type(type(value))
         node: SubParameterNode = node_type(
             name=name,
             id_=id_,
             value=value,
-            index=index,
             timestamp=timestamp,
-            specification=specification
+            specification=specification,
+            index=index
         )
         return node

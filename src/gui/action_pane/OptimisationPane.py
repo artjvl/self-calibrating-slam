@@ -38,10 +38,13 @@ class OptimisationPane(QtWidgets.QWidget):
         # optimise button
         self._button_optimise = QtWidgets.QPushButton(parent=self)
         self._button_optimise.setText('Optimise graph')
-        self._button_optimise.clicked.connect(self._optimisation_handler.optimise)
+        self._button_optimise.clicked.connect(self._handle_optimise)
         self._button_optimise.setEnabled(False)
         self._optimisation_handler.signal_update.connect(self._handle_graph_selection_update)
         layout.addWidget(self._button_optimise)
 
     def _handle_graph_selection_update(self, signal: int):
         self._button_optimise.setEnabled(True if signal == self._optimisation_handler.get_signal_filled() else False)
+
+    def _handle_optimise(self):
+        self._optimisation_handler.optimise(should_print=True)

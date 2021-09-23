@@ -53,18 +53,18 @@ class OptimisationHandler(QtCore.QObject):
     def get_include_history(self) -> bool:
         return self._include_history
 
-    def optimise(self) -> None:
+    def optimise(self, should_print: bool = True) -> None:
         assert self._graph_node is not None
         graph: SubGraph = self._graph_node.get_graph()
 
         subgraphs: tp.List[SubGraph] = [graph]
         if self._include_history:
-            subgraphs = graph.get_subgraphs()
+            subgraphs = graph.subgraphs()
 
         subsolutions: tp.List[SubGraph] = []
         for subgraph in subgraphs:
             print(f"gui/OptimisationHandler: Optimising '{subgraph.to_unique()}'...")
-            subsolution: SubGraph = self._optimiser.instance_optimise(subgraph, compute_marginals=False)
+            subsolution: SubGraph = self._optimiser.instance_optimise(subgraph, compute_marginals=False, should_print=should_print)
             if subsolutions:
                 subsolution.set_previous(subsolutions[-1])
             subsolutions.append(subsolution)

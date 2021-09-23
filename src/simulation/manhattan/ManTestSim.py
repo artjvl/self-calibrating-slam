@@ -3,7 +3,7 @@ from src.framework.math.matrix.square import Square3, Square2
 from src.framework.math.matrix.vector import Vector3, Vector2
 from src.framework.simulation.Model2D import PostModel2D
 from src.framework.simulation.Model2D import SubModel2D
-from src.framework.simulation.Simulation import ManhattanSimulation2D
+from src.framework.simulation.BiSimulation import ManhattanSimulation2D
 
 
 class ManhattanTest(ManhattanSimulation2D):

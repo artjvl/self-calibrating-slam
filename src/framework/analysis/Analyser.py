@@ -26,9 +26,9 @@ class SubgraphSet(object):
     _subgraphs: np.ndarray
 
     def __init__(self, graphs: tp.List['SubGraph']):
-        self._subgraphs = np.array([graphs[0].get_subgraphs()])
+        self._subgraphs = np.array([graphs[0].subgraphs()])
         for graph in graphs[1:]:
-            subgraphs: tp.List['SubGraph'] = graph.get_subgraphs()
+            subgraphs: tp.List['SubGraph'] = graph.subgraphs()
             assert len(subgraphs) == self._subgraphs.shape[1]
             self._subgraphs = np.vstack([self._subgraphs, subgraphs])
 
@@ -185,13 +185,13 @@ class AnalyserMetric(object):
     def plot(self, graph: 'SubGraph') -> plt.Figure:
         assert self.is_eligible(graph)
 
-        subgraphs: tp.List['SubGraph'] = graph.get_subgraphs()
+        subgraphs: tp.List['SubGraph'] = graph.subgraphs()
         size: int = len(subgraphs)
 
         timestamps: tp.List[float] = []
         metrics: tp.List[float] = []
         for i, subgraph in enumerate(subgraphs):
-            timestamps.append(subgraph.get_timestamp())
+            timestamps.append(subgraph.timestamp())
             metrics.append(self.get_metric(subgraph))
 
             update_print(f'\r{100 * i / size:.2f}%')
@@ -213,7 +213,7 @@ class AnalyserMetric(object):
         means: tp.List[float] = []
         stds: tp.List[float] = []
         for i, graph in enumerate(first):
-            timestamps.append(graph.get_timestamp())
+            timestamps.append(graph.timestamp())
             subgraphs: tp.List['SubGraph'] = subgraph_set.subgraphs(i)
             metrics: tp.List[float] = [self.get_metric(subgraph) for subgraph in subgraphs]
 
@@ -443,7 +443,7 @@ class AnalyserParameterDynamics(object):
     @classmethod
     def plot(cls, graph: 'SubCalibratingGraph', name: str) -> plt.Figure:
         assert cls.is_eligible(graph, name)
-        subgraphs: tp.List['SubCalibratingGraph'] = graph.get_subgraphs()
+        subgraphs: tp.List['SubCalibratingGraph'] = graph.subgraphs()
         parameters: tp.List['SubParameterNode'] = [graph.get_of_name(name)[0] for graph in subgraphs]
 
         size: int = len(parameters)
@@ -454,7 +454,7 @@ class AnalyserParameterDynamics(object):
         for i, graph in enumerate(subgraphs):
             parameter: 'SubParameterNode' = parameters[i]
             vector: 'SubSizeVector' = parameter.to_vector()
-            timestamps.append(graph.get_timestamp())
+            timestamps.append(graph.timestamp())
             for j in range(dim):
                 data[j, i] = vector[j]
 
@@ -468,10 +468,10 @@ class AnalyserParameterDynamics(object):
     def plot_group(cls, graphs: tp.List['SubCalibratingGraph'], name: str) -> plt.Figure:
         assert cls.is_group_eligible(graphs, name)
 
-        first: tp.List['SubCalibratingGraph'] = graphs[0].get_subgraphs()
+        first: tp.List['SubCalibratingGraph'] = graphs[0].subgraphs()
         parameter_set: np.ndarray = np.array([[graph.get_of_name(name)[0] for graph in first]])
         for graph in graphs[1:]:
-            parameters: tp.List['SubParameterNode'] = [graph.get_of_name(name)[0] for graph in graph.get_subgraphs()]
+            parameters: tp.List['SubParameterNode'] = [graph.get_of_name(name)[0] for graph in graph.subgraphs()]
             assert len(parameters) == parameter_set.shape[1]
             parameter_set = np.vstack([parameter_set, parameters])
 
@@ -484,7 +484,7 @@ class AnalyserParameterDynamics(object):
         std_set: np.ndarray = np.zeros((dim, size))
 
         for i, graph in enumerate(first):
-            timestamps.append(graph.get_timestamp())
+            timestamps.append(graph.timestamp())
             vectors: tp.List['SubSizeVector'] = [parameter.to_vector() for parameter in parameter_set[:, i]]
             for j in range(dim):
                 values: tp.List[float] = [vector[j] for vector in vectors]

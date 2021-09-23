@@ -2,35 +2,35 @@ import functools
 import typing as tp
 
 from PyQt5 import QtCore, QtWidgets, QtGui
-from src.framework.graph.CalibratingGraph import SubCalibratingGraph
 from src.framework.graph.Graph import Node, Edge, SubElement
 from src.framework.graph.protocols.Visualisable import SubVisualisable, Visualisable, DrawPoint, DrawEdge
-from src.gui.info_pane.InspectorTree import InspectorTree
-from src.gui.info_pane.TimestampBox import TimestampBox
-from src.gui.modules.TreeNode import TopTreeNode, GraphTreeNode, ElementTreeNode, TrajectoryTreeNode, Toggle
+from src.gui.modules.TreeNode import GraphTreeNode, TrajectoryTreeNode, Toggle
 from src.gui.utils.PopUp import PopUp
-from src.gui.viewer.Viewer import Viewer
 
 if tp.TYPE_CHECKING:
-    from src.framework.graph.Analyser import AnalyserParameterValues, AnalyserParameterDynamics, AnalyserVariance
+    from src.framework.analysis.Analyser import AnalyserParameterValues, AnalyserParameterDynamics, AnalyserVariance
+    from src.framework.graph.CalibratingGraph import SubCalibratingGraph
     from src.framework.graph.Graph import SubGraph
-    from src.gui.modules.TreeNode import SubTreeNode, SubToggle
+    from src.gui.info_pane.InspectorTree import InspectorTree
+    from src.gui.info_pane.TimestampBox import TimestampBox
+    from src.gui.modules.TreeNode import SubTreeNode, SubToggle, TopTreeNode, ElementTreeNode
+    from src.gui.viewer.Viewer import Viewer
 
 
 class BrowserTree(QtWidgets.QTreeWidget):
 
-    _tree: TopTreeNode
-    _inspector: InspectorTree
-    _timestamp_box: TimestampBox
-    _viewer: Viewer
+    _tree: 'TopTreeNode'
+    _inspector: 'InspectorTree'
+    _timestamp_box: 'TimestampBox'
+    _viewer: 'Viewer'
 
     # constructor
     def __init__(
             self,
-            tree: TopTreeNode,
-            inspector: InspectorTree,
-            timestamp_box: TimestampBox,
-            viewer: Viewer,
+            tree: 'TopTreeNode',
+            inspector: 'InspectorTree',
+            timestamp_box: 'TimestampBox',
+            viewer: 'Viewer',
             **kwargs
     ):
         super().__init__(**kwargs)
@@ -119,7 +119,7 @@ class BrowserTree(QtWidgets.QTreeWidget):
 
                     # elements-container: checkbox
                     if graph_node.has_key(name):
-                        elements_node: ElementTreeNode = graph_node.get_child(name)
+                        elements_node: 'ElementTreeNode' = graph_node.get_child(name)
                         elements_item.setCheckState(
                             0, QtCore.Qt.Checked if elements_node.is_checked() else QtCore.Qt.Unchecked
                         )
@@ -149,7 +149,7 @@ class BrowserTree(QtWidgets.QTreeWidget):
                 for j in range(graph_item.childCount()):
                     element_item: QtWidgets.QTreeWidgetItem = graph_item.child(j)
                     if hasattr(element_item, 'obj'):
-                        element_container: ElementTreeNode = element_item.obj
+                        element_container: 'ElementTreeNode' = element_item.obj
                         element_item.setCheckState(
                             0, QtCore.Qt.Checked if element_container.is_checked() else QtCore.Qt.Unchecked
                         )
@@ -261,7 +261,7 @@ class BrowserTree(QtWidgets.QTreeWidget):
             node: GraphTreeNode,
             point
     ) -> None:
-        graph: SubCalibratingGraph = node.get_graph()
+        graph: 'SubCalibratingGraph' = node.get_graph()
         action: QtWidgets.QAction
         commands: tp.Dict[QtWidgets.QAction, tp.Callable] = {}
         plot_commands: tp.Dict[QtWidgets.QAction, tp.Callable] = {}
@@ -286,7 +286,7 @@ class BrowserTree(QtWidgets.QTreeWidget):
         sub_analyse = menu.addMenu('Analyse')
         # analyse - plot graph
         action = sub_analyse.addAction('Plot graph')
-        commands[action] = functools.partial(self._tree.analyser().topology().plot, graph)
+        plot_commands[action] = functools.partial(self._tree.analyser().topology().plot, graph)
 
         # analyse - metrics
         sub_analyse_metrics = sub_analyse.addMenu('Metrics')
@@ -311,7 +311,7 @@ class BrowserTree(QtWidgets.QTreeWidget):
         for parameter_name in parameter_names:
             analyser: tp.Type['AnalyserParameterDynamics'] = self._tree.analyser().parameter_dynamics()
             if analyser.is_eligible(graph, parameter_name):
-                commands[sub_analyse_parameter_dynamics.addAction(f"'{parameter_name}'")] = functools.partial(
+                plot_commands[sub_analyse_parameter_dynamics.addAction(f"'{parameter_name}'")] = functools.partial(
                     self._tree.analyser().parameter_dynamics().plot, graph, parameter_name
                 )
         sub_analyse_parameter_dynamics.setEnabled(bool(sub_analyse_parameter_dynamics.actions()))

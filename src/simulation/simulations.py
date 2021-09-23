@@ -1,14 +1,16 @@
 import typing as tp
 
-from src.framework.simulation.Simulation import SubSimulationManager
-from src.simulation.dataset.IntelDatasetSim import intel_sim_plain, intel_sim_inc, intel_sim_sliding, \
-    intel_sim_old_sliding
-from src.simulation.manhattan.ManTestSim import manhattan_test_post
-from src.simulation.manhattan.ManhattanSim import manhattan_sim_plain, manhattan_sim_inc, manhattan_sim_sliding
+from src.simulation.dataset.IntelDatasetSim import IntelPlain, IntelSliding, IntelSlidingOld, \
+    IntelWithout, IntelConstant, IntelTimely, IntelSpatial
+from src.simulation.manhattan.ManhattanSim import ManhattanPlain, ManhattanConstant, ManhattanSliding, \
+    ManhattanWithout, ManhattanTimely, ManhattanSlidingOld, ManhattanSpatial
+
+if tp.TYPE_CHECKING:
+    from src.framework.simulation.BiSimulation import SubBiSimulation
 
 
 class SimulationList(object):
-    _simulations: tp.Dict[str, tp.List['SubSimulationManager']]
+    _simulations: tp.Dict[str, tp.List['SubBiSimulation']]
 
     def __init__(self):
         self._simulations = {}
@@ -19,7 +21,7 @@ class SimulationList(object):
     def add(
             self,
             section: str,
-            simulation: 'SubSimulationManager'
+            simulation: 'SubBiSimulation'
     ):
         if section not in self._simulations:
             self._simulations[section] = []
@@ -28,7 +30,7 @@ class SimulationList(object):
     def simulations(
             self,
             section: str
-    ) -> tp.List['SubSimulationManager']:
+    ) -> tp.List['SubBiSimulation']:
         assert section in self._simulations
         return self._simulations[section]
 
@@ -36,15 +38,22 @@ class SimulationList(object):
 simulations = SimulationList()
 
 section: str = 'ManhattanSim'
-simulations.add(section, manhattan_sim_plain)
-simulations.add(section, manhattan_sim_inc)
-simulations.add(section, manhattan_sim_sliding)
+simulations.add(section, ManhattanPlain())
+simulations.add(section, ManhattanWithout())
+simulations.add(section, ManhattanConstant())
+simulations.add(section, ManhattanTimely())
+simulations.add(section, ManhattanSliding())
+simulations.add(section, ManhattanSlidingOld())
+simulations.add(section, ManhattanSpatial())
 
-section = 'ManhattanTest'
-simulations.add(section, manhattan_test_post)
+# section = 'ManhattanTest'
+# simulations.add(section, manhattan_test_post)
 
 section = 'IntelSim'
-simulations.add(section, intel_sim_plain)
-simulations.add(section, intel_sim_inc)
-simulations.add(section, intel_sim_sliding)
-simulations.add(section, intel_sim_old_sliding)
+simulations.add(section, IntelPlain())
+simulations.add(section, IntelWithout())
+simulations.add(section, IntelConstant())
+simulations.add(section, IntelTimely())
+simulations.add(section, IntelSliding())
+simulations.add(section, IntelSlidingOld())
+simulations.add(section, IntelSpatial())

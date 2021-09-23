@@ -1,12 +1,13 @@
-import functools
 import pathlib
 import typing as tp
-from PyQt5 import QtWidgets
 
+from PyQt5 import QtWidgets
+from src.framework.analysis.Analyser import FigureParser
 from src.gui.menus.Menu import Menu
-from src.framework.graph.Analyser import FigureParser
+
 if tp.TYPE_CHECKING:
-    from src.framework.graph.Analyser import Analyser
+    from framework.analysis.Analyser import Analyser
+
 
 class AnalyserMenu(Menu):
     _analyser: 'Analyser'

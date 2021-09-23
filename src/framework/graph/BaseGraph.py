@@ -326,7 +326,7 @@ class BaseGraph(BaseElement, NodeContainer, EdgeContainer, Printable):
         for i in range(1, len(graphs)):
             graphs[i]._previous = graphs[i - 1]
 
-    def get_subgraphs(self) -> tp.List[SubBaseGraph]:
+    def subgraphs(self) -> tp.List[SubBaseGraph]:
         graph: SubBaseGraph = self
         graphs: tp.List[SubBaseGraph] = [graph]
         while graph.has_previous():
@@ -349,7 +349,9 @@ class BaseGraph(BaseElement, NodeContainer, EdgeContainer, Printable):
         """
         graph_edges_ids: tp.List[tp.Tuple[int, ...]] = [tuple(edge.get_endpoint_ids()) for edge in graph.get_edges() if edge.get_endpoint_ids()]
         self_edges_ids: tp.List[tp.Tuple[int, ...]] = [tuple(edge.get_endpoint_ids()) for edge in self.get_edges() if edge.get_endpoint_ids()]
-        return graph.get_endpoint_ids() == self.get_endpoint_ids() and graph_edges_ids == self_edges_ids
+        has_similar_edges: bool = graph_edges_ids == self_edges_ids
+        has_equivalent_endpoints: bool = graph.get_endpoint_ids() == self.get_endpoint_ids()
+        return has_similar_edges and has_equivalent_endpoints
 
     def is_equivalent(self, graph: SubBaseGraph) -> bool:
         """
@@ -358,7 +360,9 @@ class BaseGraph(BaseElement, NodeContainer, EdgeContainer, Printable):
         """
         graph_edges_ids: tp.List[tp.Tuple[int, ...]] = [tuple(edge.get_node_ids()) for edge in graph.get_edges()]
         self_edges_ids: tp.List[tp.Tuple[int, ...]] = [tuple(edge.get_node_ids()) for edge in self.get_edges()]
-        return graph.get_node_ids() == self.get_node_ids() and graph_edges_ids == self_edges_ids
+        has_equivalent_edges: bool = graph_edges_ids == self_edges_ids
+        has_equivalent_nodes: bool = graph.get_node_ids() == self.get_node_ids()
+        return has_equivalent_edges and has_equivalent_nodes
 
     def is_equal(self, graph: SubBaseGraph) -> bool:
         """

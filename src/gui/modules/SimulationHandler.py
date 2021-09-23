@@ -1,13 +1,12 @@
 import typing as tp
 
 from PyQt5.QtCore import QObject, pyqtSignal
-from src.framework.simulation.Model2D import Model2D
 from src.gui.action_pane.ConfigurationTree import ConfigurationTree
 from src.gui.modules.TreeNode import TopTreeNode
 
 if tp.TYPE_CHECKING:
     from src.framework.graph.Graph import SubGraph
-    from src.framework.simulation.Simulation import SubSimulation
+    from src.framework.simulation.BiSimulation import SubSimulation
 
 
 class SimulationHandler(QObject):
@@ -38,21 +37,21 @@ class SimulationHandler(QObject):
         # else:
         self._config.clear()
 
-        print(f"gui/SimulationHandler: Simulation '{simulation.name()}' selected")
+        print(f"gui/SimulationHandler: Simulation '{simulation.get_name()}' selected")
         self.signal_update.emit(1)
 
-    def get_simulation(self) -> Model2D:
+    def get_simulation(self) -> 'SubSimulation':
         return self._simulation
 
     def simulate(self) -> None:
-        print(f'gui/SimulationHandler: Simulating trajectory with {self._simulation.name()}...')
+        print(f"gui/SimulationHandler: Simulating trajectory with '{self._simulation.get_name()}'...")
         graph_estimate: 'SubGraph' = self._simulation.run()
         self._tree.add_graph(
             graph_estimate,
-            origin=self._simulation.name()
+            origin=self._simulation.get_name()
         )
 
     def monte_carlo(self, num) -> None:
-        print(f'gui/SimulationHandler: Monte Carlo simulation with {self._simulation.name()}...')
+        print(f"gui/SimulationHandler: Monte Carlo simulation with '{self._simulation.get_name()}' (with n = {num})...")
         graphs: tp.List['SubGraph'] = self._simulation.monte_carlo(num)
-        self._tree.add_graphs(graphs, self._simulation.name())
+        self._tree.add_graphs(graphs, self._simulation.get_name())

@@ -4,23 +4,31 @@ from abc import abstractmethod
 import numpy as np
 from matplotlib import pyplot as plt
 from src.framework.math.matrix.square import SquareFactory
-from src.framework.math.matrix.vector import VectorFactory
+from src.framework.math.matrix.vector import VectorFactory, Vector2
+from src.framework.graph.types.nodes.ParameterNode import ParameterNodeFactory
 
 if tp.TYPE_CHECKING:
     from src.framework.graph.CalibratingGraph import SubCalibratingEdge
+    from src.framework.graph.data.DataFactory import Quantity
     from src.framework.graph.Graph import SubEdge
-    from src.framework.graph.types.nodes.ParameterNode import ParameterSpecification
+    from src.framework.graph.types.nodes.ParameterNode import ParameterSpecification, SubParameterNode
     from src.framework.math.matrix.vector import SubVector
     from src.framework.math.matrix.vector.Vector import SubSizeVector
     from src.framework.math.matrix.square import SubSquare
+    from src.framework.simulation.Simulation import SubSimulation
 
 SubPostAnalyser = tp.TypeVar('SubPostAnalyser', bound='PostAnalyser')
 
 
 class PostAnalyser(object):
+    _sim: 'SubSimulation'
     _edges: tp.List['SubCalibratingEdge']
 
-    def __init__(self):
+    def __init__(
+            self,
+            simulation: 'SubSimulation'
+    ):
+        self._sim = simulation
         self._edges = []
 
     def add_edge(
@@ -29,7 +37,7 @@ class PostAnalyser(object):
     ) -> None:
         self._edges.append(edge)
 
-    def get_edges(self) -> tp.List['SubCalibratingEdge']:
+    def edges(self) -> tp.List['SubCalibratingEdge']:
         return self._edges
 
     @abstractmethod
@@ -42,25 +50,76 @@ SubSpatialBatchAnalyser = tp.TypeVar('SubSpatialBatchAnalyser', bound='SpatialBa
 
 class SpatialBatchAnalyser(PostAnalyser):
     _name: str
+    _init_value: 'Quantity'
     _specification: 'ParameterSpecification'
-
-
-    _batch_size: int
+    _index: int
+    _num_batches: int
 
     def __init__(
             self,
+            sim: 'SubSimulation',
             name: str,
+            value: 'Quantity',
             specification: 'ParameterSpecification',
-            batch_size: int,
+            num_batches: int,
             index: int = 0
     ):
-        super().__init__()
+        super().__init__(sim)
         self._name = name
+        self._init_value = value
         self._specification = specification
-        self._batch_size = batch_size
+        self._index = index
+        self._num_batches = num_batches
 
     def post_process(self) -> None:
-        pass
+        # calculate edge centres
+        edges: tp.List['SubCalibratingEdge'] = self.edges()
+        averages: np.ndarray = np.zeros((2, len(edges)))
+        for i, edge in enumerate(edges):
+            endpoints: tp.List['SubCalibratingEdge'] = edge.get_endpoints()
+            translations: np.ndarray = np.zeros((2, len(endpoints)))
+            for j, endpoint in enumerate(endpoints):
+                translations[:, j] = endpoint.get_value().translation().array().flatten()
+            averages[:, i] = np.mean(translations, axis=1)
+
+        # perform k-means clustering
+        from sklearn.cluster import KMeans
+        k = KMeans(n_clusters=self._num_batches, random_state=0)
+        # k = KMeans(n_clusters=self._num_batches, init='k-means++', max_iter=300, n_init=10, random_state=0)
+        k.fit_predict(averages.transpose())
+
+        # create parameters
+        parameters: tp.List['SubParameterNode'] = []
+        for i in range(self._num_batches):
+            parameter: 'SubParameterNode' = ParameterNodeFactory.from_value(
+                self._init_value,
+                name = self._name,
+                specification=self._specification,
+                index=self._index
+            )
+            translation: Vector2 = Vector2(k.cluster_centers_[i, :])
+            parameter.set_translation(translation)
+            self._sim.add_node(parameter)
+            parameters.append(parameter)
+
+        # assign parameters
+        label_dict: tp.Dict[int, int] = {}
+        label_counter: int = 0
+        for i, edge in enumerate(edges):
+            label: int = k.labels_[i]
+            if label not in label_dict:
+                label_dict[label] = label_counter
+                label_counter += 1
+            index: int = label_dict[label]
+            parameter: 'SubParameterNode' = parameters[index]
+            edge.add_parameter(parameter)
+
+        centres: np.ndarray = k.cluster_centers_.transpose()
+        fig, ax = plt.subplots()
+        ax.scatter(averages[0, :], averages[1, :])
+        ax.scatter(centres[0, :], centres[1, :], s=300, c='red')
+        fig.show()
+        print('done')
 
 
 SubVarianceAnalyser = tp.TypeVar('SubVarianceAnalyser', bound='VarianceAnalyser')
@@ -113,14 +172,15 @@ class VarianceAnalyser(PostAnalyser):
 
     def __init__(
             self,
+            simulation: 'SubSimulation',
             window_size: int
     ):
-        super().__init__()
+        super().__init__(simulation)
         self._window_size = window_size
 
     def calculate_variances(self) -> VectorList:
         window: int = self._window_size
-        edges: tp.List['SubEdge'] = self.get_edges()
+        edges: tp.List['SubEdge'] = self.edges()
         dim: int = edges[0].get_dim()
         vector_type: tp.Type['SubSizeVector'] = VectorFactory.from_dim(dim)
         vector_list: VectorList = VectorList(dim)
@@ -141,7 +201,7 @@ class VarianceAnalyser(PostAnalyser):
         return vector_list
 
     def post_process(self) -> None:
-        edges: tp.List['SubCalibratingEdge'] = self.get_edges()
+        edges: tp.List['SubCalibratingEdge'] = self.edges()
         dim: int = edges[0].get_dim()
         matrix_type: tp.Type['SubSquare'] = SquareFactory.from_dim(dim)
 

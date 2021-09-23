@@ -4,10 +4,11 @@ import typing as tp
 from abc import abstractmethod
 
 from PyQt5 import QtCore
-from src.framework.graph.Analyser import Analyser
+from src.framework.analysis.Analyser import Analyser
 from src.framework.graph.GraphContainer import GraphContainer
 from src.framework.optimiser.Optimiser import Optimiser
 from src.gui.viewer.items import Items
+
 if tp.TYPE_CHECKING:
     from src.framework.graph.Graph import SubElement, SubGraph
     from src.framework.graph.GraphContainer import SubGraphContainer

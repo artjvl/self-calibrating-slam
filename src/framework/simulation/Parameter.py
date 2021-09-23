@@ -1,40 +1,51 @@
 import typing as tp
 from abc import abstractmethod
 
-from src.framework.graph.types.nodes.ParameterNode import ParameterNodeFactory, ParameterNodeV1, \
-    ParameterNodeV2
-from src.framework.simulation.PostAnalyser import PostAnalyser
+import numpy as np
+from src.framework.graph.types.nodes.ParameterNode import ParameterNodeFactory, ParameterSpecification
+from src.framework.math.matrix.vector.Vector import Vector
 
 if tp.TYPE_CHECKING:
     from src.framework.graph.CalibratingGraph import SubCalibratingEdge
     from src.framework.graph.data.DataFactory import Quantity
     from src.framework.graph.protocols.Measurement import SubMeasurement2D
-    from src.framework.graph.types.nodes.ParameterNode import SubParameterNode, ParameterSpecification
+    from src.framework.graph.types.nodes.ParameterNode import SubParameterNode
+    from src.framework.simulation.Simulation import SubSimulation
 
 SubParameter = tp.TypeVar('SubParameter', bound='Parameter')
 
 
 class Parameter(object):
+    _sim: 'SubSimulation'
     _node: 'SubParameterNode'
     _is_visible: bool
 
     def __init__(
             self,
+            simulation: 'SubSimulation',
             value: 'Quantity',
-            specification: 'ParameterSpecification',
+            specification: ParameterSpecification,
+            name: tp.Optional[str] = None,
             index: int = 0,
             is_visible: bool = True
     ):
+        self._sim = simulation
+        self._is_visible = is_visible
+
         # create node
-        node: SubParameterNode = ParameterNodeFactory.from_value(
+        if specification == ParameterSpecification.SCALE:
+            assert isinstance(value, Vector)
+            assert not any(np.isclose(element, 0.) for element in value.to_list())
+        self._node = ParameterNodeFactory.from_value(
             value,
+            name=name,
             index=index,
             specification=specification
         )
-        self._node = node
+        self._sim.add_node(self._node)
 
-        # metadata
-        self._is_visible = is_visible
+    def simulation(self) -> 'SubSimulation':
+        return self._sim
 
     @abstractmethod
     def add_edge(
@@ -43,7 +54,7 @@ class Parameter(object):
     ) -> None:
         pass
 
-    def get_node(self) -> 'SubParameterNode':
+    def node(self) -> 'SubParameterNode':
         return self._node
 
     def set_name(self, name: str) -> None:
@@ -53,7 +64,7 @@ class Parameter(object):
         return self._is_visible
 
     @abstractmethod
-    def receive_closure(self) -> None:
+    def report_closure(self) -> None:
         pass
 
     def compose(
@@ -77,21 +88,61 @@ class StaticParameter(Parameter):
             index=old.get_index(),
             specification=old.get_specification()
         )
+        self.simulation().add_node(new)
         self._node = new
         return new
 
-    def receive_closure(self) -> None:
+    def report_closure(self) -> None:
         pass
 
     def add_edge(
             self,
             edge: 'SubCalibratingEdge'
     ) -> None:
-        node: SubParameterNode = self.get_node()
+        node: SubParameterNode = self.node()
         if self.is_visible():
             edge.add_parameter(node)
         else:
             edge.set_measurement(node.decompose(edge.get_measurement()))
+
+
+class TimelyBatchParameter(StaticParameter):
+    _batch_size: int
+    _edge_count: int
+
+    def __init__(
+            self,
+            simulation: 'SubSimulation',
+            value: 'Quantity',
+            specification: ParameterSpecification,
+            batch_size: int,
+            name: tp.Optional[str] = None,
+            index: int = 0
+    ):
+        super().__init__(
+            simulation,
+            value,
+            specification,
+            name=name,
+            index=index,
+            is_visible=True
+        )
+        self._batch_size = batch_size
+
+        self._edge_count = 0
+
+    def renew(self) -> 'SubParameterNode':
+        return self.update(self.node().get_value())
+
+    def add_edge(
+            self,
+            edge: 'SubCalibratingEdge'
+    ) -> None:
+        if self._edge_count == self._batch_size:
+            self.renew()
+            self._edge_count = 0
+        edge.add_parameter(self.node())
+        self._edge_count += 1
 
 
 class SlidingParameter(Parameter):
@@ -104,14 +155,18 @@ class SlidingParameter(Parameter):
 
     def __init__(
             self,
+            simulation: 'SubSimulation',
             value: 'Quantity',
-            specification: 'ParameterSpecification',
+            specification: ParameterSpecification,
             window_size: int,
+            name: tp.Optional[str] = None,
             index: int = 0
     ):
         super().__init__(
-            value=value,
-            specification=specification,
+            simulation,
+            value,
+            specification,
+            name=name,
             index=index,
             is_visible=True
         )
@@ -125,14 +180,14 @@ class SlidingParameter(Parameter):
     def get_window(self) -> int:
         return self._window_size
 
-    def receive_closure(self) -> None:
+    def report_closure(self) -> None:
         self._is_closures[-1] = True
 
     def add_edge(
             self,
             edge: 'SubCalibratingEdge'
     ) -> None:
-        node: 'SubParameterNode' = self.get_node()
+        node: 'SubParameterNode' = self.node()
         edge.add_parameter(node)
 
         if len(self._in) < self._window_size:
@@ -144,7 +199,7 @@ class SlidingParameter(Parameter):
             self._is_closures = self._is_closures[1:] + [False]  # push in <is_closure> and push out first element
 
         # if any closures are present in the previously connected edges, the window size is reduced to its default value
-        if self._is_closures[-2]:
+        if len(self._is_closures) > 1 and self._is_closures[-2]:
             for edge_ in self._between:
                 edge_.remove_parameter_id(node.get_id())
                 edge_.set_measurement(node.compose(edge_.get_measurement(), is_inverse=False))
@@ -160,14 +215,18 @@ class OldSlidingParameter(Parameter):
 
     def __init__(
             self,
+            simulation: 'SubSimulation',
             value: 'Quantity',
-            specification: 'ParameterSpecification',
+            specification: ParameterSpecification,
             window_size: int,
+            name: tp.Optional[str] = None,
             index: int = 0
     ):
         super().__init__(
-            value=value,
-            specification=specification,
+            simulation,
+            value,
+            specification,
+            name=name,
             index=index,
             is_visible=True
         )
@@ -179,14 +238,14 @@ class OldSlidingParameter(Parameter):
     def get_window(self) -> int:
         return self._window_size
 
-    def receive_closure(self) -> None:
+    def report_closure(self) -> None:
         pass
 
     def add_edge(
             self,
             edge: 'SubCalibratingEdge'
     ) -> None:
-        node: 'SubParameterNode' = self.get_node()
+        node: 'SubParameterNode' = self.node()
         edge.add_parameter(node)
 
         self._in.append(edge)

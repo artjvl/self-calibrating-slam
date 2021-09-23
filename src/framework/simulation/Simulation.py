@@ -1,202 +1,410 @@
-import pathlib
+import copy
 import typing as tp
 from abc import abstractmethod, ABC
 
-import numpy as np
-from framework.graph.GraphParser import GraphParser
-from src.framework.graph.types.nodes.SpatialNode import NodeSE2
+from src.framework.graph.GraphManager import GraphManager
+from src.framework.graph.types.edges.EdgeFactory import EdgeFactory
+from src.framework.graph.types.nodes.SpatialNode import SpatialNodeFactory
 from src.framework.math.lie.transformation import SE2
-from src.framework.simulation.Model2D import SubModel2D
+from src.framework.optimiser.Optimiser import Optimiser
+from src.framework.simulation.Model import Model
+from src.framework.simulation.Parameter import StaticParameter, TimelyBatchParameter, SlidingParameter, \
+    OldSlidingParameter
+from src.framework.simulation.PostAnalyser import SpatialBatchAnalyser
 
 if tp.TYPE_CHECKING:
-    from src.framework.graph.Graph import SubGraph
-    from src.framework.optimiser.Optimiser import Optimiser
-    from src.framework.math.matrix.vector import Vector2
+    from src.framework.graph.Graph import SubNode, SubEdge, SubGraph
+    from src.framework.graph.data.DataFactory import Quantity
+    from src.framework.graph.types.nodes.ParameterNode import ParameterSpecification
+    from src.framework.graph.types.nodes.SpatialNode import NodeSE2
+    from src.framework.simulation.Model import SubModel
+    from src.framework.simulation.Parameter import SubParameter
+    from src.framework.simulation.PostAnalyser import SubPostAnalyser
+    from src.framework.simulation.Sensor import SubSensor
+
 
 SubSimulation = tp.TypeVar('SubSimulation', bound='Simulation')
 
 
-class Simulation(object):
-    _name: str
-    _model: 'SubModel2D'
+class Simulation(GraphManager):
+    _model: 'SubModel'
+    _optimiser: Optimiser
+
+    _pose_ids: tp.List[int]  # list of pose-ids
+    _current_node: 'NodeSE2'  # current pose-node
+    _last_graph: 'SubGraph'  # last saved instance of the graph
 
     def __init__(
             self,
-            name: str,
-            model: 'SubModel2D'
+            optimiser: tp.Optional[Optimiser] = None
     ):
-        self._name = name
-        self._model = model
-        self.configure()
+        self._model = Model()
 
-    def name(self) -> str:
-        """ Returns the name. """
-        return self._name
+        if optimiser is None:
+            optimiser = Optimiser()
+        self._optimiser = optimiser
+        super().__init__()
 
-    def set_optimiser(self, optimiser: 'Optimiser'):
-        """ Sets the optimiser for the estimate sub-model. """
-        self._model.estimate_model().set_optimiser(optimiser)
-
-    def model(self) -> 'SubModel2D':
-        """ Returns the model. """
+    def model(self) -> 'SubModel':
         return self._model
-
-    def reset(self):
-        self._model.reset()
-
-    @abstractmethod
-    def configure(self) -> None:
-        pass
-
-    @abstractmethod
-    def initialise(self) -> None:
-        pass
-
-    @abstractmethod
-    def simulate(self) -> None:
-        pass
-
-    @abstractmethod
-    def finalise(self) -> None:
-        pass
-
-    def run(self) -> 'SubGraph':
-        self.reset()
-        self.initialise()
-        self.simulate()
-        print('\nFinalising...')
-        self.finalise()
-
-        self._model.save()
-        return self._model.estimate_graph()
-
-    def monte_carlo(
-            self,
-            num: int
-    ) -> tp.List['SubGraph']:
-        graphs: tp.List['SubGraph'] = []
-        for i in range(num):
-            self._model.set_sensor_seed(i)
-            estimate = self.run()
-            graphs.append(estimate)
-        return graphs
-
-
-class ManhattanSimulation2D(Simulation, ABC):
-    _block_size: int
-    _step_size: float
-    _domain: float
-    _step_count: int
-
-    def __init__(
-            self,
-            name: str,
-            model: 'SubModel2D'
-    ):
-        super().__init__(name, model)
-        self._block_size = 4
-        self._step_size = 1.
-        self._domain = 50.
-        self._step_count = 0
-
-    def set_block_size(self, block_size: int) -> None:
-        self._block_size = block_size
-
-    def set_step_size(self, step_size: float) -> None:
-        self._step_size = step_size
-
-    def set_domain(self, domain: float) -> None:
-        self._domain = domain
-
-    def auto_odometry(
-            self,
-            sensor_name: str
-    ) -> None:
-        model: 'SubModel2D' = self.model()
-        assert model.has_sensor(sensor_name)
-
-        self._step_count += 1
-        angle: float = 0.
-        if self._step_count == self._block_size:
-            angle = self.generate_new_angle()
-            self._step_count = 0
-
-        pose: SE2 = SE2.from_translation_angle_elements(self._step_size, 0., angle)
-        model.add_odometry(sensor_name, pose)
-
-    def generate_new_angle(self) -> float:
-        model: 'SubModel2D' = self.model()
-
-        angle = np.deg2rad(model.get_path_rng().choice([90., -90.]))
-        translation: 'Vector2' = model.get_current_pose().translation()
-        if np.max(np.abs(translation.array())) > self._domain - self._step_count:
-            proposed: SE2 = model.get_current_pose() * \
-                            SE2.from_translation_angle_elements(self._step_size, 0., angle) * \
-                            SE2.from_translation_angle_elements(self._step_count * self._step_size, 0., 0.)
-            if not self.is_in_domain(proposed):
-                angle += np.pi
-        return angle
-
-    def is_in_domain(self, pose: SE2) -> bool:
-        translation: 'Vector2' = pose.translation()
-        return np.max(np.abs(translation.array())) <= self._domain
-
-
-class InputSimulation2D(Simulation, ABC):
-    _poses: tp.Optional[tp.List['SE2']]
-    _counter: int
-    _path: tp.Optional[pathlib.Path]
-
-    def __init__(
-            self,
-            name: str,
-            model: 'SubModel2D'
-    ):
-        self._path = None
-        super().__init__(name, model)
-        self._poses = None
-        self._counter = 1
 
     def reset(self) -> None:
         super().reset()
-        self._counter = 1
+        self._model.reset()
 
-    def has_next(self) -> bool:
-        return self._poses is not None and self._counter < len(self._poses)
+        # reset graph
+        self._pose_ids = []
+        self._current_node = self.add_pose_node(SE2.from_translation_angle_elements(0, 0, 0))
+        self._current_node.fix()
+        self._last_graph = super().graph()
 
-    def auto_odometry(
+    # sensors
+    def add_sensor(
             self,
-            sensor_name: str
+            sensor_name: str,
+            sensor: 'SubSensor'
     ) -> None:
-        model: 'SubModel2D' = self.model()
-        assert model.has_sensor(sensor_name)
-        assert self.has_next()
+        self.model().add_sensor(sensor_name, sensor)
 
-        model.add_odometry_to(sensor_name, self._poses[self._counter])
-        self._counter += 1
-
-    def set_input_poses(
+    # add elements
+    def add_node_from_value(
             self,
-            poses: tp.List['SE2']
-    ) -> None:
-        self._poses = poses
+            value: 'Quantity'
+    ) -> 'SubNode':
+        """ Creates and adds a new node from a given value. """
+        return self.add_node(SpatialNodeFactory.from_value(value))
 
-    def set_input_graph(
+    def add_pose_node(
             self,
-            graph: 'SubGraph'
+            pose: SE2
+    ) -> 'NodeSE2':
+        """ Creates and adds a new node from a given pose. """
+        node: 'NodeSE2' = self.add_node_from_value(pose)
+        self._pose_ids.append(node.get_id())
+        self._current_node = node
+        return node
+
+    def add_edge_from_value(
+            self,
+            sensor_name: str,
+            ids: tp.List[int],
+            measurement: 'Quantity'
+    ) -> 'SubEdge':
+        """ Creates and adds a new edge between given nodes with a measurement from a sensor. """
+        sensor: 'SubSensor' = self.model().get_sensor(sensor_name)
+        graph: 'SubGraph' = self.graph()
+
+        # create edge
+        nodes: tp.List['SubNode'] = [graph.get_node(id_) for id_ in ids]
+        edge: 'SubEdge' = EdgeFactory.from_measurement_nodes(
+            measurement,
+            nodes,
+            name=sensor_name,
+            info_matrix=sensor.get_info_matrix()
+        )
+
+        # add parameter(s) to edge
+        for parameter in sensor.get_parameters():
+            parameter.add_edge(edge)
+
+        # add edge to graph
+        return self.add_edge(edge)
+
+    def add_odometry(
+            self,
+            sensor_name: str,
+            measurement: SE2
+    ) -> tp.Tuple['SubNode', 'SubEdge']:
+        """ Creates and adds a new node and edge with a measurement from a sensor. """
+        sensor: 'SubSensor' = self.model().get_sensor(sensor_name)
+        transformation: SE2 = sensor.compose(measurement)
+
+        current: 'NodeSE2' = self._current_node
+        pose: SE2 = current.get_value() + transformation
+        new: 'NodeSE2' = self.add_pose_node(pose)
+        edge: 'SubEdge' = self.add_edge_from_value(
+            sensor_name,
+            [current.get_id(), new.get_id()],
+            measurement
+        )
+        return new, edge
+
+    def add_odometry_to(
+            self,
+            sensor_name: str,
+            pose: SE2
+    ) -> tp.Tuple['SubNode', 'SubEdge']:
+        """ Adds a new pose-node and edge at <pose>, as measured by <sensor_name>. """
+        transformation: SE2 = pose - self._current_node.get_value()
+        return self.add_odometry(sensor_name, transformation)
+
+    # nodes
+    def current(self) -> 'NodeSE2':
+        """ Returns the current pose-node. """
+        return self._current_node
+
+    def pose_ids(self) -> tp.List[int]:
+        """ Returns all previous pose-node ids. """
+        return self._pose_ids
+
+    # optimiser
+    def set_optimiser(self, optimiser: Optimiser) -> None:
+        """ Sets the optimiser. """
+        self._optimiser = optimiser
+
+    def has_optimiser(self) -> bool:
+        """ Returns whether an optimiser has been set. """
+        return self._optimiser is not None
+
+    def get_optimiser(self) -> Optimiser:
+        """ Returns the optimiser. """
+        assert self.has_optimiser()
+        return self._optimiser
+
+    def optimise(self) -> 'SubGraph':
+        """ Optimises the graph and returns a copy. """
+        graph: 'SubGraph' = self.graph()
+
+        # find solution and copy meta/previous
+        solution: 'SubGraph' = self.get_optimiser().instance_optimise(graph)
+        graph.copy_meta_to(solution)
+        if graph.has_previous():
+            solution.set_previous(graph.get_previous())
+
+        # set graph to match solution
+        graph.from_vector(solution.to_vector())
+        return solution
+
+    def copy(self, is_shallow: bool = False) -> 'SubGraph':
+        """ Copies the graph. """
+        graph: 'SubGraph' = self.graph()
+
+        # create copy and copy meta/previous
+        copy_: 'SubGraph' = copy.copy(graph) if is_shallow else copy.deepcopy(graph)
+        graph.copy_meta_to(copy_)
+        if graph.has_previous():
+            copy_.set_previous(graph.get_previous())
+        return copy_
+
+    def set_previous(self, previous: 'SubGraph') -> None:
+        """ Sets a previous graph. """
+        self.graph().set_previous(previous)
+        self._last_graph = previous
+
+    def add_static_parameter(
+            self,
+            sensor_name: str,
+            parameter_name: str,
+            value: 'Quantity',
+            specification: 'ParameterSpecification',
+            index: int = 0
     ) -> None:
-        self._poses = [node.get_value() for node in graph.get_of_type(NodeSE2)]
+        parameter: 'SubParameter' = StaticParameter(
+            self,
+            value,
+            specification,
+            name=parameter_name,
+            index=index,
+            is_visible=True
+        )
+        self._model.add_parameter(sensor_name, parameter_name, parameter)
 
-    def has_path(self) -> bool:
-        return self._path is not None
+    def update_parameter(
+            self,
+            sensor_name: str,
+            parameter_name: str,
+            value: 'Quantity'
+    ) -> None:
+        self._model.update_parameter(sensor_name, parameter_name, value)
 
-    def set_path(self, path: pathlib.Path) -> None:
-        self._path = path
+    @abstractmethod
+    def step(self, delta: float) -> 'SubGraph':
+        """ Progresses (steps forward in time) the model. """
+        pass
 
-    def load_path(self) -> None:
-        assert self.has_path()
-        self.set_input_graph(GraphParser.load(self._path))
+    @abstractmethod
+    def report_closure(self) -> None:
+        """ Registers the addition of a loop closure constraint. """
+        pass
 
-    def run(self) -> 'SubGraph':
-        self.load_path()
-        return super().run()
+
+class PlainSimulation(Simulation):
+
+    def __init__(self, optimiser: tp.Optional[Optimiser] = None):
+        super().__init__(optimiser=optimiser)
+        self.set_timestamp(0.)
+
+    def step(self, delta: float) -> 'SubGraph':
+        snapshot: 'SubGraph' = self.copy(is_shallow=True)
+        self.set_previous(snapshot)
+
+        self.increment_timestamp(delta)
+        return snapshot
+
+    def report_closure(self) -> None:
+        pass
+
+
+class OptimisingSimulation(Simulation, ABC):
+    _has_closure: bool  # indicates whether a closure has occurred at this step
+
+    def __init__(self, optimiser: tp.Optional[Optimiser] = None):
+        super().__init__(optimiser=optimiser)
+        self._has_closure = False
+        self.set_timestamp(0.)
+
+    def add_odometry(
+            self,
+            sensor_name: str,
+            measurement: SE2
+    ) -> tp.Tuple['SubNode', 'SubEdge']:
+        self._has_closure = False
+        return super().add_odometry(sensor_name, measurement)
+
+    def report_closure(self) -> None:
+        self._has_closure = True
+        for sensor in self.model().get_sensors():
+            for parameter in sensor.get_parameters():
+                parameter.report_closure()
+
+    def step(self, delta: float) -> 'SubGraph':
+        solution: 'SubGraph'
+        if self._has_closure:
+            solution = self.optimise()
+        else:
+            solution = self.copy()
+        self.set_previous(solution)
+
+        self.increment_timestamp(delta)
+        return solution
+
+    def add_timely_parameter(
+            self,
+            sensor_name: str,
+            parameter_name: str,
+            value: 'Quantity',
+            specification: 'ParameterSpecification',
+            batch_size: int,
+            index: int = 0
+    ) -> None:
+        parameter: 'SubParameter' = TimelyBatchParameter(
+            self,
+            value,
+            specification,
+            name=parameter_name,
+            batch_size=batch_size,
+            index=index
+        )
+        self.model().add_parameter(sensor_name, parameter_name, parameter)
+
+    def add_sliding_parameter(
+            self,
+            sensor_name: str,
+            parameter_name: str,
+            value: 'Quantity',
+            specification: 'ParameterSpecification',
+            window: int,
+            index: int = 0
+    ) -> None:
+        parameter: 'SubParameter' = SlidingParameter(
+            self,
+            value,
+            specification,
+            window,
+            name=parameter_name,
+            index=index
+        )
+        self.model().add_parameter(sensor_name, parameter_name, parameter)
+
+    def add_old_sliding_parameter(
+            self,
+            sensor_name: str,
+            parameter_name: str,
+            value: 'Quantity',
+            specification: 'ParameterSpecification',
+            window_size: int,
+            index: int = 0
+    ) -> None:
+        parameter: 'SubParameter' = OldSlidingParameter(
+            self,
+            value,
+            specification,
+            window_size,
+            name=parameter_name,
+            index=index
+        )
+        self.model().add_parameter(sensor_name, parameter_name, parameter)
+
+
+class PostSimulation(Simulation):
+    _analyser: tp.Optional['SubPostAnalyser']
+    _sensor_name: tp.Optional[str]
+
+    def __init__(self, optimiser: tp.Optional[Optimiser] = None):
+        super().__init__(optimiser=optimiser)
+        self._analyser = None
+        self._sensor_name = None
+
+    def report_closure(self) -> None:
+        pass
+
+    def has_analyser(self) -> bool:
+        return self._analyser is not None
+
+    def get_analyser(self) -> 'SubPostAnalyser':
+        return self._analyser
+
+    def add_analyser(
+            self,
+            sensor_name: str,
+            analyser: 'SubPostAnalyser'
+    ) -> None:
+        self._analyser = analyser
+        self._sensor_name = sensor_name
+
+    def add_spatial_parameter(
+            self,
+            sensor_name: str,
+            parameter_name: str,
+            value: 'Quantity',
+            specification: 'ParameterSpecification',
+            num_batches: int,
+            index: int = 0
+    ) -> None:
+        analyser: 'SubPostAnalyser' = SpatialBatchAnalyser(
+            self,
+            parameter_name,
+            value,
+            specification,
+            num_batches,
+            index=index
+        )
+        self.add_analyser(sensor_name, analyser)
+
+    def add_edge_from_value(
+            self,
+            sensor_name: str,
+            ids: tp.List[int],
+            measurement: 'Quantity'
+    ) -> 'SubEdge':
+        edge: 'SubEdge' = super().add_edge_from_value(sensor_name, ids, measurement)
+        if sensor_name == self._sensor_name:
+            self._analyser.add_edge(edge)
+        return edge
+
+    def step(self, delta: float) -> 'SubGraph':
+        self.increment_timestamp(delta)
+        return self.graph()
+
+    def post_process(
+            self,
+            steps: int = 1
+    ) -> None:
+        assert self.has_analyser()
+        analyser: SubPostAnalyser = self.get_analyser()
+
+        previous: 'SubGraph' = self.optimise()
+        for _ in range(steps):
+            self.set_previous(previous)
+            analyser.post_process()
+            previous = self.optimise()

@@ -50,6 +50,10 @@ class GraphManager(object):
         self._graph.add_node(node)
         return node
 
+    def get_node(self, id_: int) -> 'SubNode':
+        """ Returns a node. """
+        return self._graph.get_node(id_)
+
     def add_edge(self, edge: SubEdge) -> SubEdge:
         self._graph.add_edge(edge)
         return edge

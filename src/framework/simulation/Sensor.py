@@ -21,7 +21,6 @@ SubSensor = tp.TypeVar('SubSensor', bound='Sensor')
 
 
 class Sensor(tp.Generic[T]):
-
     _type: tp.Type[T]
     _rng: np.random.RandomState
 
@@ -33,7 +32,7 @@ class Sensor(tp.Generic[T]):
             seed: tp.Optional[int] = None,
             info_matrix: tp.Optional['SubSquare'] = None
     ):
-        self.set_seed(seed)
+        self.set_rng(seed)
 
         # information
         if info_matrix is None:
@@ -64,7 +63,7 @@ class Sensor(tp.Generic[T]):
         return self._info_matrix.inverse()
 
     # noise
-    def set_seed(self, seed: tp.Optional[int] = None):
+    def set_rng(self, seed: tp.Optional[int] = None):
         self._rng = np.random.RandomState(seed)
 
     def generate_noise(self) -> 'SubSizeVector':

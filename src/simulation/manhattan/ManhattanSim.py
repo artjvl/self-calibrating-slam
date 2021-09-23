@@ -2,9 +2,9 @@ import numpy as np
 from src.framework.graph.types.nodes.ParameterNode import ParameterSpecification
 from src.framework.math.lie.transformation import SE2
 from src.framework.math.matrix.square import Square3, Square2
-from src.framework.math.matrix.vector import Vector1, Vector2, Vector3
-from src.framework.simulation.Model2D import SubModel2D, PlainModel2D, IncrementalModel2D, SlidingModel2D
-from framework.simulation.Simulation import ManhattanSimulation2D
+from src.framework.math.matrix.vector import Vector1, Vector2
+from src.framework.simulation.BiSimulation import BiSimulation
+from src.framework.simulation.Path import ManhattanPath
 
 
 def f_space(x, y):
@@ -12,70 +12,166 @@ def f_space(x, y):
     # return 0.1 * np.sin(0.1 * (x + y))
 
 
+def f_step(x):
+    if x > 200:
+        return 0.1
+    return -0.2
+
+
 def f_time(x):
     return 0.1 * np.sin(0.02 * x)
 
 
-class ManhattanSim(ManhattanSimulation2D):
+class ManhattanSim(BiSimulation):
 
     def configure(self) -> None:
-        self.set_block_size(6)  # 6
+        path: ManhattanPath = ManhattanPath()
+        path.set_block_size(6)
+        path.set_rng(33)
+        self.set_path(path)
 
-        model: 'SubModel2D' = self.model()
-        model.set_path_rng(33)  # 4, 33
-        model.set_constraint_rng(0)
-        model.set_sensor_seed(0)
+        # seed
+        self.set_sensor_seed(0)
+        self.set_constraint_rng(0)
 
-        info_diagonal = Vector3([3600., 2500., 1600.])
-        info_matrix3 = Square3.from_diagonal(info_diagonal.to_list())
+    def initialise(self) -> None:
+        # sensors: wheel
+        info_wheel_truth = Square3.from_diagonal([2000., 2000., 2000.])
+        info_wheel_estimate = info_wheel_truth
+        self.add_sensor('wheel', SE2, info_wheel_truth, info_wheel_estimate)
+        # sensors: lidar
+        info_lidar_truth = Square3.from_diagonal([8000., 8000., 12000.])
+        info_lidar_estimate = info_lidar_truth
+        self.add_sensor('lidar', SE2, info_lidar_truth, info_lidar_estimate)
+        # sensors: gps
+        info_gps_truth = Square2.from_diagonal([1., 1.])
+        info_gps_estimate = info_gps_truth
+        self.add_sensor('gps', Vector2, info_gps_truth, info_gps_estimate)
 
-        # wheel
-        model.add_sensor('wheel', SE2, info_matrix3, info_matrix3)
-        model.add_truth_parameter('wheel', 'bias', Vector1(0.2), ParameterSpecification.BIAS, index=0)
-        model.add_truth_parameter('wheel', 'time', Vector1(0.01), ParameterSpecification.BIAS, index=2)
-
-        # lidar
-        model.add_sensor('lidar', SE2, info_matrix3, info_matrix3)
-
-        # gps
-        info_matrix2 = Square2.from_diagonal([800., 600.])
-        model.add_sensor('gps', Vector2, info_matrix2, info_matrix2)
+        # parameters:
+        self.truth_simulation().add_static_parameter(
+            'wheel', 'bias',
+            Vector1(1.0), ParameterSpecification.SCALE, index=0
+        )
 
     def simulate(self) -> None:
-        model: 'SubModel2D' = self.model()
-
         delta: float = 0.1
-        for i in range(200):  # 400
+        num: int = 400  # 400
+
+        is_gps: bool = True
+        is_dyn: bool = False
+
+        gps_num: int = 10
+        gps_ids: set = set(self.get_constraint_rng().randint(1, num, size=(gps_num,)))
+
+        for i in range(num):
             self.auto_odometry('wheel')
-            # if i == 100:
-                # self.update_truth_parameter('wheel', 'bias', Vector1(-0.2))
-                # self.update_truth_parameter('wheel', 'bias', Vector1(0.1 * np.sin(0.01 * i)))
-            model.roll_proximity('lidar', 3, threshold=0.8)
-            model.roll_closure('lidar', 2., separation=10, threshold=0.2)
+            self.roll_proximity('lidar', 3, threshold=0.29)
+            self.roll_closure('lidar', 2., separation=10, threshold=0.26)
 
-            model.update_truth_parameter('wheel', 'bias', Vector1(f_time(i)))
-            # translation: Vector2 = self.get_current_pose().translation()
-            # model.update_truth_parameter('wheel', 'bias', Vector1(f_space(translation[0], translation[1])))
-            # model.update_constant_estimate_parameter('wheel', 'bias', Vector1(0.))
+            if is_gps and i in gps_ids:
+                self.add_gps('gps')
 
-            model.step(delta)
+            if is_dyn:
+                self.truth_simulation().update_parameter('wheel', 'bias', Vector1(f_step(i)))
+                # model.update_truth_parameter('wheel', 'bias', Vector1(0.1 * np.sin(0.01 * i)))
+
+            self.step(delta)
 
     def finalise(self) -> None:
         pass
 
 
-model: 'SubModel2D'
+class ManhattanPlain(ManhattanSim):
+    def configure(self) -> None:
+        super().configure()
+        self.set_plain_simulation()
+        self.set_name('ManhattanSim: Plain')
 
-# plain
-model = PlainModel2D()
-manhattan_sim_plain = ManhattanSim('ManhattanSim: Plain', model)
+    def initialise(self) -> None:
+        super().initialise()
+        self.estimate_simulation().add_static_parameter(
+            'wheel', 'bias',
+            Vector1(1.), ParameterSpecification.SCALE, index=0
+        )
 
-# incremental
-model = IncrementalModel2D()
-manhattan_sim_inc = ManhattanSim('ManhattanSim: Incremental', model)
-model.add_constant_estimate_parameter('wheel', 'bias', Vector1(0.), ParameterSpecification.BIAS, index=0)
 
-# sliding
-model = SlidingModel2D()
-manhattan_sim_sliding = ManhattanSim('ManhattanSim: Sliding', model)
-model.add_sliding_estimate_parameter('wheel', 'bias', Vector2(0., 0.), ParameterSpecification.BIAS, 20, index=1)
+class ManhattanWithout(ManhattanSim):
+    def configure(self) -> None:
+        super().configure()
+        self.set_optimising_simulation()
+        self.set_name('ManhattanSim: Without')
+
+
+class ManhattanConstant(ManhattanSim):
+    def configure(self) -> None:
+        super().configure()
+        self.set_optimising_simulation()
+        self.set_name('ManhattanSim: Constant')
+
+    def initialise(self) -> None:
+        super().initialise()
+        self.estimate_simulation().add_static_parameter(
+            'wheel', 'bias',
+            Vector1(0.), ParameterSpecification.SCALE, index=0
+        )
+
+
+class ManhattanTimely(ManhattanSim):
+    def configure(self) -> None:
+        super().configure()
+        self.set_optimising_simulation()
+        self.set_name('ManhattanSim: Timely Batch')
+
+    def initialise(self) -> None:
+        super().initialise()
+        self.estimate_simulation().add_timely_parameter(
+            'wheel', 'bias',
+            Vector1(0.), ParameterSpecification.SCALE, 20, index=0
+        )
+
+
+class ManhattanSliding(ManhattanSim):
+    def configure(self) -> None:
+        super().configure()
+        self.set_optimising_simulation()
+        self.set_name('ManhattanSim: Sliding')
+
+    def initialise(self) -> None:
+        super().initialise()
+        self.estimate_simulation().add_sliding_parameter(
+            'wheel', 'bias',
+            Vector1(0.), ParameterSpecification.SCALE, 20, index=0
+        )
+
+
+class ManhattanSlidingOld(ManhattanSim):
+    def configure(self) -> None:
+        super().configure()
+        self.set_optimising_simulation()
+        self.set_name('ManhattanSim: Sliding (old)')
+
+    def initialise(self) -> None:
+        super().initialise()
+        self.estimate_simulation().add_old_sliding_parameter(
+            'wheel', 'bias',
+            Vector1(0.), ParameterSpecification.SCALE, 20, index=0
+        )
+
+
+class ManhattanSpatial(ManhattanSim):
+    def configure(self) -> None:
+        super().configure()
+        self.set_post_simulation()
+        self.set_name('ManhattanSim: Spatial')
+
+    def initialise(self) -> None:
+        super().initialise()
+        self.estimate_simulation().add_spatial_parameter(
+            'wheel', 'bias', Vector1(0.),
+            ParameterSpecification.SCALE, 10, index=0
+        )
+
+    def finalise(self) -> None:
+        super().finalise()
+        self.estimate_simulation().post_process()

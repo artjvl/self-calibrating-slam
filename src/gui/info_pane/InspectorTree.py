@@ -55,7 +55,7 @@ class InspectorTree(QtWidgets.QTreeWidget):
 
         # graph
         sub_graph = self._construct_tree_property(root, 'Graph', '', bold=True, is_expanded=True)
-        timestamp: tp.Optional[float] = graph.get_timestamp()
+        timestamp: tp.Optional[float] = graph.timestamp()
         self._construct_tree_property(sub_graph, 'timestamp', f'{timestamp:.2f}' if timestamp is not None else '-')
         if graph.has_previous():
             self._construct_tree_property(sub_graph, 'previous', f'{graph.get_previous().to_unique()}')

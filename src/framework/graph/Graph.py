@@ -66,7 +66,7 @@ class Graph(FactorGraph):
         assert self.has_path()
         return self._path.name
 
-    def get_timestamp(self) -> tp.Optional[float]:
+    def timestamp(self) -> tp.Optional[float]:
         return self.get_nodes()[-1].get_timestamp()
 
     # pre
@@ -213,7 +213,7 @@ class Graph(FactorGraph):
         super().find_subgraphs()
 
         # assigning timestamps to all nodes
-        subgraphs: tp.List[SubGraph] = self.get_subgraphs()
+        subgraphs: tp.List[SubGraph] = self.subgraphs()
         node_set: tp.Set[SubNode] = set()
         next_set: tp.Set[SubNode]
         for i, subgraph in enumerate(subgraphs):
@@ -229,12 +229,12 @@ class Graph(FactorGraph):
 
     def find_truth_subgraphs(self) -> None:
         assert self.has_truth()
-        subgraphs: tp.List[SubGraph] = self.get_subgraphs()
+        subgraphs: tp.List[SubGraph] = self.subgraphs()
 
         truth: SubGraph = self.get_truth()
         if not truth.has_previous():
             truth.find_subgraphs()
-        truth_subgraphs: tp.List[SubGraph] = truth.get_subgraphs()
+        truth_subgraphs: tp.List[SubGraph] = truth.subgraphs()
         assert len(subgraphs) == len(truth_subgraphs)
 
         for i, subgraph in enumerate(subgraphs):

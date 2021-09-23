@@ -4,81 +4,172 @@ import numpy as np
 from src.definitions import get_project_root
 from src.framework.graph.types.nodes.ParameterNode import ParameterSpecification
 from src.framework.math.lie.transformation import SE2
-from src.framework.math.matrix.square import Square3
-from src.framework.math.matrix.vector import Vector1
-from src.framework.math.matrix.vector import Vector2
-from src.framework.math.matrix.vector import Vector3
-from src.framework.simulation.Model2D import SubModel2D, PlainModel2D, IncrementalModel2D, SlidingModel2D
-from src.framework.simulation.Simulation import InputSimulation2D
+from src.framework.math.matrix.square import Square2, Square3
+from src.framework.math.matrix.vector import Vector1, Vector2
+from src.framework.simulation.BiSimulation import BiSimulation
+from src.framework.simulation.Path import InputPath
 
 
-def f_time(x):
+def f_step(x):
+    if x > 100:
+        return 0.1
+    return -0.2
+
+
+def f_sin(x):
     return 0.1 * np.sin(0.02 * x)
 
 
-class IntelDatasetSim(InputSimulation2D):
+class IntelSim(BiSimulation):
 
     def configure(self) -> None:
+        path: InputPath = InputPath()
         root: pathlib.Path = get_project_root()
-        path: pathlib.Path = (root / 'graphs/solution_INTEL_g2o.g2o').resolve()
+        path.set_input_file((root / 'graphs/solution_INTEL_g2o.g2o').resolve())
         self.set_path(path)
 
-        model: 'SubModel2D' = self.model()
-        model.set_constraint_rng(5)
-        model.set_sensor_seed(1)
+        # seed
+        self.set_sensor_seed(0)
+        self.set_constraint_rng(0)
 
-        info_diagonal = Vector3([900., 625., 400.])
-        info_matrix3 = Square3.from_diagonal(info_diagonal.to_list())
+    def initialise(self) -> None:
+        # sensors: wheel
+        info_wheel_truth = Square3.from_diagonal([2000., 2000., 2000.])
+        info_wheel_estimate = info_wheel_truth
+        self.add_sensor('wheel', SE2, info_wheel_truth, info_wheel_estimate)
+        # sensors: lidar
+        info_lidar_truth = Square3.from_diagonal([8000., 8000., 12000.])
+        info_lidar_estimate = info_lidar_truth
+        self.add_sensor('lidar', SE2, info_lidar_truth, info_lidar_estimate)
+        # sensors: gps
+        info_gps_truth = Square2.from_diagonal([1., 1.])
+        info_gps_estimate = info_gps_truth
+        self.add_sensor('gps', Vector2, info_gps_truth, info_gps_estimate)
 
-        # wheel
-        model.add_sensor('wheel', SE2, info_matrix3, info_matrix3)
-        model.add_truth_parameter('wheel', 'bias', Vector1(0.2), ParameterSpecification.BIAS, index=0)
-        model.add_truth_parameter('wheel', 'time', Vector1(0.1), ParameterSpecification.BIAS, index=2)
-
-        # model.add_truth_parameter('wheel', 'bias', Vector1(-0.1), ParameterSpecification.BIAS, index=1)
-        # model.add_truth_parameter('wheel', 'bias', Vector2(0.1, -0.2), ParameterSpecification.BIAS, index=2)
-
-        # lidar
-        model.add_sensor('lidar', SE2, info_matrix3, info_matrix3)
+        # parameters:
+        self.truth_simulation().add_static_parameter(
+            'wheel', 'bias',
+            Vector1(0.1), ParameterSpecification.BIAS, index=0
+        )
 
     def simulate(self) -> None:
-        model: 'SubModel2D' = self.model()
-
         delta: float = 0.1
-        for i in range(300):
-        # while self.has_next():
+        num: int = 100  # 400
+
+        is_gps: bool = True
+        is_dyn: bool = True
+
+        gps_num: int = 10
+        gps_ids: set = set(self.get_constraint_rng().randint(1, num, size=(gps_num,)))
+
+        for i in range(num):
             self.auto_odometry('wheel')
-            model.update_truth_parameter('wheel', 'bias', Vector1(f_time(i)))
-            model.roll_proximity('lidar', 3, threshold=0.6)
-            model.roll_closure('lidar', 2., separation=10, threshold=0.2)
-            model.step(delta)
+            self.roll_proximity('lidar', 3, threshold=0.9)
+            self.roll_closure('lidar', 2., separation=10, threshold=0.8)
+
+            if is_gps and i in gps_ids:
+                self.add_gps('gps')
+
+            if is_dyn:
+                self.truth_simulation().update_parameter('wheel', 'bias', Vector1(f_step(i)))
+                # model.update_truth_parameter('wheel', 'bias', Vector1(0.1 * np.sin(0.01 * i)))
+
+            self.step(delta)
 
     def finalise(self) -> None:
         pass
 
 
-model: 'SubModel2D'
+class IntelPlain(IntelSim):
+    def configure(self) -> None:
+        super().configure()
+        self.set_plain_simulation()
+        self.set_name('IntelSim: Plain')
 
-# plain
-model = PlainModel2D()
-intel_sim_plain = IntelDatasetSim('IntelSim: Plain', model)
+    def initialise(self) -> None:
+        super().initialise()
+        self.estimate_simulation().add_static_parameter(
+            'wheel', 'bias',
+            Vector1(0.), ParameterSpecification.BIAS, index=0
+        )
 
-# incremental
-model = IncrementalModel2D()
-intel_sim_inc = IntelDatasetSim('IntelSim: Incremental', model)
-# model.add_constant_estimate_parameter('wheel', 'bias', Vector1(0.), ParameterSpecification.BIAS, index=0)
-model.add_constant_estimate_parameter('wheel', 'bias', Vector2(0., 0.), ParameterSpecification.BIAS, index=1)
-# model.add_sliding_estimate_parameter('wheel', 'bias', Vector1(0.), ParameterSpecification.BIAS, 40, index=1)
 
-# sliding
-model = SlidingModel2D()
-intel_sim_sliding = IntelDatasetSim('IntelSim: Sliding', model)
-# model.add_constant_estimate_parameter('wheel', 'bias', Vector1(0.), ParameterSpecification.BIAS, index=1)
-# model.add_sliding_estimate_parameter('wheel', 'bias', Vector1(0.), ParameterSpecification.BIAS, 20, index=1)
-model.add_sliding_estimate_parameter('wheel', 'bias', Vector2(0., 0.), ParameterSpecification.BIAS, 40, index=1)
+class IntelWithout(IntelSim):
+    def configure(self) -> None:
+        super().configure()
+        self.set_optimising_simulation()
+        self.set_name('IntelSim: Without')
 
-# old sliding
-model = SlidingModel2D()
-intel_sim_old_sliding = IntelDatasetSim('IntelSim: Sliding (old)', model)
-# model.add_constant_estimate_parameter('wheel', 'bias', Vector1(0.), ParameterSpecification.BIAS, index=1)
-model.add_old_sliding_estimate_parameter('wheel', 'bias', Vector1(0.), ParameterSpecification.BIAS, 40, index=1)
+
+class IntelConstant(IntelSim):
+    def configure(self) -> None:
+        super().configure()
+        self.set_optimising_simulation()
+        self.set_name('IntelSim: Constant')
+
+    def initialise(self) -> None:
+        super().initialise()
+        self.estimate_simulation().add_static_parameter(
+            'wheel', 'bias',
+            Vector1(0.), ParameterSpecification.BIAS, index=0
+        )
+
+
+class IntelTimely(IntelSim):
+    def configure(self) -> None:
+        super().configure()
+        self.set_optimising_simulation()
+        self.set_name('IntelSim: Timely Batch')
+
+    def initialise(self) -> None:
+        super().initialise()
+        self.estimate_simulation().add_timely_parameter(
+            'wheel', 'bias',
+            Vector1(0.), ParameterSpecification.BIAS, 20, index=0
+        )
+
+
+class IntelSliding(IntelSim):
+    def configure(self) -> None:
+        super().configure()
+        self.set_optimising_simulation()
+        self.set_name('IntelSim: Sliding')
+
+    def initialise(self) -> None:
+        super().initialise()
+        self.estimate_simulation().add_sliding_parameter(
+            'wheel', 'bias',
+            Vector1(0.), ParameterSpecification.BIAS, 20, index=0
+        )
+
+
+class IntelSlidingOld(IntelSim):
+    def configure(self) -> None:
+        super().configure()
+        self.set_optimising_simulation()
+        self.set_name('IntelSim: Sliding (old)')
+
+    def initialise(self) -> None:
+        super().initialise()
+        self.estimate_simulation().add_old_sliding_parameter(
+            'wheel', 'bias',
+            Vector1(0.), ParameterSpecification.BIAS, 20, index=0
+        )
+
+
+class IntelSpatial(IntelSim):
+    def configure(self) -> None:
+        super().configure()
+        self.set_post_simulation()
+        self.set_name('IntelSim: Spatial')
+
+    def initialise(self) -> None:
+        super().initialise()
+        self.estimate_simulation().add_spatial_parameter(
+            'wheel', 'bias', Vector1(0.),
+            ParameterSpecification.BIAS, 10, index=0
+        )
+
+    def finalise(self) -> None:
+        super().finalise()
+        self.estimate_simulation().post_process()
