@@ -18,11 +18,8 @@ namespace g2o {
         os << interpretation() << " ";
         return NodeV3::write(os);
     }
-    Vector3 ParameterV3::toVector3(bool inverse) const {
+    Vector3 ParameterV3::toVector3() const {
         Vector3 value = estimate();
-        if (inverse) {
-            value = - value;
-        }
         return value;
     }
 }

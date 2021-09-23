@@ -14,10 +14,7 @@ namespace g2o {
         ParameterSE2();
         virtual bool read(std::istream& is);
         virtual bool write(std::ostream& os) const;
-        Vector3 toVector3(bool inverse) const override;
-        virtual Vector3 toVector3() const {
-            return toVector3(false);
-        }
+        Vector3 toVector3() const override;
     };
 }
 

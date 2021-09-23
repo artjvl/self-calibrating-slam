@@ -18,10 +18,7 @@ namespace g2o {
         void setInterpretation(std::string const& interpretation) {
             _interpretation = interpretation;
         }
-        virtual Vector3 toVector3(bool inverse) const = 0;
-        virtual Vector3 toVector3() const {
-            return toVector3(false);
-        }
+        virtual Vector3 toVector3() const = 0;
     protected:
         std::string _interpretation;
     };

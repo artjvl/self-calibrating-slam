@@ -19,15 +19,14 @@ namespace g2o {
         os << interpretation() << " " << _index << " ";
         return NodeV2::write(os);
     }
-    Vector3 ParameterV2::toVector3(bool inverse) const {
+    Vector3 ParameterV2::toVector3() const {
         Vector2 value = estimate();
-        if (inverse) {
-            value = - value;
-        }
+        number_t filler = 0.0;
+        if (interpretation() == "scale") filler = 1.0;
         switch (_index) {
-            case 0: return Vector3(0.0, value[0], value[1]);
-            case 1: return Vector3(value[0], 0.0, value[1]);
-            case 2: return Vector3(value[0], value[1], 0.0);
+            case 0: return Vector3(filler, value[0], value[1]);
+            case 1: return Vector3(value[0], filler, value[1]);
+            case 2: return Vector3(value[0], value[1], filler);
         }
     }
 }
