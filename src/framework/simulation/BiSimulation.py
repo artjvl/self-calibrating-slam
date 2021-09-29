@@ -18,7 +18,6 @@ if tp.TYPE_CHECKING:
     from src.framework.math.matrix.square import SubSquare
     from src.framework.math.matrix.vector import Vector2
     from src.framework.optimiser.Optimiser import Optimiser
-    from src.framework.simulation.Model import SubModel
     from src.framework.simulation.Path import SubPath
     from src.framework.simulation.Sensor import SubSensor
     from src.framework.simulation.Simulation import SubSimulation
@@ -43,6 +42,9 @@ class BiSimulation(object):
     _truth_sim: tp.Optional['SubSimulation']
     _estimate_sim: tp.Optional['SubSimulation']
 
+    # config
+    _config: tp.Union[int, str]
+
     def __init__(
             self,
             name: tp.Optional[str] = None,
@@ -63,6 +65,9 @@ class BiSimulation(object):
         # simulations
         self._truth_sim = None
         self._estimate_sim = None
+
+        # config
+        self._config = 0
         self.configure()
 
     # name
@@ -107,6 +112,12 @@ class BiSimulation(object):
         self._geo.add(translation[0], translation[1], self.get_current_id())
         self.set_constraint_rng(self._constraint_seed)
 
+    def set_config(self, config: tp.Union[int, str]) -> None:
+        self._config = config
+
+    def get_config(self) -> tp.Union[int, str]:
+        return self._config
+
     # path
     def set_path(self, path: 'SubPath') -> None:
         self._path = path
@@ -138,8 +149,8 @@ class BiSimulation(object):
         truth_sim.set_count(id_)
         estimate_sim.set_count(id_)
 
-    def timestamp(self) -> float:
-        return self.truth_simulation().get_timestamp()
+    def timestep(self) -> float:
+        return self.truth_simulation().get_timestep()
 
     # edges
     def add_edge(
@@ -398,19 +409,20 @@ class BiSimulation(object):
         GraphParser.save_path_folder(self.estimate_simulation().graph(), folder, name=f'{name}_perturbed', should_print=should_print)
 
     # simulation
-    def step(self, delta: float) -> None:
-        self.truth_simulation().step(delta)
-        self.estimate_simulation().step(delta)
-        self.print(f'framework/Simulation: Time: {self.timestamp():.2f}')
+    def step(self) -> None:
+        self.truth_simulation().step()
+        self.estimate_simulation().step()
+        self.print(f'framework/Simulation: Time: {self.timestep():.2f}')
 
-    def run(self) -> 'SubGraph':
+    def run(self, should_save: bool = False) -> 'SubGraph':
         self.reset()
         self.initialise()
         self.simulate()
         print('\nframework/Simulation: Finalising simulation...')
         self.finalise()
 
-        self.save()
+        if should_save:
+            self.save()
         return self.estimate_simulation().graph()
 
     def monte_carlo(

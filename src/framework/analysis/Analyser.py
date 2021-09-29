@@ -47,46 +47,6 @@ def round_down(value: float, nearest: float = 1.) -> float:
     return nearest * np.floor(value / nearest)
 
 
-class FigureParser(object):
-    _path: pathlib.Path = (get_project_root() / 'plots').resolve()
-
-    @classmethod
-    def path(cls) -> pathlib.Path:
-        return cls._path
-
-    @classmethod
-    def save(
-            cls,
-            fig: plt.Figure,
-            name: tp.Optional[str] = None
-    ) -> None:
-        if name is None:
-            name = f"pickle_{datetime.now().strftime('%Y%m%d-%H%M%S')}"
-        if not name.endswith('.pickle'):
-            name += '.pickle'
-        cls._path.mkdir(parents=True, exist_ok=True)
-        path: pathlib.Path = (cls._path / name).resolve()
-        with open(path, 'wb') as file:
-            pkl.dump(fig, file)
-        print(f"src/FigureParser: Figure saved as {path}")
-
-    @classmethod
-    def load(
-            cls,
-            name: str
-    ) -> plt.Figure:
-        if not name.endswith('.pickle'):
-            name += '.pickle'
-        path: pathlib.Path = (cls._path / name).resolve()
-        assert path.is_file()
-        with open(path, 'rb') as file:
-            fig: plt.Figure = pkl.load(file)
-        dummy = plt.figure()
-        new_manager = dummy.canvas.manager
-        new_manager.canvas.figure = fig
-        fig.set_canvas(new_manager.canvas)
-        return fig
-
 
 def update_print(text: str) -> None:
     sys.__stdout__.write(f'\r{text}')
@@ -188,17 +148,17 @@ class AnalyserMetric(object):
         subgraphs: tp.List['SubGraph'] = graph.subgraphs()
         size: int = len(subgraphs)
 
-        timestamps: tp.List[float] = []
+        timesteps: tp.List[float] = []
         metrics: tp.List[float] = []
         for i, subgraph in enumerate(subgraphs):
-            timestamps.append(subgraph.timestamp())
+            timesteps.append(subgraph.timestep())
             metrics.append(self.get_metric(subgraph))
 
             update_print(f'\r{100 * i / size:.2f}%')
         update_print('\rDone!\n')
 
         ax: plt.Axes = self._fig.axes[0]
-        ax.plot(timestamps, metrics)
+        ax.plot(timesteps, metrics)
         self._fig.show()
         return self._fig
 
@@ -209,11 +169,11 @@ class AnalyserMetric(object):
         first: tp.List['SubGraph'] = subgraph_set.graphs(0)
         size: int = len(first)
 
-        timestamps: tp.List[float] = []
+        timesteps: tp.List[float] = []
         means: tp.List[float] = []
         stds: tp.List[float] = []
         for i, graph in enumerate(first):
-            timestamps.append(graph.timestamp())
+            timesteps.append(graph.timestep())
             subgraphs: tp.List['SubGraph'] = subgraph_set.subgraphs(i)
             metrics: tp.List[float] = [self.get_metric(subgraph) for subgraph in subgraphs]
 
@@ -227,10 +187,24 @@ class AnalyserMetric(object):
         stds_array: np.ndarray = np.array(stds)
 
         ax: plt.Axes = self._fig.axes[0]
-        ax.plot(timestamps, means_array)
-        ax.fill_between(timestamps, means_array - stds_array, means_array + stds_array, alpha=0.2)
+        ax.plot(timesteps, means_array)
+        ax.fill_between(timesteps, means_array - stds_array, means_array + stds_array, alpha=0.2)
         self._fig.show()
         return self._fig
+
+
+class AnalyserError(AnalyserMetric):
+    _attr = 'get_error'
+
+    @staticmethod
+    def create_fig() -> plt.Figure:
+        fig: plt.Figure
+        ax: plt.Axes
+        fig, ax = plt.subplots()
+        ax.set_title('Error - time')
+        ax.set_xlabel(r'Time [s]')
+        ax.set_ylabel(r'Error [-]')
+        return fig
 
 
 class AnalyserATE(AnalyserMetric):
@@ -309,17 +283,17 @@ class AnalyserParameterValues(object):
         size: int = len(parameters)
         dim: int = parameters[0].get_dim()
 
-        timestamps: tp.List[float] = []
+        timesteps: tp.List[float] = []
         data: np.ndarray = np.zeros((dim, size))
         for i, parameter in enumerate(parameters):
             vector: 'SubSizeVector' = parameter.to_vector()
-            timestamps.append(parameter.get_timestamp())
+            timesteps.append(parameter.get_timestep())
             for j in range(dim):
                 data[j, i] = vector[j]
 
         fig, axes = plt.subplots(dim, 1)
         for i, ax in enumerate(np.array(axes).flatten()):
-            ax.plot(timestamps, data[i, :])
+            ax.plot(timesteps, data[i, :])
         fig.show()
         return fig
 
@@ -347,12 +321,12 @@ class AnalyserParameterValues(object):
         dim: int = first[0].get_dim()
         size: int = len(first)
 
-        timestamps: tp.List[float] = []
+        timesteps: tp.List[float] = []
         mean_set: np.ndarray = np.zeros((dim, size))
         std_set: np.ndarray = np.zeros((dim, size))
 
         for i, parameter in enumerate(first):
-            timestamps.append(parameter.get_timestamp())
+            timesteps.append(parameter.get_timestep())
             vectors: tp.List['SubSizeVector'] = [parameter.to_vector() for parameter in parameter_set[:, i]]
             for j in range(dim):
                 values: tp.List[float] = [vector[j] for vector in vectors]
@@ -366,8 +340,8 @@ class AnalyserParameterValues(object):
         for i, ax in enumerate(fig.axes):
             means = mean_set[i, :]
             stds = std_set[i, :]
-            ax.plot(timestamps, means)
-            ax.fill_between(timestamps, means - stds, means + stds, alpha=0.2)
+            ax.plot(timesteps, means)
+            ax.fill_between(timesteps, means - stds, means + stds, alpha=0.2)
         fig.show()
         return fig
 
@@ -449,18 +423,18 @@ class AnalyserParameterDynamics(object):
         size: int = len(parameters)
         dim: int = parameters[0].get_dim()
 
-        timestamps: tp.List[float] = []
+        timesteps: tp.List[float] = []
         data: np.ndarray = np.zeros((dim, size))
         for i, graph in enumerate(subgraphs):
             parameter: 'SubParameterNode' = parameters[i]
             vector: 'SubSizeVector' = parameter.to_vector()
-            timestamps.append(graph.timestamp())
+            timesteps.append(graph.timestep())
             for j in range(dim):
                 data[j, i] = vector[j]
 
         fig, axes = plt.subplots(dim, 1)
         for i, ax in enumerate(np.array(axes).flatten()):
-            ax.plot(timestamps, data[i, :])
+            ax.plot(timesteps, data[i, :])
         fig.show()
         return fig
 
@@ -479,12 +453,12 @@ class AnalyserParameterDynamics(object):
         dim: int = first_parameters[0].get_dim()
         size: int = len(first_parameters)
 
-        timestamps: tp.List[float] = []
+        timesteps: tp.List[float] = []
         mean_set: np.ndarray = np.zeros((dim, size))
         std_set: np.ndarray = np.zeros((dim, size))
 
         for i, graph in enumerate(first):
-            timestamps.append(graph.timestamp())
+            timesteps.append(graph.timestep())
             vectors: tp.List['SubSizeVector'] = [parameter.to_vector() for parameter in parameter_set[:, i]]
             for j in range(dim):
                 values: tp.List[float] = [vector[j] for vector in vectors]
@@ -498,8 +472,8 @@ class AnalyserParameterDynamics(object):
         for i, ax in enumerate(fig.axes):
             means = mean_set[i, :]
             stds = std_set[i, :]
-            ax.plot(timestamps, means)
-            ax.fill_between(timestamps, means - stds, means + stds, alpha=0.2)
+            ax.plot(timesteps, means)
+            ax.fill_between(timesteps, means - stds, means + stds, alpha=0.2)
         fig.show()
         return fig
 
@@ -525,8 +499,8 @@ class AnalyserVariance(object):
         return all(cls.is_eligible(graph, name) for graph in graphs)
 
     @staticmethod
-    def timestamps(edges: tp.List['SubEdge']) -> tp.List[float]:
-        return [edge.get_timestamp() for edge in edges]
+    def timesteps(edges: tp.List['SubEdge']) -> tp.List[float]:
+        return [edge.get_timestep() for edge in edges]
 
     @staticmethod
     def estimate_variances(edges: tp.List['SubEdge'], window: int) -> np.ndarray:
@@ -557,12 +531,12 @@ class AnalyserVariance(object):
         edges: tp.List['SubEdge'] = graph.get_of_name(name)
         dim: int = edges[0].get_dim()
 
-        timestamps: tp.List[float] = [edge.get_timestamp() for edge in edges]
+        timesteps: tp.List[float] = [edge.get_timestep() for edge in edges]
         data: np.ndarray = cls.estimate_variances(edges, window)
 
         fig: plt.Figure = cls.create_fig(name, dim)
         for i, ax in enumerate(fig.axes):
-            ax.plot(timestamps, data[i, :])
+            ax.plot(timesteps, data[i, :])
         fig.show()
         return fig
 
@@ -588,9 +562,9 @@ class AnalyserVariance(object):
         mean_set: np.ndarray = np.zeros((dim, size))
         std_set: np.ndarray = np.zeros((dim, size))
 
-        timestamps: tp.List[float] = []
+        timesteps: tp.List[float] = []
         for i, edge in enumerate(first_edges):
-            timestamps.append(edge.get_timestamp())
+            timesteps.append(edge.get_timestep())
             for j in range(dim):
                 values: tp.List[float] = [variance[j, i] for variance in variances]
                 mean_set[j, i] = float(np.mean(values))
@@ -602,8 +576,8 @@ class AnalyserVariance(object):
         for i, ax in enumerate(fig.axes):
             means = mean_set[i, :]
             stds = std_set[i, :]
-            ax.plot(timestamps, means)
-            ax.fill_between(timestamps, means - stds, means + stds, alpha=0.2)
+            ax.plot(timesteps, means)
+            ax.fill_between(timesteps, means - stds, means + stds, alpha=0.2)
         fig.show()
         return fig
 
@@ -619,10 +593,10 @@ class AnalyserVariance(object):
         size: int = len(edges)
         dim: int = edges[0].get_dim()
 
-        timestamps: tp.List[float] = []
+        timesteps: tp.List[float] = []
         data: np.ndarray = np.zeros((dim, size))
         for i, edge in enumerate(edges):
-            timestamps.append(edge.get_timestamp())
+            timesteps.append(edge.get_timestep())
             cov_diagonal: 'SubSizeVector' = edge.get_cov_matrix().diagonal()
             for j in range(dim):
                 data[j, i] = cov_diagonal[j]
@@ -632,7 +606,7 @@ class AnalyserVariance(object):
 
         fig: plt.Figure = cls.create_fig(name, dim)
         for i, ax in enumerate(fig.axes):
-            ax.plot(timestamps, data[i, :])
+            ax.plot(timesteps, data[i, :])
         fig.show()
         return fig
 
@@ -651,6 +625,7 @@ class Analyser(object):
     _fig: tp.Optional[plt.Figure]
 
     _topology: tp.Type[AnalyserTopology]
+    _error: AnalyserError
     _ate: AnalyserATE
     _rpet: AnalyserRPET
     _rper: AnalyserRPER
@@ -662,6 +637,7 @@ class Analyser(object):
         self._fig = None
 
         self._topology = AnalyserTopology
+        self._error = AnalyserError()
         self._ate = AnalyserATE()
         self._rpet = AnalyserRPET()
         self._rper = AnalyserRPER()
@@ -694,6 +670,9 @@ class Analyser(object):
 
     def topology(self) -> tp.Type[AnalyserTopology]:
         return self._topology
+
+    def error(self) -> AnalyserError:
+        return self._error
 
     def ate(self) -> AnalyserATE:
         return self._ate

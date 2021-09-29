@@ -5,7 +5,7 @@ from PyQt5 import QtCore, QtWidgets
 from src.framework.graph.Graph import SubGraph
 from src.gui.info_pane.BrowserTree import BrowserTree
 from src.gui.info_pane.InspectorTree import InspectorTree
-from src.gui.info_pane.TimestampBox import TimestampBox
+from src.gui.info_pane.TimestepBox import TimestepBox
 from src.gui.modules.TreeNode import TopTreeNode
 from src.gui.utils.LabelPane import LabelPane
 from src.gui.utils.PopUp import PopUp
@@ -60,11 +60,11 @@ class InfoPane(QtWidgets.QWidget):
         # self.setStretchFactor(0, 0)
 
         inspector = InspectorTree(self)
-        timestamp_box = TimestampBox()
-        browser = BrowserTree(self._tree, inspector, timestamp_box, viewer, parent=self)
+        timestep_box = TimestepBox()
+        browser = BrowserTree(self._tree, inspector, timestep_box, viewer, parent=self)
 
         panels.addWidget(LabelPane(browser, 'Graph browser'))
-        panels.addWidget(LabelPane(timestamp_box, 'Select timestamp:'))
+        panels.addWidget(LabelPane(timestep_box, 'Select timestep:'))
         panels.addWidget(LabelPane(inspector, 'Graph-element inspector'))
         layout.addWidget(panels)
 

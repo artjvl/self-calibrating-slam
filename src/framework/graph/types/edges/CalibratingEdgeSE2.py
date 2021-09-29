@@ -20,9 +20,10 @@ class CalibratingEdgeSE2(CalibratingEdge[SE2], ABC):
             estimate = parameter.compose(estimate, is_inverse=True)
         return estimate.transformation()
 
-    def compute_error_vector(self) -> 'Vector3':
+    def _compute_error_vector(self) -> 'Vector3':
         delta: SE2 = self.get_estimate() - self.get_value()
-        return delta.translation_angle_vector()
+        translation_angle_vector: 'Vector3' = delta.translation_angle_vector()
+        return translation_angle_vector
         # return self.get_estimate().minus(self.get_measurement())
 
     def set_measurement(self, measurement: 'SubMeasurement2D') -> None:

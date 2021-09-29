@@ -15,7 +15,7 @@ class CalibratingEdgeV2(CalibratingEdge[Vector2], ABC):
             estimate = parameter.compose(estimate, is_inverse=True)
         return estimate.translation()
 
-    def compute_error_vector(self) -> Vector2:
+    def _compute_error_vector(self) -> Vector2:
         return Vector2(self.get_estimate().array() - self.get_value().array())
 
     def set_measurement(self, measurement: Measurement2D) -> None:

@@ -160,7 +160,9 @@ class GraphParser(object):
                     # read node
                     id_: int = int(words[1])
                     node.set_id(id_)
-                    assert not node.read(words[2:])
+                    words = words[2:]
+                    assert not any(word == 'nan' for word in words)
+                    assert not node.read(words)
 
                     # add node
                     assert id_ not in nodes

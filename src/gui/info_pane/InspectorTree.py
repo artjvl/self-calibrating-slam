@@ -55,8 +55,8 @@ class InspectorTree(QtWidgets.QTreeWidget):
 
         # graph
         sub_graph = self._construct_tree_property(root, 'Graph', '', bold=True, is_expanded=True)
-        timestamp: tp.Optional[float] = graph.timestamp()
-        self._construct_tree_property(sub_graph, 'timestamp', f'{timestamp:.2f}' if timestamp is not None else '-')
+        timestep: tp.Optional[float] = graph.timestep()
+        self._construct_tree_property(sub_graph, 'timestep', f'{timestep:.2f}' if timestep is not None else '-')
         if graph.has_previous():
             self._construct_tree_property(sub_graph, 'previous', f'{graph.get_previous().to_unique()}')
         # self._construct_tree_property(sub_properties, 'path', str(graph.get_path()))
@@ -153,8 +153,8 @@ class InspectorTree(QtWidgets.QTreeWidget):
         # top
         sub_node = self._construct_tree_property(root, 'Node', '', bold=True, is_expanded=True)
         self._construct_tree_property(sub_node, 'id', f'{node.get_id()}')
-        timestamp: tp.Optional[float] = node.get_timestamp()
-        self._construct_tree_property(sub_node, 'timestamp', f'{timestamp:.2f}' if timestamp is not None else '-')
+        timestep: tp.Optional[float] = node.get_timestep()
+        self._construct_tree_property(sub_node, 'timestep', f'{timestep:.2f}' if timestep is not None else '-')
         self._construct_tree_property(sub_node, 'is_fixed', f'{node.is_fixed()}')
 
         # metrics
@@ -163,7 +163,7 @@ class InspectorTree(QtWidgets.QTreeWidget):
             truth: SubNode = node.get_truth()
             sub_truth = self._construct_tree_property(sub_metrics, 'truth', f'{truth.to_unique()}')
             self._construct_node_tree(truth, sub_truth)
-            ate2: tp.Optional[float] = node.compute_ate2()
+            ate2: tp.Optional[float] = node._compute_ate2()
             if ate2 is not None:
                 self._construct_tree_property(sub_metrics, 'ate2', f'{ate2}')
 
@@ -191,8 +191,8 @@ class InspectorTree(QtWidgets.QTreeWidget):
 
         # top
         sub_edge = self._construct_tree_property(root, 'Edge', '', bold=True, is_expanded=True)
-        timestamp: tp.Optional[float] = edge.get_timestamp()
-        self._construct_tree_property(sub_edge, 'timestamp', f'{timestamp:.2f}' if timestamp is not None else '-')
+        timestep: tp.Optional[float] = edge.get_timestep()
+        self._construct_tree_property(sub_edge, 'timestep', f'{timestep:.2f}' if timestep is not None else '-')
         self._construct_tree_property(sub_edge, 'cardinality', f'{edge.get_cardinality()}')
         self._construct_tree_property_from_value(sub_edge, 'information', edge.get_info_matrix())
 
@@ -214,8 +214,8 @@ class InspectorTree(QtWidgets.QTreeWidget):
             truth: SubEdge = edge.get_truth()
             sub_truth = self._construct_tree_property(sub_metrics, 'truth', f'{truth.to_unique()}')
             self._construct_edge_tree(truth, sub_truth)
-            self._construct_tree_property_from_value(sub_metrics, 'rpe_translation2', edge.compute_rpe_translation2())
-            self._construct_tree_property_from_value(sub_metrics, 'rpe_rotation', edge.compute_rpe_rotation())
+            self._construct_tree_property_from_value(sub_metrics, 'rpe_translation2', edge._compute_rpe_translation2())
+            self._construct_tree_property_from_value(sub_metrics, 'rpe_rotation', edge._compute_rpe_rotation2())
 
         # measurement
         sub_measurement = self._construct_tree_property(root, 'Measurement', '', bold=True)

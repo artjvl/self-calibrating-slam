@@ -2,7 +2,7 @@ import pathlib
 import typing as tp
 
 from PyQt5 import QtWidgets
-from src.framework.analysis.Analyser import FigureParser
+from src.framework.analysis.FigureParser import FigureParser
 from src.gui.menus.Menu import Menu
 
 if tp.TYPE_CHECKING:

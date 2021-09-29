@@ -13,10 +13,12 @@ from src.framework.simulation.Parameter import StaticParameter, TimelyBatchParam
 from src.framework.simulation.PostAnalyser import SpatialBatchAnalyser
 
 if tp.TYPE_CHECKING:
+    from src.framework.graph.CalibratingGraph import SubCalibratingGraph
     from src.framework.graph.Graph import SubNode, SubEdge, SubGraph
     from src.framework.graph.data.DataFactory import Quantity
     from src.framework.graph.types.nodes.ParameterNode import ParameterSpecification
     from src.framework.graph.types.nodes.SpatialNode import NodeSE2
+    from src.framework.math.matrix.vector import SubSizeVector
     from src.framework.simulation.Model import SubModel
     from src.framework.simulation.Parameter import SubParameter
     from src.framework.simulation.PostAnalyser import SubPostAnalyser
@@ -161,31 +163,6 @@ class Simulation(GraphManager):
         assert self.has_optimiser()
         return self._optimiser
 
-    def optimise(self) -> 'SubGraph':
-        """ Optimises the graph and returns a copy. """
-        graph: 'SubGraph' = self.graph()
-
-        # find solution and copy meta/previous
-        solution: 'SubGraph' = self.get_optimiser().instance_optimise(graph)
-        graph.copy_meta_to(solution)
-        if graph.has_previous():
-            solution.set_previous(graph.get_previous())
-
-        # set graph to match solution
-        graph.from_vector(solution.to_vector())
-        return solution
-
-    def copy(self, is_shallow: bool = False) -> 'SubGraph':
-        """ Copies the graph. """
-        graph: 'SubGraph' = self.graph()
-
-        # create copy and copy meta/previous
-        copy_: 'SubGraph' = copy.copy(graph) if is_shallow else copy.deepcopy(graph)
-        graph.copy_meta_to(copy_)
-        if graph.has_previous():
-            copy_.set_previous(graph.get_previous())
-        return copy_
-
     def set_previous(self, previous: 'SubGraph') -> None:
         """ Sets a previous graph. """
         self.graph().set_previous(previous)
@@ -218,7 +195,7 @@ class Simulation(GraphManager):
         self._model.update_parameter(sensor_name, parameter_name, value)
 
     @abstractmethod
-    def step(self, delta: float) -> 'SubGraph':
+    def step(self) -> 'SubGraph':
         """ Progresses (steps forward in time) the model. """
         pass
 
@@ -232,13 +209,13 @@ class PlainSimulation(Simulation):
 
     def __init__(self, optimiser: tp.Optional[Optimiser] = None):
         super().__init__(optimiser=optimiser)
-        self.set_timestamp(0.)
+        self.set_timestep(0)
 
-    def step(self, delta: float) -> 'SubGraph':
-        snapshot: 'SubGraph' = self.copy(is_shallow=True)
+    def step(self) -> 'SubGraph':
+        snapshot: 'SubGraph' = self.graph().copy(is_shallow=True)
         self.set_previous(snapshot)
 
-        self.increment_timestamp(delta)
+        self.increment_timestep()
         return snapshot
 
     def report_closure(self) -> None:
@@ -251,7 +228,7 @@ class OptimisingSimulation(Simulation, ABC):
     def __init__(self, optimiser: tp.Optional[Optimiser] = None):
         super().__init__(optimiser=optimiser)
         self._has_closure = False
-        self.set_timestamp(0.)
+        self.set_timestep(0)
 
     def add_odometry(
             self,
@@ -267,15 +244,16 @@ class OptimisingSimulation(Simulation, ABC):
             for parameter in sensor.get_parameters():
                 parameter.report_closure()
 
-    def step(self, delta: float) -> 'SubGraph':
-        solution: 'SubGraph'
+    def step(self) -> 'SubGraph':
+        graph: 'SubGraph' = self.graph()
+        solution: tp.Optional['SubGraph'] = None
         if self._has_closure:
-            solution = self.optimise()
-        else:
-            solution = self.copy()
+            solution = graph.optimise(self.get_optimiser())
+        if solution is None:
+            solution = graph.copy()
         self.set_previous(solution)
 
-        self.increment_timestamp(delta)
+        self.increment_timestep()
         return solution
 
     def add_timely_parameter(
@@ -392,8 +370,8 @@ class PostSimulation(Simulation):
             self._analyser.add_edge(edge)
         return edge
 
-    def step(self, delta: float) -> 'SubGraph':
-        self.increment_timestamp(delta)
+    def step(self) -> 'SubGraph':
+        self.increment_timestep()
         return self.graph()
 
     def post_process(

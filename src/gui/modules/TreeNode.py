@@ -276,7 +276,7 @@ class GraphTreeNode(GraphicsTreeNode):
     _id: int  # node id
     _types: tp.List[Type]  # supported
     _graph_container: 'SubGraphContainer'  # graph-container
-    _timestamp: tp.Optional[float]  # current time-stamp
+    _timestep: tp.Optional[float]  # current time-stamp
 
     def __init__(
             self,
@@ -289,9 +289,9 @@ class GraphTreeNode(GraphicsTreeNode):
         self._id = id_
         self._types = types
         self._graph_container = graph_container
-        self._timestamp = None
+        self._timestep = None
         if not graph_container.is_singular():
-            self._timestamp = graph_container.get_timestamps()[-1]
+            self._timestep = graph_container.get_timesteps()[-1]
         self.init_graph(self._graph_container.get_graph())
 
     def init_graph(self, graph: 'SubGraph'):
@@ -318,31 +318,31 @@ class GraphTreeNode(GraphicsTreeNode):
     def get_id(self) -> int:
         return self._id
 
-    # timestamp
-    def set_timestamp(self, timestamp: float):
-        assert self._graph_container.has_timestamp(timestamp)
-        self._timestamp = timestamp
+    # timestep
+    def set_timesteps(self, timestep: int):
+        assert self._graph_container.has_timestep(timestep)
+        self._timestep = timestep
         self.init_graph(self.get_graph())
         self.broadcast(self.get_id())
 
-    def get_timestamp(self) -> float:
-        return self._timestamp
+    def get_timestep(self) -> float:
+        return self._timestep
 
     # graphs
     def get_graph(self, is_final: bool = False) -> 'SubGraph':
         """ Returns the graph that this tree-element represents. """
-        timestamp: tp.Optional[float] = None
+        timestep: tp.Optional[float] = None
         if not is_final:
-            timestamp = self._timestamp
-        return self._graph_container.get_graph(timestamp)
+            timestep = self._timestep
+        return self._graph_container.get_graph(timestep)
 
     def get_graph_container(self) -> 'SubGraphContainer':
         return self._graph_container
 
     # truth
     def set_truth(self, graph_container: 'SubGraphContainer'):
-        timestamp: float = self._graph_container.get_timestamps()[-1]
-        self._graph_container.get_graph(timestamp).assign_truth(graph_container.get_graph(timestamp))
+        timestep: int = self._graph_container.get_timesteps()[-1]
+        self._graph_container.get_graph(timestep).assign_truth(graph_container.get_graph(timestep))
 
     def set_as_truth(self) -> None:
         assert self.is_eligible_for_truth()
@@ -352,8 +352,8 @@ class GraphTreeNode(GraphicsTreeNode):
         return self.get_parent().is_eligible_for_truth(self._graph_container)
 
     # GraphContainer interface
-    def get_timestamps(self) -> tp.List[float]:
-        return self._graph_container.get_timestamps()
+    def get_timesteps(self) -> tp.List[int]:
+        return self._graph_container.get_timesteps()
 
     def is_singular(self) -> bool:
         return self._graph_container.is_singular()
@@ -361,7 +361,7 @@ class GraphTreeNode(GraphicsTreeNode):
     def find_subgraphs(self) -> None:
         assert self.is_singular()
         self._graph_container.find_subgraphs()
-        self.set_timestamp(self.get_timestamps()[-1])
+        self.set_timesteps(self.get_timesteps()[-1])
 
     # TreeNode
     def get_key(self) -> str:

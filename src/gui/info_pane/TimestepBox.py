@@ -4,7 +4,7 @@ from PyQt5 import QtWidgets
 from src.gui.modules.TreeNode import GraphTreeNode
 
 
-class TimestampBox(QtWidgets.QComboBox):
+class TimestepBox(QtWidgets.QComboBox):
 
     _node: tp.Optional[GraphTreeNode]   # graph-tree-node that stores the graph(s)
     _elements: tp.List[float]           # list storing all combo-box element-correspondences
@@ -29,10 +29,10 @@ class TimestampBox(QtWidgets.QComboBox):
 
     def update_contents(self) -> None:
         assert self._node is not None
-        timestamp: tp.Optional[float] = self._node.get_timestamp()
+        timestamp: tp.Optional[float] = self._node.get_timestep()
 
         if timestamp is not None:
-            self._elements = self._node.get_timestamps()
+            self._elements = self._node.get_timesteps()
             self._index = self._elements.index(timestamp)
 
             self.blockSignals(True)
@@ -55,4 +55,4 @@ class TimestampBox(QtWidgets.QComboBox):
     def _handle_index_change(self, index: int) -> None:
         if index != self._index and index >= 0:
             self._index = index
-            self._node.set_timestamp(self._elements[index])
+            self._node.set_timesteps(self._elements[index])

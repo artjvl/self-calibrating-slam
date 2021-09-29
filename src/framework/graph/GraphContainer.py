@@ -8,7 +8,7 @@ SubGraphContainer = tp.TypeVar('SubGraphContainer', bound='GraphContainer')
 class GraphContainer(object):
 
     _graph: SubGraph  # original graph
-    _graphs: tp.Dict[float, SubGraph]  # indexed subgraphs
+    _graphs: tp.Dict[int, SubGraph]  # indexed subgraphs
 
     def __init__(self, graph: SubGraph):
         self._graph = graph
@@ -16,8 +16,8 @@ class GraphContainer(object):
 
     def index_graph(self) -> None:
         subgraphs: tp.List[SubGraph] = self._graph.subgraphs()
-        keys: tp.List[tp.Optional[float]] = [subgraph.timestamp() for subgraph in subgraphs]
-        if any(timestamp is None for timestamp in keys) or \
+        keys: tp.List[tp.Optional[int]] = [subgraph.timestep() for subgraph in subgraphs]
+        if any(timestep is None for timestep in keys) or \
                 (len(keys) > 1 and len(set(keys)) == 1):
             keys = list(range(len(keys)))
 
@@ -26,20 +26,20 @@ class GraphContainer(object):
     def get_graphs(self) -> tp.List[SubGraph]:
         return [self._graphs[key] for key in sorted(self._graphs)]
 
-    def get_graph(self, timestamp: tp.Optional[float] = None) -> SubGraph:
-        if timestamp is None:
+    def get_graph(self, timestep: tp.Optional[int] = None) -> SubGraph:
+        if timestep is None:
             return self.get_graphs()[-1]
-        assert timestamp in self._graphs
-        return self._graphs[timestamp]
+        assert timestep in self._graphs
+        return self._graphs[timestep]
 
     def is_singular(self) -> bool:
         # return not self.get_graph().has_previous()
-        return len(self.get_timestamps()) == 1
+        return len(self.get_timesteps()) == 1
 
-    def has_timestamp(self, timestamp: float) -> bool:
-        return timestamp in self._graphs
+    def has_timestep(self, timestep: int) -> bool:
+        return timestep in self._graphs
 
-    def get_timestamps(self) -> tp.List[float]:
+    def get_timesteps(self) -> tp.List[int]:
         return sorted(self._graphs.keys())
 
     # subgraphs
@@ -50,23 +50,23 @@ class GraphContainer(object):
 
     # superset
     def is_superset(self, other: SubGraphContainer) -> bool:
-        return set(self.get_timestamps()) >= set(other.get_timestamps())
+        return set(self.get_timesteps()) >= set(other.get_timesteps())
 
     def is_superset_similar(self, other: SubGraphContainer) -> bool:
         if self.is_superset(other):
-            timestamp: float = other.get_timestamps()[-1]
-            return self.get_graph(timestamp).is_similar(other.get_graph(timestamp))
+            timestep: int = other.get_timesteps()[-1]
+            return self.get_graph(timestep).is_similar(other.get_graph(timestep))
         return False
 
     def is_superset_equivalent(self, other: SubGraphContainer) -> bool:
         if self.is_superset(other):
-            timestamp: float = other.get_timestamps()[-1]
-            return self.get_graph(timestamp).is_equivalent(other.get_graph(timestamp))
+            timestep: int = other.get_timesteps()[-1]
+            return self.get_graph(timestep).is_equivalent(other.get_graph(timestep))
         return False
 
     def is_superset_equal(self, other: SubGraphContainer) -> bool:
         is_superset: bool = self.is_superset(other)
         if is_superset:
-            timestamp: float = other.get_timestamps()[-1]
-            return self.get_graph(timestamp).is_equal(other.get_graph(timestamp))
+            timestep: int = other.get_timesteps()[-1]
+            return self.get_graph(timestep).is_equal(other.get_graph(timestep))
         return False

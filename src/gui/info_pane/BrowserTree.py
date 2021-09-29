@@ -12,7 +12,7 @@ if tp.TYPE_CHECKING:
     from src.framework.graph.CalibratingGraph import SubCalibratingGraph
     from src.framework.graph.Graph import SubGraph
     from src.gui.info_pane.InspectorTree import InspectorTree
-    from src.gui.info_pane.TimestampBox import TimestampBox
+    from src.gui.info_pane.TimestepBox import TimestepBox
     from src.gui.modules.TreeNode import SubTreeNode, SubToggle, TopTreeNode, ElementTreeNode
     from src.gui.viewer.Viewer import Viewer
 
@@ -21,7 +21,7 @@ class BrowserTree(QtWidgets.QTreeWidget):
 
     _tree: 'TopTreeNode'
     _inspector: 'InspectorTree'
-    _timestamp_box: 'TimestampBox'
+    _timestep_box: 'TimestepBox'
     _viewer: 'Viewer'
 
     # constructor
@@ -29,14 +29,14 @@ class BrowserTree(QtWidgets.QTreeWidget):
             self,
             tree: 'TopTreeNode',
             inspector: 'InspectorTree',
-            timestamp_box: 'TimestampBox',
+            timestep_box: 'TimestepBox',
             viewer: 'Viewer',
             **kwargs
     ):
         super().__init__(**kwargs)
         self._tree = tree
         self._inspector = inspector
-        self._timestamp_box = timestamp_box
+        self._timestep_box = timestep_box
         self._viewer = viewer
 
         # formatting
@@ -162,7 +162,7 @@ class BrowserTree(QtWidgets.QTreeWidget):
         elif signal == 0:
             self._construct_browser()
             self._inspector.clear()
-            self._timestamp_box.clear()
+            self._timestep_box.clear()
         else:
             # element has been toggled
             self._update_browser()
@@ -173,7 +173,7 @@ class BrowserTree(QtWidgets.QTreeWidget):
             obj: tp.Union['SubTreeNode', SubVisualisable] = item.obj
             if isinstance(obj, GraphTreeNode):
                 self._inspector.display_graph(obj.get_graph())
-                self._timestamp_box.set_node(obj)
+                self._timestep_box.set_node(obj)
             elif isinstance(obj, Node):
                 self._inspector.display_node(obj)
             elif isinstance(obj, Edge):
@@ -292,6 +292,10 @@ class BrowserTree(QtWidgets.QTreeWidget):
         sub_analyse_metrics = sub_analyse.addMenu('Metrics')
         has_metrics: bool = self._tree.analyser().ate().is_eligible(graph)
         sub_analyse_metrics.setEnabled(has_metrics)
+        # analyse - metrics - Error
+        action = sub_analyse_metrics.addAction('Plot Error')
+        action.setEnabled(has_metrics)
+        plot_commands[action] = functools.partial(self._tree.analyser().error().plot, graph)
         # analyse - metrics - ATE
         action = sub_analyse_metrics.addAction('Plot ATE')
         action.setEnabled(has_metrics)
@@ -352,7 +356,7 @@ class BrowserTree(QtWidgets.QTreeWidget):
             self._tree.analyser().set_fig(plot_commands[action]())
         elif action == action_find_subgraphs:
             node.find_subgraphs()
-            self._timestamp_box.update_contents()
+            self._timestep_box.update_contents()
 
     def _handle_context_menu(self, point):
         index = self.indexAt(point)

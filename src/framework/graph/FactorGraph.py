@@ -18,6 +18,7 @@ if tp.TYPE_CHECKING:
     from src.framework.math.matrix.Matrix import SubMatrix
     from src.framework.math.matrix.square import SubSquare
     from src.framework.math.matrix.vector.Vector import SubVector, SubSizeVector
+    from src.framework.optimiser.Optimiser import Optimiser
 
 
 SubFactorGraph = tp.TypeVar('SubFactorGraph', bound='FactorGraph')
@@ -28,6 +29,7 @@ SubFactorElement = tp.Union[SubFactorNode, SubFactorEdge]
 
 class FactorGraph(BaseGraph):
 
+    _error: tp.Optional[float]
     _hessian: tp.Optional['SubSparseBlockMatrix']
     _covariance: tp.Optional['SubSparseBlockMatrix']
 
@@ -35,7 +37,32 @@ class FactorGraph(BaseGraph):
         super().__init__()
         self._hessian = None
         self._covariance = None
+        self._error = None
 
+    # metrics
+    def clear_metrics(self) -> None:
+        self._error = None
+        for node in self.get_nodes():
+            node.clear_metrics()
+        for edge in self.get_edges():
+            edge.clear_metrics()
+
+    def get_error(self) -> float:
+        if self._error is None:
+            error: float = 0.
+            for edge in self.get_edges():
+                error += edge.get_error()
+            self._error = error
+        return self._error
+
+    def compute_error(self) -> float:
+        error: float = 0.
+        for edge in self.get_edges():
+            error += edge.compute_error()
+        self._error = error
+        return error
+
+    # vector initialisation
     def to_vector(self) -> 'SubVector':
         list_: tp.List[float] = []
         node: SubFactorNode
@@ -55,9 +82,29 @@ class FactorGraph(BaseGraph):
             dim = node.get_dim()
             segment: tp.List[float] = list_[index: index + dim]
             assert len(segment) == dim
-            node.from_vector(VectorFactory.from_list(segment))
+            node.set_from_vector(VectorFactory.from_list(segment))
             index += dim
         assert index == len(list_)
+        self.clear_metrics()
+
+    # optimise/copy
+    def optimise(self, optimiser: 'Optimiser') -> tp.Optional[SubFactorGraph]:
+        error: float = self.compute_error()
+        solution: SubFactorGraph = optimiser.instance_optimise(self)
+        if solution.compute_error() < error:
+            self.from_vector(solution.to_vector())
+            self.copy_meta_to(solution)
+            if self.has_previous():
+                solution.set_previous(self.get_previous())
+            return solution
+        return None
+
+    def copy(self, is_shallow: bool = False) -> SubFactorGraph:
+        copy_: SubFactorGraph = copy.copy(self) if is_shallow else copy.deepcopy(self)
+        self.copy_meta_to(copy_)
+        if self.has_previous():
+            copy_.set_previous(self.get_previous())
+        return copy_
 
     # linearise
     def get_hessian(self) -> 'SubSparseBlockMatrix':
@@ -147,26 +194,30 @@ class DataContainer(tp.Generic[T]):
 
     # value
     def has_value(self) -> bool:
-        """ Returns whether a value has already been assigned to this container. """
+        """ Returns whether a value has already been assigned. """
         return self._data.has_value()
 
     def get_value(self) -> T:
-        """ Returns the value encoded in this container. """
+        """ Returns the value. """
         assert self.has_value()
         return self._data.get_value()
 
     def set_value(self, value: T) -> None:
-        """ Sets the value of this container. """
+        """ Sets the value. """
         self._data.set_value(value)
 
     # vector
     def to_vector(self) -> 'SubSizeVector':
-        """ Returns the vector that defines the value of this container. """
+        """ Returns the vector that defines the value. """
         return self._data.to_vector()
 
-    def from_vector(self, vector: 'SubSizeVector') -> None:
-        """ Sets the value of this container according to the provided vector. """
+    def set_from_vector(self, vector: 'SubSizeVector') -> None:
+        """ Sets the value according to the provided vector. """
         self._data.from_vector(vector)
+
+    def set_zero(self) -> None:
+        """ Sets the value to zero. """
+        self.set_from_vector(VectorFactory.from_dim(self.get_dim()).zeros())
 
     # read/write
     def read(self, words: tp.List[str]) -> tp.List[str]:
@@ -190,6 +241,13 @@ class FactorNode(BaseNode, tp.Generic[T], DataContainer[T]):
     ):
         super().__init__(name=name, id_=id_, value=value)
         self._is_fixed = False
+
+    def clear_metrics(self) -> None:
+        pass
+
+    def set_from_vector(self, vector: 'SubSizeVector') -> None:
+        super().set_from_vector(vector)
+        self.clear_metrics()
 
     # fix
     def fix(self, is_fixed: bool = True) -> None:
@@ -231,10 +289,11 @@ class FactorNode(BaseNode, tp.Generic[T], DataContainer[T]):
 
 class FactorEdge(BaseEdge, tp.Generic[T], DataContainer[T]):
 
+    # constant properties
     _info_matrix: 'SubDataSymmetric'
-    _error_vector: tp.Optional['SubSizeVector']
 
-    # gradient
+    # dynamic properties
+    _error_vector: tp.Optional['SubSizeVector']
     _jacobian: tp.Optional['SubBlockMatrix']
     _hessian: tp.Optional['SubBlockMatrix']
 
@@ -249,8 +308,12 @@ class FactorEdge(BaseEdge, tp.Generic[T], DataContainer[T]):
         if info_matrix is None:
             info_matrix = SquareFactory.from_dim(self.get_dim()).identity()
         self._info_matrix = DataFactory.from_value(info_matrix)
-        self._error_vector = None
+        self.clear_metrics()
 
+    def clear_metrics(self) -> None:
+        """ Clear all dynamic properties. """
+
+        self._error_vector = None
         self._jacobian = None
         self._hessian = None
 
@@ -261,12 +324,16 @@ class FactorEdge(BaseEdge, tp.Generic[T], DataContainer[T]):
         pass
 
     @abstractmethod
-    def compute_error_vector(self) -> 'SubSizeVector':
+    def _compute_error_vector(self) -> 'SubSizeVector':
         pass
+
+    def compute_error_vector(self) -> 'SubSizeVector':
+        self._error_vector = self._compute_error_vector()
+        return self._error_vector
 
     def get_error_vector(self) -> 'SubSizeVector':
         if self._error_vector is None:
-            self._error_vector = self.compute_error_vector()
+            self.compute_error_vector()
         return self._error_vector
 
     def compute_error(self) -> float:

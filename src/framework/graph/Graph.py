@@ -9,6 +9,7 @@ from src.framework.graph.FactorGraph import FactorGraph, FactorNode, FactorEdge
 if tp.TYPE_CHECKING:
     from src.framework.graph.protocols.Measurement import SubMeasurement
     from src.framework.math.matrix.square import SubSquare
+    from src.framework.math.matrix.vector import SubVector
 
 SubGraph = tp.TypeVar('SubGraph', bound='Graph')
 SubNode = tp.TypeVar('SubNode', bound='Node')
@@ -28,7 +29,6 @@ class Graph(FactorGraph):
     _atol: tp.Optional[float]
 
     # properties
-    _error: tp.Optional[float]
     _ate: tp.Optional[float]
     _rpe_translation: tp.Optional[float]
     _rpe_rotation: tp.Optional[float]
@@ -45,7 +45,11 @@ class Graph(FactorGraph):
         self._path = None
         self._atol = 1e-6
 
-        # properties
+        # metrics
+        self.clear_metrics()
+
+    def clear_metrics(self) -> None:
+        super().clear_metrics()
         self._error = None
         self._ate = None
         self._rpe_translation = None
@@ -66,8 +70,8 @@ class Graph(FactorGraph):
         assert self.has_path()
         return self._path.name
 
-    def timestamp(self) -> tp.Optional[float]:
-        return self.get_nodes()[-1].get_timestamp()
+    def timestep(self) -> tp.Optional[int]:
+        return self.get_nodes()[-1].get_timestep()
 
     # pre
     def has_pre(self) -> bool:
@@ -81,13 +85,20 @@ class Graph(FactorGraph):
         assert self.is_equivalent(graph)
         self._pre = graph
 
-    # error
-    def compute_error(self) -> float:
-        error: float = 0.
-        for edge in self.get_edges():
-            error += edge.compute_error()
-        self._error = error
-        return error
+    # metrics
+    def get_ate(self) -> float:
+        assert self.has_truth()
+        if self._ate is None:
+            te2: float = 0
+            count: int = 0
+            node: SubNode
+            for node in self.get_nodes():
+                node_ate2 = node.get_ate2()
+                if node_ate2 is not None:
+                    te2 += node_ate2
+                    count += 1
+            self._ate = np.sqrt(te2 / count)
+        return self._ate
 
     def compute_ate(self) -> float:
         """ Returns the Absolute Trajectory Error (APE). """
@@ -104,6 +115,20 @@ class Graph(FactorGraph):
         self._ate = np.sqrt(te2/count)
         return self._ate
 
+    def get_rpe_translation(self) -> float:
+        assert self.has_truth()
+        if self._rpe_translation is None:
+            rpe2: float = 0
+            count: int = 0
+            edge: SubEdge
+            for edge in self.get_edges():
+                edge_rpe2 = edge.get_rpe_translation2()
+                if edge_rpe2 is not None:
+                    rpe2 += edge_rpe2
+                    count += 1
+            self._rpe_translation = np.sqrt(rpe2 / count)
+        return self._rpe_translation
+
     def compute_rpe_translation(self) -> float:
         """ Returns the translation portion of the Relative Pose Error (RPE). """
 
@@ -119,6 +144,20 @@ class Graph(FactorGraph):
         self._rpe_translation = np.sqrt(rpe2/count)
         return self._rpe_translation
 
+    def get_rpe_rotation(self) -> float:
+        assert self.has_truth()
+        if self._rpe_rotation is None:
+            rpe: float = 0
+            count: int = 0
+            edge: SubEdge
+            for edge in self.get_edges():
+                edge_rpe2 = edge.get_rpe_rotation2()
+                if edge_rpe2 is not None:
+                    rpe += edge_rpe2
+                    count += 1
+            self._rpe_rotation = rpe / count
+        return self._rpe_rotation
+
     def compute_rpe_rotation(self) -> float:
         """ Returns the rotation portion of the Relative Pose Error (RPE). """
 
@@ -127,34 +166,11 @@ class Graph(FactorGraph):
         count: int = 0
         edge: SubEdge
         for edge in self.get_edges():
-            edge_rpe2 = edge.compute_rpe_rotation()
+            edge_rpe2 = edge.compute_rpe_rotation2()
             if edge_rpe2 is not None:
                 rpe += edge_rpe2
                 count += 1
         self._rpe_rotation = rpe/count
-        return self._rpe_rotation
-
-    def get_error(self) -> float:
-        if self._error is None:
-            error: float = 0.
-            for edge in self.get_edges():
-                error += edge.get_error()
-            self._error = error
-        return self._error
-
-    def get_ate(self) -> float:
-        if self._ate is None:
-            self.compute_ate()
-        return self._ate
-
-    def get_rpe_translation(self) -> float:
-        if self._rpe_translation is None:
-            self.compute_rpe_translation()
-        return self._rpe_translation
-
-    def get_rpe_rotation(self) -> float:
-        if self._rpe_rotation is None:
-            self.compute_rpe_rotation()
         return self._rpe_rotation
 
     # truth
@@ -212,7 +228,7 @@ class Graph(FactorGraph):
     def find_subgraphs(self) -> None:
         super().find_subgraphs()
 
-        # assigning timestamps to all nodes
+        # assigning timesteps to all nodes
         subgraphs: tp.List[SubGraph] = self.subgraphs()
         node_set: tp.Set[SubNode] = set()
         next_set: tp.Set[SubNode]
@@ -221,7 +237,7 @@ class Graph(FactorGraph):
 
             node: SubNode
             for node in next_set - node_set:
-                node.set_timestamp(i)
+                node.set_timestep(i)
             node_set = next_set
 
         if self.has_truth():
@@ -265,28 +281,45 @@ class Node(tp.Generic[T], FactorNode[T]):
 
     # reference to truth/unperturbed equivalent node
     _truth: tp.Optional[SubNode]
-    _timestamp: tp.Optional[float]
+    _timestep: tp.Optional[int]
+
+    # metrics
+    _ate2: tp.Optional[float]
 
     def __init__(
             self,
             name: tp.Optional[str] = None,
             id_: tp.Optional[int] = None,
             value: tp.Optional[T] = None,
-            timestamp: tp.Optional[float] = None
+            timestep: tp.Optional[float] = None
     ):
         super().__init__(name=name, id_=id_, value=value)
-        self._timestamp = timestamp
         self._truth = None
+        self._timestep = timestep
+        self.clear_metrics()
+
+    def clear_metrics(self) -> None:
+        super().clear_metrics()
+        self._ate2 = None
 
     # error
+    def get_ate2(self) -> tp.Optional[float]:
+        if self._ate2 is None:
+            self.compute_ate2()
+        return self._ate2
+
     def compute_ate2(self) -> tp.Optional[float]:
+        self._ate2 = self._compute_ate2()
+        return self._ate2
+
+    def _compute_ate2(self) -> tp.Optional[float]:
         return None
 
     # truth
     def assign_truth(self, node: SubNode):
         assert not self.has_truth()
         assert node.get_id() == self.get_id()
-        assert node.get_timestamp() == self.get_timestamp()
+        assert node.get_timestep() == self.get_timestep()
         self._truth = node
 
     def has_truth(self) -> bool:
@@ -296,27 +329,27 @@ class Node(tp.Generic[T], FactorNode[T]):
         assert self.has_truth()
         return self._truth
 
-    # timestamp
-    def set_timestamp(self, timestamp: float) -> None:
-        assert not self.has_timestamp()
-        self._timestamp = timestamp
+    # timestep
+    def set_timestep(self, timestep: int) -> None:
+        assert not self.has_timestep()
+        self._timestep = timestep
 
-    def has_timestamp(self) -> bool:
-        return self._timestamp is not None
+    def has_timestep(self) -> bool:
+        return self._timestep is not None
 
-    def get_timestamp(self) -> tp.Optional[float]:
-        return self._timestamp
+    def get_timestep(self) -> tp.Optional[int]:
+        return self._timestep
 
     # copy
     def copy_meta_to(self, node: SubNode) -> SubNode:
         node = super().copy_meta_to(node)
         node._truth = self._truth
-        node._timestamp = self._timestamp
+        node._timestep = self._timestep
         return node
 
     def __copy__(self):
         new = super().__copy__()
-        new._timestamp = self._timestamp
+        new._timestep = self._timestep
         new._truth = self._truth
         return new
 
@@ -326,7 +359,7 @@ class Node(tp.Generic[T], FactorNode[T]):
         new = super().__deepcopy__(memo)
         memo[id(self)] = new
 
-        new._timestamp = self._timestamp
+        new._timestep = self._timestep
         new._truth = self._truth
         return new
 
@@ -335,6 +368,10 @@ class Edge(tp.Generic[T], FactorEdge[T], ABC):
 
     # reference to truth/unperturbed equivalent edge
     _truth: tp.Optional[SubEdge]
+
+    # metrics
+    _rpet2: tp.Optional[float]
+    _rper2: tp.Optional[float]
 
     def __init__(
             self,
@@ -345,6 +382,12 @@ class Edge(tp.Generic[T], FactorEdge[T], ABC):
     ):
         super().__init__(name=name, nodes=nodes, measurement=measurement, info_matrix=info_matrix)
         self._truth = None
+        self.clear_metrics()
+
+    def clear_metrics(self) -> None:
+        super().clear_metrics()
+        self._rpet2 = None
+        self._rper2 = None
 
     # DataContainer
     def has_measurement(self) -> bool:
@@ -362,10 +405,28 @@ class Edge(tp.Generic[T], FactorEdge[T], ABC):
         pass
 
     # error
+    def get_rpe_translation2(self) -> tp.Optional[float]:
+        if self._rpet2 is None:
+            self.compute_rpe_translation2()
+        return self._rpet2
+
+    def get_rpe_rotation2(self) -> tp.Optional[float]:
+        if self._rper2 is None:
+            self.compute_rpe_rotation2()
+        return self._rper2
+
     def compute_rpe_translation2(self) -> tp.Optional[float]:
+        self._rpet2 = self._compute_rpe_translation2()
+        return self._rpet2
+
+    def compute_rpe_rotation2(self) -> tp.Optional[float]:
+        self._rper2 = self._compute_rpe_rotation2()
+        return self._rper2
+
+    def _compute_rpe_translation2(self) -> tp.Optional[float]:
         return None
 
-    def compute_rpe_rotation(self) -> tp.Optional[float]:
+    def _compute_rpe_rotation2(self) -> tp.Optional[float]:
         return None
 
     # truth
@@ -373,7 +434,7 @@ class Edge(tp.Generic[T], FactorEdge[T], ABC):
         """ Returns whether the provided edge is connected to all this edge's nodes that have a 'truth' reference. """
 
         # truth_ids: tp.List[int] = [node.get_id() for node in self.get_nodes() if node.has_truth()]
-        return edge.get_timestamp() == self.get_timestamp() and self.get_endpoint_ids() == edge.get_endpoint_ids()
+        return edge.get_timestep() == self.get_timestep() and self.get_endpoint_ids() == edge.get_endpoint_ids()
 
     def assign_truth(self, edge: SubEdge):
         assert not self.has_truth()
@@ -387,12 +448,12 @@ class Edge(tp.Generic[T], FactorEdge[T], ABC):
         assert self.has_truth()
         return self._truth
 
-    # timestamp
-    def get_timestamp(self) -> tp.Optional[float]:
-        timestamps = [node.get_timestamp() for node in self.get_nodes()]
-        if None in timestamps:
+    # timestep
+    def get_timestep(self) -> tp.Optional[int]:
+        timesteps = [node.get_timestep() for node in self.get_nodes()]
+        if None in timesteps:
             return None
-        return max(timestamps)
+        return max(timesteps)
 
     # copy
     def copy_meta_to(self, edge: SubEdge) -> SubEdge:

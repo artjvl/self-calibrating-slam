@@ -5,12 +5,13 @@ from abc import abstractmethod
 import numpy as np
 from src.framework.graph.Graph import Node
 from src.framework.math.lie.transformation import SE2
-from src.framework.math.matrix.vector import Vector1, Vector2, Vector3
+from src.framework.math.matrix.vector import VectorFactory, Vector1, Vector2, Vector3
 from utils.TwoWayDict import TwoWayDict
 
 if tp.TYPE_CHECKING:
     from src.framework.graph.data.DataFactory import Quantity
     from src.framework.graph.protocols.Measurement import SubMeasurement2D
+    from src.framework.math.matrix.vector import SubSizeVector
 
 SubParameterNode = tp.TypeVar('SubParameterNode', bound='ParameterNode')
 
@@ -50,19 +51,42 @@ class ParameterNode(tp.Generic[T], Node[T]):
             name: tp.Optional[str] = None,  # BaseNode
             id_: tp.Optional[int] = None,  # BaseNode
             value: tp.Optional[T] = None,  # FactorNode
-            timestamp: tp.Optional[float] = None,  # FactorNode
-            specification: ParameterSpecification = ParameterSpecification.BIAS,  # ParameterNode
+            timestep: tp.Optional[float] = None,  # FactorNode
+            specification: tp.Optional[ParameterSpecification] = None,  # ParameterNode
             index: int = 0  # ParameterNode
     ):
         # node-name
         if name is None:
             name = f'{self.__class__.__name__}({ParameterDict.from_specification(specification)})'
-        super().__init__(name=name, id_=id_, value=value, timestamp=timestamp)
+        super().__init__(name=name, id_=id_, value=value, timestep=timestep)
 
         # attributes
+        if specification is None:
+            if self.get_type() == Vector3:
+                specification = ParameterSpecification.SCALE
+            else:
+                specification = ParameterSpecification.BIAS
         self.set_specification(specification)
+        if value is None:
+            self.initialise()
         self._index = index
         self._translation = None
+
+    # value
+    def initialise(self) -> None:
+        assert self._specification is not None
+        vector_type: tp.Type['SubSizeVector'] = VectorFactory.from_dim(self.get_dim())
+        if self._specification == ParameterSpecification.SCALE:
+            self.set_from_vector(vector_type.ones())
+        else:
+            self.set_from_vector(vector_type.zeros())
+
+    def reinitialise(self) -> 'SubSizeVector':
+        assert self._specification is not None
+        assert self.has_value()
+        vector: 'SubSizeVector' = self.to_vector()
+        self.initialise()
+        return vector
 
     # specification
     def get_specification(self) -> ParameterSpecification:
@@ -112,6 +136,26 @@ class ParameterNode(tp.Generic[T], Node[T]):
         words: tp.List[str] = [ParameterDict.from_specification(self._specification)] + self._data.write()
         return words
 
+    # copy
+    def __copy__(self):
+        new = super().__copy__()
+
+        new._specification = self._specification
+        new._index = self._index
+        new._translation = self._translation
+        return new
+
+    def __deepcopy__(self, memo: tp.Optional[tp.Dict[int, tp.Any]] = None):
+        if memo is None:
+            memo = {}
+        new = super().__deepcopy__(memo)
+        memo[id(self)] = new
+
+        new._specification = self._specification
+        new._index = self._index
+        new._translation = self._translation
+        return new
+
 
 def compose_bias(
         measurement: 'SubMeasurement2D',
@@ -160,10 +204,10 @@ class ParameterNodeSE2(ParameterNode[SE2]):
     _type = SE2
 
     def set_specification(self, specification: ParameterSpecification) -> None:
-        assert specification in (
+        assert specification in [
             ParameterSpecification.BIAS,
             ParameterSpecification.OFFSET
-        )
+        ]
         return super().set_specification(specification)
 
     def to_list3(self) -> tp.List[float]:
@@ -206,12 +250,12 @@ class ParameterNodeV1(ParameterNode[Vector1]):
 
     # specification
     def set_specification(self, specification: ParameterSpecification) -> None:
-        assert specification in (
+        assert specification in [
             ParameterSpecification.BIAS,
             ParameterSpecification.OFFSET,
             ParameterSpecification.SCALE,
             ParameterSpecification.UNIFORM_TRANSLATION_SCALE
-        )
+        ]
         return super().set_specification(specification)
 
     def to_list3(self, filler: tp.Optional[float] = None) -> tp.List[tp.Optional[float]]:
@@ -291,11 +335,11 @@ class ParameterNodeV2(ParameterNode[Vector2]):
 
     # specification
     def set_specification(self, specification: ParameterSpecification) -> None:
-        assert specification in (
+        assert specification in [
             ParameterSpecification.BIAS,
             ParameterSpecification.OFFSET,
             ParameterSpecification.SCALE
-        )
+        ]
         return super().set_specification(specification)
 
     def to_list3(self, filler: tp.Optional[float] = None) -> tp.List[tp.Optional[float]]:
@@ -356,9 +400,9 @@ class ParameterNodeV3(ParameterNode[Vector3]):
 
     # specification
     def set_specification(self, specification: ParameterSpecification) -> None:
-        assert specification in (
+        assert specification in [
             ParameterSpecification.SCALE
-        )
+        ]
         return super().set_specification(specification)
 
     def to_list3(self) -> tp.List[float]:
@@ -405,7 +449,7 @@ class ParameterNodeFactory(object):
             value: 'Quantity',
             name: tp.Optional[str] = None,
             id_: tp.Optional[int] = None,
-            timestamp: tp.Optional[float] = None,
+            timestep: tp.Optional[float] = None,
             specification: ParameterSpecification = ParameterSpecification.BIAS,
             index: int = 0
     ) -> SubParameterNode:
@@ -414,7 +458,7 @@ class ParameterNodeFactory(object):
             name=name,
             id_=id_,
             value=value,
-            timestamp=timestamp,
+            timestep=timestep,
             specification=specification,
             index=index
         )

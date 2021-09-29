@@ -45,6 +45,9 @@ class Vector(Matrix, Dimensional):
     def zeros(self) -> SubVector:
         return self.__class__(np.zeros((self.get_dim(), 1)))
 
+    def ones(self) -> SubVector:
+        return self.__class__(np.ones((self.get_dim(), 1)))
+
     # manipulation
     def magnitude(self) -> float:
         return float(linalg.norm(self.array()))

@@ -14,7 +14,7 @@ class GraphManager(object):
     # counters
     _id_counter: int
     _id_set: tp.Set[int]
-    _timestamp: float
+    _timestep: int
 
     def __init__(self):
         self.reset()
@@ -25,7 +25,7 @@ class GraphManager(object):
         # counters
         self._id_counter = 0
         self._id_set = set()
-        self._timestamp = 0.
+        self._timestep = 0
 
     # graph
     def graph(self) -> SubGraph:
@@ -46,7 +46,7 @@ class GraphManager(object):
             id_ = self.get_id(should_increment=True)
 
         node.set_id(id_)
-        node.set_timestamp(self._timestamp)
+        node.set_timestep(self._timestep)
         self._graph.add_node(node)
         return node
 
@@ -71,13 +71,13 @@ class GraphManager(object):
         assert count >= self._id_counter and count not in self._id_set
         self._id_counter = count
 
-    # timestamp
-    def set_timestamp(self, timestamp: float = 0.) -> None:
-        assert timestamp >= self._timestamp
-        self._timestamp = timestamp
+    # timestep
+    def set_timestep(self, timestep: int = 0) -> None:
+        assert timestep >= self._timestep
+        self._timestep = timestep
 
-    def increment_timestamp(self, delta: float) -> None:
-        self.set_timestamp(self._timestamp + delta)
+    def increment_timestep(self, delta: int = 1) -> None:
+        self.set_timestep(self._timestep + delta)
 
-    def get_timestamp(self) -> float:
-        return self._timestamp
+    def get_timestep(self) -> int:
+        return self._timestep

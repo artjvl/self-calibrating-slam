@@ -6,10 +6,12 @@ import numpy as np
 from src.framework.graph.GraphParser import GraphParser
 from src.framework.graph.types.nodes.SpatialNode import NodeSE2
 from src.framework.math.lie.transformation import SE2
+from src.framework.math.matrix.vector import Vector2
+from src.framework.math.matrix.vector import Vector3
 
 if tp.TYPE_CHECKING:
     from src.framework.graph.Graph import SubGraph
-    from src.framework.math.matrix.vector import Vector2
+
 
 SubPath = tp.TypeVar('SubPath', bound='Path', covariant=True)
 
@@ -80,23 +82,28 @@ class ManhattanPath(Path):
 
     _current: SE2
     _seed: int
-    _rng: np.random.RandomState
+    _step_rng: np.random.RandomState
+    _sidestep_rng: np.random.RandomState
+    _sidesteps_x: tp.List[float]
+    _sidesteps_y: tp.List[float]
 
     def __init__(
             self,
             seed: tp.Optional[int] = None
     ):
         super().__init__()
+        self._seed = seed
         self._block_size = 4
         self._step_size = 1.
         self._domain = 50.
-        self._step_count = 0
-        self.set_rng(seed)
+        self.reset()
 
     def reset(self) -> None:
         self._current = SE2.from_translation_angle_elements(0., 0., 0.)
         self._step_count = 0
         self.set_rng(self._seed)
+        self._sidesteps_x = []
+        self._sidesteps_y = []
 
     def set_block_size(self, block_size: int) -> None:
         self._block_size = block_size
@@ -117,23 +124,29 @@ class ManhattanPath(Path):
         transformation: SE2 = SE2.from_translation_angle_elements(self._step_size, 0., angle)
         new: SE2 = self._current + transformation
         self._current = new
-        return new
+        sidestep: np.ndarray = self._sidestep_rng.multivariate_normal(
+            mean=[0, 0], cov=0.16 * np.eye(2)
+        )
+        self._sidesteps_x = [sidestep[0]] + self._sidesteps_x[:3]
+        self._sidesteps_y = [sidestep[1]] + self._sidesteps_y[:3]
+        return new.oplus(Vector3(np.mean(self._sidesteps_x), np.mean(self._sidesteps_y), 0.))
 
     def generate_new_angle(self) -> float:
-        angle = np.deg2rad(self._rng.choice([90., -90.]))
-        translation: 'Vector2' = self._current.translation()
+        angle = np.deg2rad(self._step_rng.choice([90., -90.]))
+        translation: Vector2 = self._current.translation()
         if np.max(np.abs(translation.array())) > self._domain - self._step_count:
-            proposed: SE2 = self._current * \
-                            SE2.from_translation_angle_elements(self._step_size, 0., angle) * \
+            proposed: SE2 = self._current + \
+                            SE2.from_translation_angle_elements(self._step_size, 0., angle) + \
                             SE2.from_translation_angle_elements(self._step_count * self._step_size, 0., 0.)
             if not self.is_in_domain(proposed):
                 angle += np.pi
         return angle
 
     def is_in_domain(self, pose: SE2) -> bool:
-        translation: 'Vector2' = pose.translation()
+        translation: Vector2 = pose.translation()
         return np.max(np.abs(translation.array())) <= self._domain
 
     def set_rng(self, seed: tp.Optional[int] = None) -> None:
         self._seed = seed
-        self._rng = np.random.RandomState(seed)
+        self._step_rng = np.random.RandomState(seed)
+        self._sidestep_rng = np.random.RandomState(seed)

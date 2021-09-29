@@ -10,7 +10,9 @@ if tp.TYPE_CHECKING:
     from src.framework.graph.Graph import SubNode
     from src.framework.graph.types.nodes.SpatialNode import SubSpatialNode
     from src.framework.graph.types.nodes.ParameterNode import SubParameterNode
+    from src.framework.math.matrix.vector import SubSizeVector
     from src.framework.math.matrix.square import SubSquare
+    from src.framework.optimiser.Optimiser import Optimiser
 
 SubCalibratingGraph = tp.TypeVar('SubCalibratingGraph', bound='CalibratingGraph')
 SubCalibratingEdge = tp.TypeVar('SubCalibratingEdge', bound='CalibratingEdge')
@@ -27,6 +29,23 @@ class CalibratingGraph(Graph):
         self._endpoints = {}
         self._parameters = {}
         self._parameter_names = []
+
+    def optimise(self, optimiser: 'Optimiser') -> tp.Optional[SubCalibratingGraph]:
+        # reinitialise parameters and save overwritten value
+        parameters: tp.List['SubParameterNode'] = self.get_parameters()
+        vectors: tp.List['SubSizeVector'] = []
+        for parameter in parameters:
+            vector: 'SubSizeVector' = parameter.reinitialise()
+            vectors.append(vector)
+
+        # optimise
+        solution: tp.Optional[SubCalibratingGraph] = super().optimise(optimiser)
+        if solution is not None:
+            return solution
+
+        # solution is not of lower cost: revert parameter initialisation
+        for i, parameter in enumerate(parameters):
+            parameter.set_from_vector(vectors[i])
 
     # parameters
     def add_node(self, node: 'SubNode') -> None:
