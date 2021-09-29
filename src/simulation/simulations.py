@@ -1,7 +1,14 @@
 import typing as tp
 
+from simulation.results.ResultsConstantBias import ResultsConstantBiasWithout, ResultsConstantBiasStatic
+from simulation.results.ResultsConstantScale import ResultsConstantScaleWithout, ResultsConstantScaleStatic
+from simulation.results.ResultsSinBias import ResultsSinBiasWithout, ResultsSinBiasTimelyBatch, ResultsSinBiasSliding, \
+    ResultsSinBiasSlidingOld
 from src.simulation.dataset.IntelDatasetSim import IntelPlain, IntelSliding, IntelSlidingOld, \
     IntelWithout, IntelConstant, IntelTimely, IntelSpatial
+from src.simulation.manhattan.ManhattanResults import ManhattanResultsPlain, ManhattanResultsWithout, \
+    ManhattanResultsConstant, ManhattanResultsTimely, ManhattanResultsSliding, ManhattanResultsSlidingOld, \
+    ManhattanResultsSpatial
 from src.simulation.manhattan.ManhattanSim import ManhattanPlain, ManhattanConstant, ManhattanSliding, \
     ManhattanWithout, ManhattanTimely, ManhattanSlidingOld, ManhattanSpatial
 
@@ -45,6 +52,16 @@ simulations.add(section, ManhattanTimely())
 simulations.add(section, ManhattanSliding())
 simulations.add(section, ManhattanSlidingOld())
 simulations.add(section, ManhattanSpatial())
+
+section: str = 'Results'
+simulations.add(section, ResultsConstantBiasWithout().set_intel().set_steps(200))
+simulations.add(section, ResultsConstantBiasStatic().set_intel().set_steps(200))
+simulations.add(section, ResultsConstantScaleWithout().set_intel().set_steps(200))
+simulations.add(section, ResultsConstantScaleStatic().set_intel().set_steps(220))
+simulations.add(section, ResultsSinBiasWithout().set_manhattan())
+simulations.add(section, ResultsSinBiasTimelyBatch().set_manhattan())
+simulations.add(section, ResultsSinBiasSliding().set_manhattan())
+simulations.add(section, ResultsSinBiasSlidingOld().set_manhattan())
 
 # section = 'ManhattanTest'
 # simulations.add(section, manhattan_test_post)

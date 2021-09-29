@@ -26,7 +26,7 @@ class ManhattanSim(BiSimulation):
 
     def configure(self) -> None:
         path: ManhattanPath = ManhattanPath()
-        path.set_block_size(6)
+        path.set_block_size(5)
         path.set_rng(33)
         self.set_path(path)
 
@@ -36,9 +36,9 @@ class ManhattanSim(BiSimulation):
 
     def initialise(self) -> None:
         # sensors: wheel
-        info_wheel_truth = Square3.from_diagonal([2000., 2000., 2000.])
+        info_wheel_truth = Square3.from_diagonal([200., 200., 400.])
         info_wheel_estimate = info_wheel_truth
-        self.add_sensor('wheel', SE2, info_wheel_truth, info_wheel_estimate)
+        self.add_sensor('whseel', SE2, info_wheel_truth, info_wheel_estimate)
         # sensors: lidar
         info_lidar_truth = Square3.from_diagonal([8000., 8000., 12000.])
         info_lidar_estimate = info_lidar_truth
@@ -51,12 +51,12 @@ class ManhattanSim(BiSimulation):
         # parameters:
         self.truth_simulation().add_static_parameter(
             'wheel', 'bias',
-            Vector1(1.0), ParameterSpecification.SCALE, index=0
+            Vector1(1.1), ParameterSpecification.SCALE, index=1
         )
 
     def simulate(self) -> None:
         delta: float = 0.1
-        num: int = 400  # 400
+        num: int = 200  # 400
 
         is_gps: bool = True
         is_dyn: bool = False
@@ -66,8 +66,8 @@ class ManhattanSim(BiSimulation):
 
         for i in range(num):
             self.auto_odometry('wheel')
-            self.roll_proximity('lidar', 3, threshold=0.29)
-            self.roll_closure('lidar', 2., separation=10, threshold=0.26)
+            self.roll_proximity('lidar', 3, threshold=0.9)
+            self.roll_closure('lidar', 2., separation=10, threshold=0.6)
 
             if is_gps and i in gps_ids:
                 self.add_gps('gps')
@@ -76,7 +76,7 @@ class ManhattanSim(BiSimulation):
                 self.truth_simulation().update_parameter('wheel', 'bias', Vector1(f_step(i)))
                 # model.update_truth_parameter('wheel', 'bias', Vector1(0.1 * np.sin(0.01 * i)))
 
-            self.step(delta)
+            self.step()
 
     def finalise(self) -> None:
         pass
@@ -91,8 +91,8 @@ class ManhattanPlain(ManhattanSim):
     def initialise(self) -> None:
         super().initialise()
         self.estimate_simulation().add_static_parameter(
-            'wheel', 'bias',
-            Vector1(1.), ParameterSpecification.SCALE, index=0
+            'wheel', 'scale',
+            Vector1(1.1), ParameterSpecification.SCALE, index=1
         )
 
 
@@ -113,7 +113,7 @@ class ManhattanConstant(ManhattanSim):
         super().initialise()
         self.estimate_simulation().add_static_parameter(
             'wheel', 'bias',
-            Vector1(0.), ParameterSpecification.SCALE, index=0
+            Vector1(1.), ParameterSpecification.SCALE, index=1
         )
 
 
@@ -168,8 +168,8 @@ class ManhattanSpatial(ManhattanSim):
     def initialise(self) -> None:
         super().initialise()
         self.estimate_simulation().add_spatial_parameter(
-            'wheel', 'bias', Vector1(0.),
-            ParameterSpecification.SCALE, 10, index=0
+            'wheel', 'bias', Vector1(1.),
+            ParameterSpecification.SCALE, 20, index=0
         )
 
     def finalise(self) -> None:

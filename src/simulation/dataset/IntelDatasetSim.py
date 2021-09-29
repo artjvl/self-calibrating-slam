@@ -74,7 +74,7 @@ class IntelSim(BiSimulation):
                 self.truth_simulation().update_parameter('wheel', 'bias', Vector1(f_step(i)))
                 # model.update_truth_parameter('wheel', 'bias', Vector1(0.1 * np.sin(0.01 * i)))
 
-            self.step(delta)
+            self.step()
 
     def finalise(self) -> None:
         pass
