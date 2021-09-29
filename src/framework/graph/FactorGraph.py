@@ -90,8 +90,8 @@ class FactorGraph(BaseGraph):
     # optimise/copy
     def optimise(self, optimiser: 'Optimiser') -> tp.Optional[SubFactorGraph]:
         error: float = self.compute_error()
-        solution: SubFactorGraph = optimiser.instance_optimise(self)
-        if solution.compute_error() < error:
+        solution: tp.Optional[SubFactorGraph] = optimiser.instance_optimise(self)
+        if solution is not None and solution.compute_error() < error:
             self.from_vector(solution.to_vector())
             self.copy_meta_to(solution)
             if self.has_previous():

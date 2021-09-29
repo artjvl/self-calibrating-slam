@@ -55,17 +55,18 @@ class ParameterNode(tp.Generic[T], Node[T]):
             specification: tp.Optional[ParameterSpecification] = None,  # ParameterNode
             index: int = 0  # ParameterNode
     ):
+        if specification is None:
+            if self.get_type() == Vector3:
+                specification = ParameterSpecification.SCALE
+            else:
+                specification = ParameterSpecification.BIAS
+
         # node-name
         if name is None:
             name = f'{self.__class__.__name__}({ParameterDict.from_specification(specification)})'
         super().__init__(name=name, id_=id_, value=value, timestep=timestep)
 
         # attributes
-        if specification is None:
-            if self.get_type() == Vector3:
-                specification = ParameterSpecification.SCALE
-            else:
-                specification = ParameterSpecification.BIAS
         self.set_specification(specification)
         if value is None:
             self.initialise()
