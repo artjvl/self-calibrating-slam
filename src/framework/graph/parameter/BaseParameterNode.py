@@ -3,8 +3,8 @@ import typing as tp
 import numpy as np
 from src.framework.math.lie.transformation import SE2
 from src.framework.math.matrix.vector import Vector3
-from src.framework.ppg.Graph import ParameterNode
-from src.framework.ppg.parameter.ParameterSpecification import ParameterSpecification
+from src.framework.graph.Graph import ParameterNode
+from src.framework.graph.parameter.ParameterSpecification import ParameterSpecification
 
 if tp.TYPE_CHECKING:
     from src.framework.graph.data.DataFactory import Quantity
@@ -53,9 +53,9 @@ class BaseParameterNode(tp.Generic[T], ParameterNode[T]):
     def __init__(
             self,
             name: tp.Optional[str],
-            id_: int,
             value: tp.Optional['Quantity'],
             specification: ParameterSpecification,
+            id_: int = 0,
             timestep: int = 0,
             index: int = 0
     ):
@@ -64,7 +64,9 @@ class BaseParameterNode(tp.Generic[T], ParameterNode[T]):
             ParameterSpecification.OFFSET,
             ParameterSpecification.SCALE
         ]
-        super().__init__(name, id_, value, specification, timestep, index)
+        super().__init__(
+            name, value, specification,
+            id_=id_, timestep=timestep, index=index)
 
     def compose(
             self,

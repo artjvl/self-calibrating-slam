@@ -1,13 +1,13 @@
-from src.framework.ppg.Database import Database
-from src.framework.ppg.constraint.EdgePosePointV2 import EdgePosePointV2
-from src.framework.ppg.constraint.EdgePoseV2 import EdgePoseV2
-from src.framework.ppg.constraint.EdgePosesSE2 import EdgePosesSE2
-from src.framework.ppg.parameter.ParameterNodeSE2 import ParameterNodeSE2
-from src.framework.ppg.parameter.ParameterNodeV1 import ParameterNodeV1
-from src.framework.ppg.parameter.ParameterNodeV2 import ParameterNodeV2
-from src.framework.ppg.parameter.ParameterNodeV3 import ParameterNodeV3
-from src.framework.ppg.spatial.NodeSE2 import NodeSE2
-from src.framework.ppg.spatial.NodeV2 import NodeV2
+from src.framework.graph.Database import Database
+from src.framework.graph.constraint.EdgePosePointV2 import EdgePosePointV2
+from src.framework.graph.constraint.EdgePoseV2 import EdgePoseV2
+from src.framework.graph.constraint.EdgePosesSE2 import EdgePosesSE2
+from src.framework.graph.parameter.ParameterNodeSE2 import ParameterNodeSE2
+from src.framework.graph.parameter.ParameterNodeV1 import ParameterNodeV1
+from src.framework.graph.parameter.ParameterNodeV2 import ParameterNodeV2
+from src.framework.graph.parameter.ParameterNodeV3 import ParameterNodeV3
+from src.framework.graph.spatial.NodeSE2 import NodeSE2
+from src.framework.graph.spatial.NodeV2 import NodeV2
 
 database = Database()
 

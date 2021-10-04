@@ -3,11 +3,14 @@ from __future__ import annotations
 import typing as tp
 
 from OpenGL.GL import *
-from src.framework.graph.protocols.Visualisable import Visualisable, DrawEdge
+from src.framework.graph.Visualisable import DrawEdge
 from src.framework.math.matrix.vector import Vector3
 from src.gui.viewer.Drawer import Drawer
 from src.gui.viewer.Rgb import Rgb, RgbTuple
 from src.gui.viewer.items.GraphicsItem import GraphicsItem
+
+if tp.TYPE_CHECKING:
+    from src.framework.graph.Visualisable import SubVisualisable
 
 Nodeset = tp.Tuple[Vector3, Vector3]
 
@@ -49,7 +52,7 @@ class Edges(GraphicsItem):
 
     # constructor method
     @staticmethod
-    def check(element_type: tp.Type[Visualisable]) -> bool:
+    def check(element_type: tp.Type['SubVisualisable']) -> bool:
         return issubclass(element_type, DrawEdge)
 
     @classmethod

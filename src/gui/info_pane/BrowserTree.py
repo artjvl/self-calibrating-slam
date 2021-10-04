@@ -3,14 +3,14 @@ import typing as tp
 
 from PyQt5 import QtCore, QtWidgets, QtGui
 from src.framework.graph.Graph import Node, Edge, SubElement
-from src.framework.graph.protocols.Visualisable import SubVisualisable, Visualisable, DrawPoint, DrawEdge
+from src.framework.graph.Visualisable import Visualisable, DrawPoint, DrawEdge
 from src.gui.modules.TreeNode import GraphTreeNode, TrajectoryTreeNode, Toggle
 from src.gui.utils.PopUp import PopUp
 
 if tp.TYPE_CHECKING:
     from src.framework.analysis.Analyser import AnalyserParameterValues, AnalyserParameterDynamics, AnalyserVariance
-    from src.framework.graph.CalibratingGraph import SubCalibratingGraph
     from src.framework.graph.Graph import SubGraph
+    from src.framework.graph.Visualisable import SubVisualisable
     from src.gui.info_pane.InspectorTree import InspectorTree
     from src.gui.info_pane.TimestepBox import TimestepBox
     from src.gui.modules.TreeNode import SubTreeNode, SubToggle, TopTreeNode, ElementTreeNode
@@ -132,7 +132,7 @@ class BrowserTree(QtWidgets.QTreeWidget):
 
                         # element
                         element_item = self._construct_tree_item(
-                            f'({element.to_id()})',
+                            f'({element.identifier()})',
                             f'{type(element).__name__}',
                             elements_item
                         )
@@ -261,7 +261,7 @@ class BrowserTree(QtWidgets.QTreeWidget):
             node: GraphTreeNode,
             point
     ) -> None:
-        graph: 'SubCalibratingGraph' = node.get_graph()
+        graph: 'SubGraph' = node.get_graph()
         action: QtWidgets.QAction
         commands: tp.Dict[QtWidgets.QAction, tp.Callable] = {}
         plot_commands: tp.Dict[QtWidgets.QAction, tp.Callable] = {}

@@ -1,7 +1,7 @@
 import typing as tp
 from abc import ABC
 
-from src.framework.graph.types.nodes.ParameterNode import ParameterSpecification
+from src.framework.graph.parameter.ParameterSpecification import ParameterSpecification
 from src.framework.math.lie.transformation import SE2
 from src.framework.math.matrix.vector import Vector1, Vector2
 from src.simulation.results.Results import Results

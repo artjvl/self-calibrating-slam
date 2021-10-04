@@ -369,7 +369,7 @@ class GraphTreeNode(GraphicsTreeNode):
 
     def get_gui_name(self) -> str:
         graph: 'SubGraph' = self.get_graph()
-        return f'Graph({self.get_id()})[{graph.to_id()}]'
+        return f'Graph({self.get_id()})[{graph.identifier()}]'
 
     def remove(
             self,
@@ -421,7 +421,7 @@ class TrajectoryTreeNode(GraphicsTreeNode, QtCore.QObject):
         node = GraphTreeNode(self, self.get_types(), self.count_id(increment=True), graph_container)
         self.add_child(node)
         print(
-            f"gui/TrajectoryContainer: Graph '{graph_container.get_graph().to_unique()}' added to {self.get_gui_name()}"
+            f"gui/TrajectoryContainer: Graph '{graph_container.get_graph().identifier_class_unique()}' added to {self.get_gui_name()}"
         )
         return node
 

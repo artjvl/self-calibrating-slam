@@ -1,22 +1,17 @@
-import pathlib
-import pickle as pkl
 import sys
 import typing as tp
 from abc import abstractmethod
-from datetime import datetime
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
-from src.definitions import get_project_root
-from src.framework.graph.protocols.Visualisable import Visualisable, DrawPoint, DrawAxis, DrawEdge
+from framework.analysis.FigureParser import FigureParser
+from src.framework.graph.Visualisable import Visualisable, DrawPoint, DrawAxis, DrawEdge
 from src.framework.math.matrix.vector.Vector import Vector
 from src.gui.viewer.Rgb import Rgb
 
 if tp.TYPE_CHECKING:
-    from src.framework.graph.CalibratingGraph import SubCalibratingGraph
-    from src.framework.graph.Graph import SubGraph, SubNode, SubElement, SubEdge
-    from src.framework.graph.types.nodes.ParameterNode import SubParameterNode
+    from src.framework.graph.Graph import SubGraph, SubNode, SubParameterNode, SubNodeEdge, SubEdge
     from src.framework.math.lie.transformation import SE2
     from src.framework.math.matrix.vector.Vector import SubSizeVector
     from src.framework.math.matrix.vector import SubVector, Vector2, Vector3
@@ -65,8 +60,8 @@ class AnalyserTopology(object):
         type_: tp.Type['SubNode']
         for type_ in graph.get_types():
             if issubclass(type_, Visualisable):
-                elements: tp.List['SubElement'] = graph.get_of_type(type_)
-                element: 'SubElement'
+                elements: tp.List['SubNodeEdge'] = graph.get_of_type(type_)
+                element: 'SubNodeEdge'
                 for element in elements:
                     if isinstance(element, DrawPoint):
                         point: Vector = element.draw_point()
@@ -90,8 +85,8 @@ class AnalyserTopology(object):
         for type_ in graph.get_types():
             if issubclass(type_, Visualisable):
                 t = time.time()
-                elements: tp.List['SubElement'] = graph.get_of_type(type_)
-                element: 'SubElement'
+                elements: tp.List['SubNodeEdge'] = graph.get_of_type(type_)
+                element: 'SubNodeEdge'
                 for element in elements:
                     color: tp.Tuple = type_.draw_rgb()
                     if isinstance(element, DrawAxis):
@@ -268,7 +263,7 @@ class PlotData(object):
 class AnalyserParameterValues(object):
 
     @staticmethod
-    def is_eligible(graph: 'SubCalibratingGraph', name: str) -> bool:
+    def is_eligible(graph: 'SubGraph', name: str) -> bool:
         return name in graph.get_parameter_names() and len(graph.get_of_name(name)) > 1
 
     @staticmethod
@@ -276,7 +271,7 @@ class AnalyserParameterValues(object):
         return all(graph.has_name(name) for graph in graphs)
 
     @classmethod
-    def plot(cls, graph: 'SubCalibratingGraph', name: str) -> plt.Figure:
+    def plot(cls, graph: 'SubGraph', name: str) -> plt.Figure:
         assert cls.is_eligible(graph, name)
 
         parameters: tp.List['SubParameterNode'] = graph.get_of_name(name)
@@ -298,17 +293,17 @@ class AnalyserParameterValues(object):
         return fig
 
     @classmethod
-    def plot_group(cls, graphs: tp.List['SubCalibratingGraph'], name: str) -> plt.Figure:
+    def plot_group(cls, graphs: tp.List['SubGraph'], name: str) -> plt.Figure:
         assert cls.is_group_eligible(graphs, name)
 
-        first: 'SubCalibratingGraph' = graphs[0]
+        first: 'SubGraph' = graphs[0]
         parameters: tp.List['SubParameterNode'] = first.get_of_name(name)
         if len(parameters) > 1:
             return cls.plot_group_plural(graphs, name)
         return cls.plot_group_singular(graphs, name)
 
     @classmethod
-    def plot_group_plural(cls, graphs: tp.List['SubCalibratingGraph'], name: str) -> plt.Figure:
+    def plot_group_plural(cls, graphs: tp.List['SubGraph'], name: str) -> plt.Figure:
         assert cls.is_group_eligible(graphs, name)
 
         parameter_set: np.ndarray = np.array([graphs[0].get_of_name(name)])
@@ -356,7 +351,7 @@ class AnalyserParameterValues(object):
         return fig
 
     @classmethod
-    def plot_group_singular(cls, graphs: tp.List['SubCalibratingGraph'], name: str) -> plt.Figure:
+    def plot_group_singular(cls, graphs: tp.List['SubGraph'], name: str) -> plt.Figure:
         assert cls.is_group_eligible(graphs, name)
 
         parameters: tp.List['SubParameterNode'] = [graph.get_of_name(name)[0] for graph in graphs]
@@ -407,7 +402,7 @@ class AnalyserParameterValues(object):
 
 class AnalyserParameterDynamics(object):
     @staticmethod
-    def is_eligible(graph: 'SubCalibratingGraph', name: str) -> bool:
+    def is_eligible(graph: 'SubGraph', name: str) -> bool:
         return name in graph.get_parameter_names() and len(graph.get_of_name(name)) == 1
 
     @classmethod
@@ -415,9 +410,9 @@ class AnalyserParameterDynamics(object):
         return all(cls.is_eligible(graph, name) for graph in graphs)
 
     @classmethod
-    def plot(cls, graph: 'SubCalibratingGraph', name: str) -> plt.Figure:
+    def plot(cls, graph: 'SubGraph', name: str) -> plt.Figure:
         assert cls.is_eligible(graph, name)
-        subgraphs: tp.List['SubCalibratingGraph'] = graph.subgraphs()
+        subgraphs: tp.List['SubGraph'] = graph.subgraphs()
         parameters: tp.List['SubParameterNode'] = [graph.get_of_name(name)[0] for graph in subgraphs]
 
         size: int = len(parameters)
@@ -439,10 +434,10 @@ class AnalyserParameterDynamics(object):
         return fig
 
     @classmethod
-    def plot_group(cls, graphs: tp.List['SubCalibratingGraph'], name: str) -> plt.Figure:
+    def plot_group(cls, graphs: tp.List['SubGraph'], name: str) -> plt.Figure:
         assert cls.is_group_eligible(graphs, name)
 
-        first: tp.List['SubCalibratingGraph'] = graphs[0].subgraphs()
+        first: tp.List['SubGraph'] = graphs[0].subgraphs()
         parameter_set: np.ndarray = np.array([[graph.get_of_name(name)[0] for graph in first]])
         for graph in graphs[1:]:
             parameters: tp.List['SubParameterNode'] = [graph.get_of_name(name)[0] for graph in graph.subgraphs()]

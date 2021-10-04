@@ -2,12 +2,12 @@ import typing as tp
 
 from src.framework.math.lie.transformation import SE2
 from src.framework.math.matrix.vector import Vector2
-from src.framework.ppg.constraint.EdgeV2 import EdgeV2
+from src.framework.graph.constraint.EdgeV2 import EdgeV2
 
 if tp.TYPE_CHECKING:
     from src.framework.math.matrix.square import SubSquare
-    from src.framework.ppg.Graph import SubSpatialNode
-    from src.framework.ppg.spatial.NodeSE2 import NodeSE2
+    from src.framework.graph.Graph import SubSpatialNode
+    from src.framework.graph.spatial.NodeSE2 import NodeSE2
 
 
 class EdgePoseV2(EdgeV2):

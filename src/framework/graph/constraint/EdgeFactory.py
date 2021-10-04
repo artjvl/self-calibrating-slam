@@ -2,14 +2,14 @@ import typing as tp
 
 from src.framework.math.lie.transformation import SE2
 from src.framework.math.matrix.vector import Vector2
-from src.framework.ppg.constraint.EdgePosePointV2 import EdgePosePointV2
-from src.framework.ppg.constraint.EdgePoseV2 import EdgePoseV2
-from src.framework.ppg.constraint.EdgePosesSE2 import EdgePosesSE2
-from src.framework.ppg.spatial.NodeSE2 import NodeSE2
-from src.framework.ppg.spatial.NodeV2 import NodeV2
+from src.framework.graph.constraint.EdgePosePointV2 import EdgePosePointV2
+from src.framework.graph.constraint.EdgePoseV2 import EdgePoseV2
+from src.framework.graph.constraint.EdgePosesSE2 import EdgePosesSE2
+from src.framework.graph.spatial.NodeSE2 import NodeSE2
+from src.framework.graph.spatial.NodeV2 import NodeV2
 
 if tp.TYPE_CHECKING:
-    from src.framework.ppg.Graph import SubEdge, SubNode
+    from src.framework.graph.Graph import SubEdge, SubNode
     from src.framework.math.matrix.square import SubSquare
     from src.framework.graph.data.DataFactory import Quantity
 

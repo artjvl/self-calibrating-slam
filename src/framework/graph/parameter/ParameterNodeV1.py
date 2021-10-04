@@ -1,8 +1,8 @@
 import typing as tp
 
 from src.framework.math.matrix.vector import Vector1, Vector3
-from src.framework.ppg.parameter.BaseParameterNode import BaseParameterNode
-from src.framework.ppg.parameter.ParameterSpecification import ParameterSpecification, ParameterDict
+from src.framework.graph.parameter.BaseParameterNode import BaseParameterNode
+from src.framework.graph.parameter.ParameterSpecification import ParameterSpecification, ParameterDict
 
 
 class ParameterNodeV1(BaseParameterNode[Vector1]):
@@ -11,13 +11,18 @@ class ParameterNodeV1(BaseParameterNode[Vector1]):
     def __init__(
             self,
             name: tp.Optional[str],
-            id_: int,
             value: tp.Optional[Vector1] = None,
-            specification: ParameterSpecification = ParameterSpecification.BIAS,
+            specification: ParameterSpecification = None,
+            id_: int = 0,
             timestep: int = 0,
             index: int = 0
     ):
-        super().__init__(name, id_, value, specification, timestep, index)
+        if specification is None:
+            specification = ParameterSpecification.BIAS
+        super().__init__(
+            name,
+            value=value, specification=specification, id_=id_, timestep=timestep, index=index
+        )
 
     def set_specification(self, specification: ParameterSpecification) -> None:
         assert specification in [

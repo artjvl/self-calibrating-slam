@@ -1,10 +1,9 @@
-import copy
 import typing as tp
 from abc import abstractmethod, ABC
 
 from src.framework.graph.GraphManager import GraphManager
-from src.framework.graph.types.edges.EdgeFactory import EdgeFactory
-from src.framework.graph.types.nodes.SpatialNode import SpatialNodeFactory
+from src.framework.graph.constraint.EdgeFactory import EdgeFactory
+from src.framework.graph.spatial.SpatialNodeFactory import SpatialNodeFactory
 from src.framework.math.lie.transformation import SE2
 from src.framework.optimiser.Optimiser import Optimiser
 from src.framework.simulation.Model import Model
@@ -13,12 +12,10 @@ from src.framework.simulation.Parameter import StaticParameter, TimelyBatchParam
 from src.framework.simulation.PostAnalyser import SpatialBatchAnalyser
 
 if tp.TYPE_CHECKING:
-    from src.framework.graph.CalibratingGraph import SubCalibratingGraph
     from src.framework.graph.Graph import SubNode, SubEdge, SubGraph
     from src.framework.graph.data.DataFactory import Quantity
-    from src.framework.graph.types.nodes.ParameterNode import ParameterSpecification
-    from src.framework.graph.types.nodes.SpatialNode import NodeSE2
-    from src.framework.math.matrix.vector import SubSizeVector
+    from src.framework.graph.parameter.ParameterSpecification import ParameterSpecification
+    from src.framework.graph.spatial.NodeSE2 import NodeSE2
     from src.framework.simulation.Model import SubModel
     from src.framework.simulation.Parameter import SubParameter
     from src.framework.simulation.PostAnalyser import SubPostAnalyser
@@ -74,7 +71,7 @@ class Simulation(GraphManager):
             value: 'Quantity'
     ) -> 'SubNode':
         """ Creates and adds a new node from a given value. """
-        return self.add_node(SpatialNodeFactory.from_value(value))
+        return self.add_node(SpatialNodeFactory.from_value(None, value))
 
     def add_pose_node(
             self,
@@ -99,9 +96,7 @@ class Simulation(GraphManager):
         # create edge
         nodes: tp.List['SubNode'] = [graph.get_node(id_) for id_ in ids]
         edge: 'SubEdge' = EdgeFactory.from_measurement_nodes(
-            measurement,
-            nodes,
-            name=sensor_name,
+            sensor_name, measurement, nodes,
             info_matrix=sensor.get_info_matrix()
         )
 
@@ -224,10 +219,12 @@ class PlainSimulation(Simulation):
 
 class OptimisingSimulation(Simulation, ABC):
     _has_closure: bool  # indicates whether a closure has occurred at this step
+    _last_cost: tp.Optional[float]
 
     def __init__(self, optimiser: tp.Optional[Optimiser] = None):
         super().__init__(optimiser=optimiser)
         self._has_closure = False
+        self._last_cost = None
         self.set_timestep(0)
 
     def add_odometry(
@@ -248,7 +245,11 @@ class OptimisingSimulation(Simulation, ABC):
         graph: 'SubGraph' = self.graph()
         solution: tp.Optional['SubGraph'] = None
         if self._has_closure:
-            solution = graph.optimise(self.get_optimiser())
+            cost_threshold: tp.Optional[float] = None
+            if self._last_cost is not None:
+                cost_threshold = 2 * self._last_cost
+            solution = graph.optimise(self.get_optimiser(), cost_threshold=cost_threshold)
+            self._last_cost = solution.cost()
         if solution is None:
             solution = graph.copy()
         self.set_previous(solution)

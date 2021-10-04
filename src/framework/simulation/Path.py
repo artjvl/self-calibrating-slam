@@ -4,7 +4,7 @@ from abc import abstractmethod
 
 import numpy as np
 from src.framework.graph.GraphParser import GraphParser
-from src.framework.graph.types.nodes.SpatialNode import NodeSE2
+from src.framework.graph.spatial.NodeSE2 import NodeSE2
 from src.framework.math.lie.transformation import SE2
 from src.framework.math.matrix.vector import Vector2
 from src.framework.math.matrix.vector import Vector3

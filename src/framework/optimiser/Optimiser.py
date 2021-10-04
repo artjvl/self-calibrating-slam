@@ -4,10 +4,10 @@ from enum import Enum
 from pathlib import Path
 
 from src.definitions import get_project_root
-from src.framework.graph.CalibratingGraph import SubCalibratingGraph
-from src.framework.graph.Graph import SubGraph
 from src.framework.graph.GraphParser import GraphParser
 
+if tp.TYPE_CHECKING:
+    from src.framework.graph.Graph import SubGraph
 
 class Library(Enum):
     CHOLMOD = 'CHOLMOD'
@@ -106,7 +106,7 @@ class Optimiser(object):
             graph,
             should_print: bool = False,
             compute_marginals: bool = False
-    ) -> tp.Optional[SubGraph]:
+    ) -> tp.Optional['SubGraph']:
         return self.optimise(
             graph,
             self._library,
@@ -118,12 +118,12 @@ class Optimiser(object):
     @classmethod
     def optimise(
             cls,
-            graph: SubGraph,
+            graph: 'SubGraph',
             library: Library = Library.CHOLMOD,
             solver: Solver = Solver.GN,
             should_print: bool = False,
             compute_marginals: bool = False
-    ) -> tp.Optional[SubGraph]:
+    ) -> tp.Optional['SubGraph']:
         root: Path = get_project_root()
         relative_to: str = 'graphs/temp'
         GraphParser.save_path_folder(graph, relative_to, 'before', should_print=should_print)
@@ -153,7 +153,7 @@ class Optimiser(object):
             process = subprocess.run(commands, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
 
         if path_output.exists():
-            solution: SubCalibratingGraph = GraphParser.load(path_output, reference=graph, should_print=should_print)
+            solution: 'SubGraph' = GraphParser.load(path_output, reference=graph, should_print=should_print)
             graph.copy_attributes_to(solution)
             return solution
         return None

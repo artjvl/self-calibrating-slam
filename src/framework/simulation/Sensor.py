@@ -3,7 +3,6 @@ from abc import abstractmethod
 
 import numpy as np
 from src.framework.graph.data.DataFactory import DataFactory
-from src.framework.graph.protocols.Measurement import Measurement2D
 from src.framework.math.lie.transformation import SE2
 from src.framework.math.matrix.square import SquareFactory
 from src.framework.math.matrix.vector import VectorFactory, Vector2, Vector3
@@ -43,7 +42,7 @@ class Sensor(tp.Generic[T]):
     # measurement-type
     @classmethod
     def get_dim(cls):
-        return DataFactory.from_type(cls.get_type()).get_dim()
+        return DataFactory.from_type(cls.get_type()).dim()
 
     @classmethod
     def get_type(cls) -> tp.Type['SubData']:
@@ -157,16 +156,16 @@ class SensorSE2(Sensor[SE2]):
         return value.oplus(noise)
 
     def compose(self, value: SE2) -> SE2:
-        measurement: Measurement2D = Measurement2D.from_transformation(value)
+        transformation: SE2 = value
         for parameter in self.get_parameters():
-            measurement = parameter.compose(measurement)
-        return measurement.transformation()
+            transformation = parameter.compose(transformation)
+        return transformation
 
     def decompose(self, value: SE2) -> SE2:
-        measurement: Measurement2D = Measurement2D.from_transformation(value)
+        transformation: SE2 = value
         for parameter in self.get_parameters(is_reverse=True):
-            measurement = parameter.compose(measurement, is_inverse=True)
-        return measurement.transformation()
+            transformation = parameter.compose(transformation, is_inverse=True)
+        return transformation
 
 
 class SensorV2(Sensor[Vector2]):
@@ -177,9 +176,10 @@ class SensorV2(Sensor[Vector2]):
         return Vector2(value.array() + noise.array())
 
     def compose(self, value: Vector2) -> Vector2:
+        transformation: SE2 = SE2.from_translation_angle(value, 0.)
         for parameter in self.get_parameters():
-            value = parameter.compose_translation(value)
-        return value
+            transformation = parameter.compose_translation(transformation)
+        return transformation.translation()
 
     def decompose(self, value: Vector2) -> Vector2:
         for parameter in self.get_parameters()[::-1]:

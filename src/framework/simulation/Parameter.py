@@ -2,14 +2,14 @@ import typing as tp
 from abc import abstractmethod
 
 import numpy as np
-from src.framework.graph.types.nodes.ParameterNode import ParameterNodeFactory, ParameterSpecification
+from src.framework.graph.parameter.ParameterNodeFactory import ParameterNodeFactory
+from src.framework.graph.parameter.ParameterSpecification import ParameterSpecification
 from src.framework.math.matrix.vector.Vector import Vector
 
 if tp.TYPE_CHECKING:
-    from src.framework.graph.CalibratingGraph import SubCalibratingEdge
+    from src.framework.graph.Graph import SubGraph, SubParameterNode
     from src.framework.graph.data.DataFactory import Quantity
-    from src.framework.graph.protocols.Measurement import SubMeasurement2D
-    from src.framework.graph.types.nodes.ParameterNode import SubParameterNode
+    from src.framework.math.lie.transformation import SE2
     from src.framework.simulation.Simulation import SubSimulation
 
 SubParameter = tp.TypeVar('SubParameter', bound='Parameter')
@@ -37,10 +37,8 @@ class Parameter(object):
             assert isinstance(value, Vector)
             assert not any(np.isclose(element, 0.) for element in value.to_list())
         self._node = ParameterNodeFactory.from_value(
-            value,
-            name=name,
-            index=index,
-            specification=specification
+            name,
+            value=value, specification=specification, index=index
         )
         self._sim.add_node(self._node)
 
@@ -50,7 +48,7 @@ class Parameter(object):
     @abstractmethod
     def add_edge(
             self,
-            edge: 'SubCalibratingEdge'
+            edge: 'SubGraph'
     ) -> None:
         pass
 
@@ -69,10 +67,10 @@ class Parameter(object):
 
     def compose(
             self,
-            measurement: 'SubMeasurement2D',
+            transformation: 'SE2',
             is_inverse: bool = False
-    ) -> 'SubMeasurement2D':
-        return self._node.compose(measurement, is_inverse)
+    ) -> 'SE2':
+        return self._node.compose(transformation, is_inverse)
 
 
 class StaticParameter(Parameter):
@@ -97,11 +95,11 @@ class StaticParameter(Parameter):
 
     def add_edge(
             self,
-            edge: 'SubCalibratingEdge'
+            edge: 'SubGraph'
     ) -> None:
         node: SubParameterNode = self.node()
         if self.is_visible():
-            edge.add_parameter(node)
+            edge.add_node(node)
         else:
             edge.set_measurement(node.decompose(edge.get_measurement()))
 
@@ -136,7 +134,7 @@ class TimelyBatchParameter(StaticParameter):
 
     def add_edge(
             self,
-            edge: 'SubCalibratingEdge'
+            edge: 'SubGraph'
     ) -> None:
         if self._edge_count == self._batch_size:
             self.renew()
@@ -148,10 +146,10 @@ class TimelyBatchParameter(StaticParameter):
 class SlidingParameter(Parameter):
     _window_size: int
 
-    _in: tp.List['SubCalibratingEdge']
+    _in: tp.List['SubGraph']
     _is_closures: tp.List[bool]
-    _between: tp.List['SubCalibratingEdge']
-    _out: tp.List['SubCalibratingEdge']
+    _between: tp.List['SubGraph']
+    _out: tp.List['SubGraph']
 
     def __init__(
             self,
@@ -185,7 +183,7 @@ class SlidingParameter(Parameter):
 
     def add_edge(
             self,
-            edge: 'SubCalibratingEdge'
+            edge: 'SubGraph'
     ) -> None:
         node: 'SubParameterNode' = self.node()
         edge.add_parameter(node)
@@ -210,8 +208,8 @@ class SlidingParameter(Parameter):
 class OldSlidingParameter(Parameter):
     _window_size: int
 
-    _in: tp.List['SubCalibratingEdge']
-    _out: tp.List['SubCalibratingEdge']
+    _in: tp.List['SubGraph']
+    _out: tp.List['SubGraph']
 
     def __init__(
             self,
@@ -243,14 +241,14 @@ class OldSlidingParameter(Parameter):
 
     def add_edge(
             self,
-            edge: 'SubCalibratingEdge'
+            edge: 'SubGraph'
     ) -> None:
         node: 'SubParameterNode' = self.node()
         edge.add_parameter(node)
 
         self._in.append(edge)
         if len(self._in) > self._window_size:
-            first: 'SubCalibratingEdge' = self._in[0]
+            first: 'SubGraph' = self._in[0]
             first.remove_parameter_id(node.get_id())
             first.set_measurement(node.compose(first.get_measurement(), is_inverse=False))
             self._in = self._in[1:]

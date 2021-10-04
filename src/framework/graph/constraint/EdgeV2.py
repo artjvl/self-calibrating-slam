@@ -2,7 +2,7 @@ from abc import ABC
 
 from src.framework.math.lie.transformation import SE2
 from src.framework.math.matrix.vector import Vector2
-from src.framework.ppg.Graph import Edge
+from src.framework.graph.Graph import Edge
 
 
 class EdgeV2(Edge[Vector2], ABC):

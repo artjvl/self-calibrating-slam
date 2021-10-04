@@ -2,12 +2,12 @@ import typing as tp
 
 from src.framework.math.lie.transformation import SE2
 from src.framework.math.matrix.vector import Vector1, Vector2, Vector3
-from src.framework.ppg.Graph import SubParameterNode
-from src.framework.ppg.parameter.ParameterNodeSE2 import ParameterNodeSE2
-from src.framework.ppg.parameter.ParameterNodeV1 import ParameterNodeV1
-from src.framework.ppg.parameter.ParameterNodeV2 import ParameterNodeV2
-from src.framework.ppg.parameter.ParameterNodeV3 import ParameterNodeV3
-from src.framework.ppg.parameter.ParameterSpecification import ParameterSpecification
+from src.framework.graph.Graph import SubParameterNode
+from src.framework.graph.parameter.ParameterNodeSE2 import ParameterNodeSE2
+from src.framework.graph.parameter.ParameterNodeV1 import ParameterNodeV1
+from src.framework.graph.parameter.ParameterNodeV2 import ParameterNodeV2
+from src.framework.graph.parameter.ParameterNodeV3 import ParameterNodeV3
+from src.framework.graph.parameter.ParameterSpecification import ParameterSpecification
 
 if tp.TYPE_CHECKING:
     from src.framework.graph.data.DataFactory import Quantity
@@ -33,15 +33,15 @@ class ParameterNodeFactory(object):
     def from_value(
             cls,
             name: tp.Optional[str],
-            id_: int,
             value: 'Quantity',
-            specification: ParameterSpecification,
+            specification: tp.Optional[ParameterSpecification] = None,
+            id_: int = 0,
             timestep: int = 0,
             index: int = 0
     ) -> SubParameterNode:
         node_type: tp.Type[SubParameterNode] = cls.from_value_type(type(value))
         node: SubParameterNode = node_type(
-            name, id_,
-            value=value, specification=specification, timestep=timestep, index=index
+            name,
+            id_=id_, value=value, specification=specification, timestep=timestep, index=index
         )
         return node

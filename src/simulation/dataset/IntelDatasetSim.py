@@ -2,7 +2,7 @@ import pathlib
 
 import numpy as np
 from src.definitions import get_project_root
-from src.framework.graph.types.nodes.ParameterNode import ParameterSpecification
+from src.framework.graph.parameter.ParameterSpecification import ParameterSpecification
 from src.framework.math.lie.transformation import SE2
 from src.framework.math.matrix.square import Square2, Square3
 from src.framework.math.matrix.vector import Vector1, Vector2

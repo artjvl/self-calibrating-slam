@@ -3,15 +3,14 @@ from abc import abstractmethod
 
 import numpy as np
 from matplotlib import pyplot as plt
+from src.framework.graph.parameter.ParameterNodeFactory import ParameterNodeFactory
 from src.framework.math.matrix.square import SquareFactory
 from src.framework.math.matrix.vector import VectorFactory, Vector2
-from src.framework.graph.types.nodes.ParameterNode import ParameterNodeFactory
 
 if tp.TYPE_CHECKING:
-    from src.framework.graph.CalibratingGraph import SubCalibratingEdge
     from src.framework.graph.data.DataFactory import Quantity
-    from src.framework.graph.Graph import SubEdge
-    from src.framework.graph.types.nodes.ParameterNode import ParameterSpecification, SubParameterNode
+    from src.framework.graph.Graph import SubParameterNode, SubEdge, SubGraph
+    from src.framework.graph.parameter.ParameterSpecification import ParameterSpecification
     from src.framework.math.matrix.vector import SubVector
     from src.framework.math.matrix.vector.Vector import SubSizeVector
     from src.framework.math.matrix.square import SubSquare
@@ -22,7 +21,7 @@ SubPostAnalyser = tp.TypeVar('SubPostAnalyser', bound='PostAnalyser')
 
 class PostAnalyser(object):
     _sim: 'SubSimulation'
-    _edges: tp.List['SubCalibratingEdge']
+    _edges: tp.List['SubGraph']
 
     def __init__(
             self,
@@ -33,11 +32,11 @@ class PostAnalyser(object):
 
     def add_edge(
             self,
-            edge: 'SubCalibratingEdge'
+            edge: 'SubGraph'
     ) -> None:
         self._edges.append(edge)
 
-    def edges(self) -> tp.List['SubCalibratingEdge']:
+    def edges(self) -> tp.List['SubGraph']:
         return self._edges
 
     @abstractmethod
@@ -73,13 +72,13 @@ class SpatialBatchAnalyser(PostAnalyser):
 
     def post_process(self) -> None:
         # calculate edge centres
-        edges: tp.List['SubCalibratingEdge'] = self.edges()
+        edges: tp.List['SubGraph'] = self.edges()
         averages: np.ndarray = np.zeros((2, len(edges)))
         for i, edge in enumerate(edges):
-            endpoints: tp.List['SubCalibratingEdge'] = edge.get_endpoints()
+            endpoints: tp.List['SubGraph'] = edge.get_endpoints()
             translations: np.ndarray = np.zeros((2, len(endpoints)))
             for j, endpoint in enumerate(endpoints):
-                translations[:, j] = endpoint.get_value().translation().array().flatten()
+                translations[:, j] = endpoint.get_value().get_translation().array().flatten()
             averages[:, i] = np.mean(translations, axis=1)
 
         # perform k-means clustering
@@ -137,7 +136,7 @@ class VectorList(object):
         self._data = []
 
     def append(self, vector: 'SubSizeVector') -> None:
-        assert vector.get_dim() == self._dim
+        assert vector.dim() == self._dim
         self._data.append(vector)
 
     def list(self) -> tp.List['SubSizeVector']:
@@ -190,7 +189,7 @@ class VarianceAnalyser(PostAnalyser):
 
         for i, edge in enumerate(edges):
             edge_window: tp.List[edges] = edges[np.maximum(0, i - left + 1): i + right + 1]
-            error_vectors: tp.List['SubVector'] = [edge.get_error_vector() for edge in edge_window]
+            error_vectors: tp.List['SubVector'] = [edge.error_vector() for edge in edge_window]
 
             variance_vector: 'SubSizeVector' = vector_type.zeros()
             for i in range(dim):
@@ -201,7 +200,7 @@ class VarianceAnalyser(PostAnalyser):
         return vector_list
 
     def post_process(self) -> None:
-        edges: tp.List['SubCalibratingEdge'] = self.edges()
+        edges: tp.List['SubGraph'] = self.edges()
         dim: int = edges[0].get_dim()
         matrix_type: tp.Type['SubSquare'] = SquareFactory.from_dim(dim)
 

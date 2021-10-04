@@ -58,7 +58,7 @@ class InspectorTree(QtWidgets.QTreeWidget):
         timestep: tp.Optional[float] = graph.timestep()
         self._construct_tree_property(sub_graph, 'timestep', f'{timestep:.2f}' if timestep is not None else '-')
         if graph.has_previous():
-            self._construct_tree_property(sub_graph, 'previous', f'{graph.get_previous().to_unique()}')
+            self._construct_tree_property(sub_graph, 'previous', f'{graph.get_previous().identifier_class_unique()}')
         # self._construct_tree_property(sub_properties, 'path', str(graph.get_path()))
 
         # sub-elements
@@ -78,7 +78,7 @@ class InspectorTree(QtWidgets.QTreeWidget):
         if graph.has_truth():
             sub_metrics = self._construct_tree_property(root, 'Metrics', '', bold=True, is_expanded=True)
             truth: SubGraph = graph.get_truth()
-            sub_truth = self._construct_tree_property(sub_metrics, 'truth', f'{truth.to_unique()}')
+            sub_truth = self._construct_tree_property(sub_metrics, 'truth', f'{truth.identifier_class_unique()}')
             sub_truth.obj = Indicator.TRUE
             self._construct_tree_property(sub_metrics, 'ate', f'{graph.ate()}')
             self._construct_tree_property(sub_metrics, 'rpe_translation', f'{graph.rpe_translation()}')
@@ -161,7 +161,7 @@ class InspectorTree(QtWidgets.QTreeWidget):
         if node.has_truth():
             sub_metrics = self._construct_tree_property(root, 'Metrics', '', bold=True, is_expanded=True)
             truth: SubNode = node.get_truth()
-            sub_truth = self._construct_tree_property(sub_metrics, 'truth', f'{truth.to_unique()}')
+            sub_truth = self._construct_tree_property(sub_metrics, 'truth', f'{truth.identifier_class_unique()}')
             self._construct_node_tree(truth, sub_truth)
             ate2: tp.Optional[float] = node._compute_ate2()
             if ate2 is not None:
@@ -191,16 +191,16 @@ class InspectorTree(QtWidgets.QTreeWidget):
 
         # top
         sub_edge = self._construct_tree_property(root, 'Edge', '', bold=True, is_expanded=True)
-        timestep: tp.Optional[float] = edge.get_timestep()
+        timestep: tp.Optional[float] = edge.timestep()
         self._construct_tree_property(sub_edge, 'timestep', f'{timestep:.2f}' if timestep is not None else '-')
-        self._construct_tree_property(sub_edge, 'cardinality', f'{edge.get_cardinality()}')
+        self._construct_tree_property(sub_edge, 'cardinality', f'{edge.cardinality()}')
         self._construct_tree_property_from_value(sub_edge, 'information', edge.get_info_matrix())
 
         # nodes
         nodes = edge.get_nodes()
         sub_nodes = self._construct_tree_property(root, 'Nodes', f'{len(nodes)}', bold=True, is_expanded=True)
         for node in nodes:
-            sub_node = self._construct_tree_property(sub_nodes, f'{node.get_id()}', node.to_unique())
+            sub_node = self._construct_tree_property(sub_nodes, f'{node.get_id()}', node.identifier_class_unique())
             self._construct_node_tree(node, sub_node)
 
         # error
@@ -212,7 +212,7 @@ class InspectorTree(QtWidgets.QTreeWidget):
         if edge.has_truth():
             sub_metrics = self._construct_tree_property(root, 'Metrics', '', bold=True, is_expanded=True)
             truth: SubEdge = edge.get_truth()
-            sub_truth = self._construct_tree_property(sub_metrics, 'truth', f'{truth.to_unique()}')
+            sub_truth = self._construct_tree_property(sub_metrics, 'truth', f'{truth.identifier_class_unique()}')
             self._construct_edge_tree(truth, sub_truth)
             self._construct_tree_property_from_value(sub_metrics, 'rpe_translation2', edge.rpe_translation2())
             self._construct_tree_property_from_value(sub_metrics, 'rpe_rotation', edge.rpe_rotation2())
@@ -223,7 +223,7 @@ class InspectorTree(QtWidgets.QTreeWidget):
 
         # estimate
         sub_estimate = self._construct_tree_property(root, 'Estimate', '', bold=True)
-        self._construct_value_tree(sub_estimate, edge.get_estimate())
+        self._construct_value_tree(sub_estimate, edge.estimate())
 
         # jacobian/hessian
         sub_linearisation = self._construct_tree_property(root, 'Linearisation', '', bold=True, is_expanded=True)

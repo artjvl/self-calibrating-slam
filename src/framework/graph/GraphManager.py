@@ -1,7 +1,9 @@
 import typing as tp
 
-from src.framework.graph.CalibratingGraph import CalibratingGraph
-from src.framework.graph.Graph import SubGraph, SubNode, SubEdge
+from src.framework.graph.Graph import Graph
+
+if tp.TYPE_CHECKING:
+    from src.framework.graph.Graph import SubGraph, SubNode, SubEdge
 
 SubGraphManager = tp.TypeVar('SubGraphManager', bound='GraphManager')
 
@@ -9,7 +11,7 @@ SubGraphManager = tp.TypeVar('SubGraphManager', bound='GraphManager')
 class GraphManager(object):
 
     # graph
-    _graph: SubGraph
+    _graph: 'SubGraph'
 
     # counters
     _id_counter: int
@@ -20,7 +22,7 @@ class GraphManager(object):
         self.reset()
 
     def reset(self) -> None:
-        self._graph = CalibratingGraph()
+        self._graph = Graph()
 
         # counters
         self._id_counter = 0
@@ -28,15 +30,15 @@ class GraphManager(object):
         self._timestep = 0
 
     # graph
-    def graph(self) -> SubGraph:
+    def graph(self) -> 'SubGraph':
         return self._graph
 
     # elements
     def add_node(
             self,
-            node: SubNode,
+            node: 'SubNode',
             id_: tp.Optional[int] = None
-    ) -> SubNode:
+    ) -> 'SubNode':
         if id_ is not None:
             # check if node-id has not been used before
             assert id_ not in self._id_set
@@ -54,7 +56,7 @@ class GraphManager(object):
         """ Returns a node. """
         return self._graph.get_node(id_)
 
-    def add_edge(self, edge: SubEdge) -> SubEdge:
+    def add_edge(self, edge: 'SubEdge') -> 'SubEdge':
         self._graph.add_edge(edge)
         return edge
 

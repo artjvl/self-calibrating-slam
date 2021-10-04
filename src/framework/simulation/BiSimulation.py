@@ -13,7 +13,7 @@ from src.utils import GeoHash2D
 if tp.TYPE_CHECKING:
     from src.framework.graph.data.DataFactory import Quantity
     from src.framework.graph.Graph import SubEdge, SubGraph
-    from src.framework.graph.types.nodes.SpatialNode import NodeSE2
+    from src.framework.graph.spatial.NodeSE2 import NodeSE2
     from src.framework.math.lie.transformation import SE2
     from src.framework.math.matrix.square import SubSquare
     from src.framework.math.matrix.vector import Vector2
@@ -252,18 +252,19 @@ class BiSimulation(object):
             distance: float,
             separation: int = 10,
             threshold: float = 0.
-    ) -> None:
+    ) -> bool:
         """ Creates a loop-closure constraint with probability <threshold>. """
 
         if self._constraint_rng.uniform(0, 1) >= threshold:
-            self.try_closure(sensor_name, distance, separation)
+            return self.try_closure(sensor_name, distance, separation)
+        return False
 
     def try_closure(
             self,
             sensor_name: str,
             distance: float,
             separation: int = 10
-    ) -> None:
+    ) -> bool:
         """
         Creates a loop-closure constraint IF POSSIBLE with the oldest node within <distance> and separated by
         <separation> ids, with the 'truth' transformation, as measurement by <sensor_name>.
@@ -287,6 +288,8 @@ class BiSimulation(object):
                 # closure_id: int = self._rng.choice(closures)
                 current_id: int = self.get_current_id()
                 self.add_poses_edge(sensor_name, closure_id, current_id)
+                return True
+        return False
 
     # proximity constraint
     def roll_proximity(
@@ -294,17 +297,18 @@ class BiSimulation(object):
             sensor_name: str,
             steps: int,
             threshold: float = 0.
-    ) -> None:
+    ) -> bool:
         """ Creates a proximity constraint with probability <threshold>. """
 
         if self._constraint_rng.uniform(0, 1) >= threshold:
-            self.try_proximity(sensor_name, steps)
+            return self.try_proximity(sensor_name, steps)
+        return False
 
     def try_proximity(
             self,
             sensor_name: str,
             steps: int
-    ) -> None:
+    ) -> bool:
         """
         Creates a proximity constraint IF POSSIBLE with the node separated by <steps>, with the 'truth' transformation,
         as measurement by <sensor_name>.
@@ -317,6 +321,8 @@ class BiSimulation(object):
             current_id: int = truth_sim.current().get_id()
             proximity_id: int = pose_ids[-1 - steps]
             self.add_poses_edge(sensor_name, proximity_id, current_id)
+            return True
+        return False
 
     # rng
     def set_constraint_rng(self, seed: tp.Optional[int] = None) -> None:

@@ -71,15 +71,18 @@ class Results(BiSimulation, ABC):
 
         for i in range(self._num_steps):
             self.auto_odometry('wheel')
-            self.roll_proximity('lidar', 3, threshold=0.9)
-            self.roll_closure('lidar', 2., separation=10, threshold=0.6)
+            is_proximity: bool = self.roll_proximity('lidar', 3, threshold=0.9)
+            is_closure: bool = self.roll_closure('lidar', 2., separation=10, threshold=0.6)
             if i in gps_ids:
                 self.add_gps('gps')
 
             self.loop(i)
 
+            if i == 84:
+                print(i)
+
             self.step()
-            cost = self.estimate_simulation().graph().get_error()
+            cost = self.estimate_simulation().graph().cost()
             costs.append(cost)
 
     @abstractmethod

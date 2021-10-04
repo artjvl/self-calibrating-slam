@@ -1,5 +1,6 @@
 import numpy as np
-from src.framework.graph.types.nodes.ParameterNode import ParameterSpecification
+
+from src.framework.graph.parameter.ParameterSpecification import ParameterSpecification
 from src.framework.math.lie.transformation import SE2
 from src.framework.math.matrix.square import Square3, Square2
 from src.framework.math.matrix.vector import Vector1, Vector2
@@ -38,7 +39,7 @@ class ManhattanSim(BiSimulation):
         # sensors: wheel
         info_wheel_truth = Square3.from_diagonal([200., 200., 400.])
         info_wheel_estimate = info_wheel_truth
-        self.add_sensor('whseel', SE2, info_wheel_truth, info_wheel_estimate)
+        self.add_sensor('wheel', SE2, info_wheel_truth, info_wheel_estimate)
         # sensors: lidar
         info_lidar_truth = Square3.from_diagonal([8000., 8000., 12000.])
         info_lidar_estimate = info_lidar_truth
@@ -50,13 +51,13 @@ class ManhattanSim(BiSimulation):
 
         # parameters:
         self.truth_simulation().add_static_parameter(
-            'wheel', 'bias',
+            'wheel', 'scale',
             Vector1(1.1), ParameterSpecification.SCALE, index=1
         )
 
     def simulate(self) -> None:
         delta: float = 0.1
-        num: int = 200  # 400
+        num: int = 100  # 400
 
         is_gps: bool = True
         is_dyn: bool = False

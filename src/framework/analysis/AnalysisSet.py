@@ -9,13 +9,11 @@ import numpy as np
 from matplotlib import pyplot as plt
 from scipy.stats import norm
 from src.definitions import get_project_root
-from src.framework.graph.protocols.Visualisable import Visualisable, DrawPoint, DrawAxis, DrawEdge
+from src.framework.graph.Visualisable import Visualisable, DrawPoint, DrawAxis, DrawEdge
 from src.gui.viewer.Rgb import Rgb
 
 if tp.TYPE_CHECKING:
-    from src.framework.graph.CalibratingGraph import SubCalibratingGraph
-    from src.framework.graph.Graph import SubGraph, SubNode, SubElement
-    from src.framework.graph.types.nodes.ParameterNode import SubParameterNode
+    from src.framework.graph.Graph import SubNode, SubParameterNode, SubNodeEdge, SubGraph
     from src.framework.math.lie.transformation import SE2
     from src.framework.math.matrix.vector.Vector import SubSizeVector, Vector2, Vector3
 
@@ -83,7 +81,7 @@ class TimeData(object):
 
 class AnalysisSet(object):
     _path: pathlib.Path = (get_project_root() / 'plots').resolve()
-    _graphs: tp.List['SubCalibratingGraph']
+    _graphs: tp.List['SubGraph']
     _resolution: int = 30
 
     _metrics: SubTimeData
@@ -102,11 +100,11 @@ class AnalysisSet(object):
     def has_first(self) -> bool:
         return len(self._graphs) > 0
 
-    def graph(self, index: int) -> 'SubCalibratingGraph':
+    def graph(self, index: int) -> 'SubGraph':
         assert len(self._graphs) > index
         return self._graphs[index]
 
-    def add_graph(self, graph: 'SubCalibratingGraph') -> None:
+    def add_graph(self, graph: 'SubGraph') -> None:
         assert graph.has_truth()
         if self.has_first():
             assert self._graphs[0].is_equivalent(graph)
@@ -124,7 +122,7 @@ class AnalysisSet(object):
         par_data: tp.Dict[str, tp.List[tp.List[float]]] = {}
 
         names: tp.List[str] = graph.get_parameter_names()
-        subgraphs: tp.List['SubCalibratingGraph'] = graph.subgraphs()
+        subgraphs: tp.List['SubGraph'] = graph.subgraphs()
         size: int = len(subgraphs)
         for i, subgraph in enumerate(subgraphs):
             # metrics
@@ -139,7 +137,7 @@ class AnalysisSet(object):
             for name in names:
                 if subgraph.has_name(name) and len(graph.get_of_name(name)) == 1:
                     parameter: 'SubParameterNode' = subgraph.get_of_name(name)[0]
-                    dim: int = parameter.get_dim()
+                    dim: int = parameter.dim()
                     vector: 'SubSizeVector' = parameter.to_vector()
                     if name not in par_data:
                         par_data[name] = [[] for _ in range(dim)]
@@ -171,7 +169,7 @@ class AnalysisSet(object):
                 parameters: tp.List['SubParameterNode'] = graph.get_of_name(name)
                 if len(parameters) > 1:
                     first: 'SubParameterNode' = parameters[0]
-                    dim: int = first.get_dim()
+                    dim: int = first.dim()
                     vector: 'SubSizeVector' = first.to_vector()
                     if name not in par_data:
                         par_data[name] = [[] for _ in range(dim)]
@@ -578,8 +576,8 @@ class AnalysisSet(object):
         type_: tp.Type['SubNode']
         for type_ in graph.get_types():
             if issubclass(type_, Visualisable):
-                elements: tp.List['SubElement'] = graph.get_of_type(type_)
-                element: 'SubElement'
+                elements: tp.List['SubNodeEdge'] = graph.get_of_type(type_)
+                element: 'SubNodeEdge'
                 for element in elements:
                     if isinstance(element, DrawPoint):
                         point: 'SubSizeVector' = element.draw_point()
@@ -600,8 +598,8 @@ class AnalysisSet(object):
         for type_ in graph.get_types():
             if issubclass(type_, Visualisable):
                 t = time.time()
-                elements: tp.List['SubElement'] = graph.get_of_type(type_)
-                element: 'SubElement'
+                elements: tp.List['SubNodeEdge'] = graph.get_of_type(type_)
+                element: 'SubNodeEdge'
                 for element in elements:
                     color: tp.Tuple = type_.draw_rgb()
                     if isinstance(element, DrawAxis):
