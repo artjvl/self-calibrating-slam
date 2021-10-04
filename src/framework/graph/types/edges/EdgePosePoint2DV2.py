@@ -28,8 +28,12 @@ class EdgePosePoint2DV2(CalibratingEdgeSE2):
             info_matrix=info_matrix
         )
 
+    def is_complete(self) -> bool:
+        return self.has_value() and len(self.get_endpoints() == 2)
+
     def get_delta(self) -> Vector2:
+        assert self.is_complete()
         a: NodeSE2
         b: NodeV2
         a, b = tuple(self.get_endpoints())
-        return Vector2(b.get_delta() - a.get_delta().translation())
+        return Vector2(b.get_delta() - a.get_delta().get_translation())

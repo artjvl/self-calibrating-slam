@@ -6,9 +6,6 @@ from simulation.results.ResultsSinBias import ResultsSinBiasWithout, ResultsSinB
     ResultsSinBiasSlidingOld
 from src.simulation.dataset.IntelDatasetSim import IntelPlain, IntelSliding, IntelSlidingOld, \
     IntelWithout, IntelConstant, IntelTimely, IntelSpatial
-from src.simulation.manhattan.ManhattanResults import ManhattanResultsPlain, ManhattanResultsWithout, \
-    ManhattanResultsConstant, ManhattanResultsTimely, ManhattanResultsSliding, ManhattanResultsSlidingOld, \
-    ManhattanResultsSpatial
 from src.simulation.manhattan.ManhattanSim import ManhattanPlain, ManhattanConstant, ManhattanSliding, \
     ManhattanWithout, ManhattanTimely, ManhattanSlidingOld, ManhattanSpatial
 

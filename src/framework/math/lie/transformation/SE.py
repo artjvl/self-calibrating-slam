@@ -36,7 +36,7 @@ class SE(Lie, ABC):
     # properties
     @classmethod
     def get_size(cls) -> int:
-        return cls.get_dim() + 1
+        return cls.dim() + 1
 
     def translation(self) -> SubVector:
         return self._translation
@@ -46,7 +46,7 @@ class SE(Lie, ABC):
 
     def inverse(self) -> SubSE:
         inverse_rotation: SubSO = self.rotation().inverse()
-        inverse_translation: SubVector = VectorFactory.from_dim(self.get_dim())(
+        inverse_translation: SubVector = VectorFactory.from_dim(self.dim())(
             - inverse_rotation.array() @ self.translation().array()
         )
         return type(self)(inverse_translation, inverse_rotation)
@@ -65,7 +65,7 @@ class SE(Lie, ABC):
         return self.rotation().vector()
 
     def translation_vector(self) -> SubVector:
-        dim: int = self.get_dim()
+        dim: int = self.dim()
         return VectorFactory.from_dim(dim)(
             self.rotation().inverse_jacobian().array() @ self.translation().array()
         )
@@ -86,7 +86,7 @@ class SE(Lie, ABC):
             translation_vector: SubVector,
             rotation_vector: SubVector
     ) -> SubSE:
-        dim: int = cls.get_dim()
+        dim: int = cls.dim()
         rotation: SubSO = SOFactory.from_dim(dim).from_vector(rotation_vector)
         jacobian: SubSquare = rotation.jacobian()
         translation: SubVector = VectorFactory.from_dim(dim)(
@@ -99,7 +99,7 @@ class SE(Lie, ABC):
             cls,
             vector: SubVector
     ) -> SubSE:
-        dim: int = cls.get_dim()
+        dim: int = cls.dim()
         dof: int = cls.get_dof()
         translation_vector: SubVector = VectorFactory.from_dim(dim)(vector[:dim])
         rotation_vector: SubVector = VectorFactory.from_dim(dof - dim)(vector[dim:])
@@ -118,7 +118,7 @@ class SE(Lie, ABC):
             translation: SubVector,
             rotation: SubSO
     ) -> SubSquare:
-        pad_array = np.zeros((1, cls.get_dim()))
+        pad_array = np.zeros((1, cls.dim()))
         matrix_array = np.block([[rotation.array(), translation.array()],
                                  [pad_array, 1]])
 
@@ -131,7 +131,7 @@ class SE(Lie, ABC):
             cls,
             matrix: SubSquare
     ) -> SubVector:
-        dim: int = cls.get_dim()
+        dim: int = cls.dim()
         return VectorFactory.from_dim(dim)(matrix[: dim, dim:])
 
     @classmethod
@@ -139,6 +139,6 @@ class SE(Lie, ABC):
             cls,
             matrix: SubSquare
     ) -> SubSO:
-        dim: int = cls.get_dim()
+        dim: int = cls.dim()
         matrix = SquareFactory.from_dim(dim)(matrix[: dim, : dim])
         return SOFactory.from_dim(dim).from_matrix(matrix)

@@ -194,7 +194,7 @@ class AnalyserMetric(object):
 
 
 class AnalyserError(AnalyserMetric):
-    _attr = 'get_error'
+    _attr = 'cost'
 
     @staticmethod
     def create_fig() -> plt.Figure:
@@ -208,7 +208,7 @@ class AnalyserError(AnalyserMetric):
 
 
 class AnalyserATE(AnalyserMetric):
-    _attr = 'get_ate'
+    _attr = 'ate'
 
     @staticmethod
     def create_fig() -> plt.Figure:
@@ -222,7 +222,7 @@ class AnalyserATE(AnalyserMetric):
 
 
 class AnalyserRPET(AnalyserMetric):
-    _attr = 'get_rpe_translation'
+    _attr = 'rpe_translation'
 
     @staticmethod
     def create_fig() -> plt.Figure:
@@ -236,7 +236,7 @@ class AnalyserRPET(AnalyserMetric):
 
 
 class AnalyserRPER(AnalyserMetric):
-    _attr = 'get_rpe_rotation'
+    _attr = 'rpe_rotation'
 
     @staticmethod
     def create_fig() -> plt.Figure:
@@ -281,7 +281,7 @@ class AnalyserParameterValues(object):
 
         parameters: tp.List['SubParameterNode'] = graph.get_of_name(name)
         size: int = len(parameters)
-        dim: int = parameters[0].get_dim()
+        dim: int = parameters[0].dim()
 
         timesteps: tp.List[float] = []
         data: np.ndarray = np.zeros((dim, size))
@@ -318,7 +318,7 @@ class AnalyserParameterValues(object):
             parameter_set = np.vstack([parameter_set, parameters])
 
         first: tp.List['SubParameterNode'] = parameter_set[0, :]
-        dim: int = first[0].get_dim()
+        dim: int = first[0].dim()
         size: int = len(first)
 
         timesteps: tp.List[float] = []
@@ -360,7 +360,7 @@ class AnalyserParameterValues(object):
         assert cls.is_group_eligible(graphs, name)
 
         parameters: tp.List['SubParameterNode'] = [graph.get_of_name(name)[0] for graph in graphs]
-        dim: int = parameters[0].get_dim()
+        dim: int = parameters[0].dim()
         size: int = len(parameters)
 
         values = np.zeros((dim, size))
@@ -421,7 +421,7 @@ class AnalyserParameterDynamics(object):
         parameters: tp.List['SubParameterNode'] = [graph.get_of_name(name)[0] for graph in subgraphs]
 
         size: int = len(parameters)
-        dim: int = parameters[0].get_dim()
+        dim: int = parameters[0].dim()
 
         timesteps: tp.List[float] = []
         data: np.ndarray = np.zeros((dim, size))
@@ -450,7 +450,7 @@ class AnalyserParameterDynamics(object):
             parameter_set = np.vstack([parameter_set, parameters])
 
         first_parameters: tp.List['SubParameterNode'] = parameter_set[0, :]
-        dim: int = first_parameters[0].get_dim()
+        dim: int = first_parameters[0].dim()
         size: int = len(first_parameters)
 
         timesteps: tp.List[float] = []
@@ -505,7 +505,7 @@ class AnalyserVariance(object):
     @staticmethod
     def estimate_variances(edges: tp.List['SubEdge'], window: int) -> np.ndarray:
         size: int = len(edges)
-        dim: int = edges[0].get_dim()
+        dim: int = edges[0].dim()
 
         left: int = int(np.floor(window / 2))
         right: int = window - left
@@ -513,7 +513,7 @@ class AnalyserVariance(object):
         data: np.ndarray = np.zeros((dim, size))
         for i, edge in enumerate(edges):
             edge_window: tp.List[edges] = edges[np.maximum(0, i - left + 1): i + right + 1]
-            error_vectors: tp.List['SubVector'] = [edge.get_error_vector() for edge in edge_window]
+            error_vectors: tp.List['SubVector'] = [edge.error_vector() for edge in edge_window]
             for j in range(dim):
                 errors: tp.List[float] = [error_vector[j] for error_vector in error_vectors]
                 data[j, i] = float(np.var(errors))
@@ -529,7 +529,7 @@ class AnalyserVariance(object):
         assert cls.is_eligible(graph, name)
 
         edges: tp.List['SubEdge'] = graph.get_of_name(name)
-        dim: int = edges[0].get_dim()
+        dim: int = edges[0].dim()
 
         timesteps: tp.List[float] = [edge.get_timestep() for edge in edges]
         data: np.ndarray = cls.estimate_variances(edges, window)
@@ -552,7 +552,7 @@ class AnalyserVariance(object):
         first_edges: tp.List['SubEdge'] = graphs[0].get_of_name(name)
 
         size: int = len(first_edges)
-        dim: int = first_edges[0].get_dim()
+        dim: int = first_edges[0].dim()
 
         variances: tp.List[np.ndarray] = []
         for graph in graphs:
@@ -591,7 +591,7 @@ class AnalyserVariance(object):
 
         edges: tp.List['SubEdge'] = graph.get_of_name(name)
         size: int = len(edges)
-        dim: int = edges[0].get_dim()
+        dim: int = edges[0].dim()
 
         timesteps: tp.List[float] = []
         data: np.ndarray = np.zeros((dim, size))

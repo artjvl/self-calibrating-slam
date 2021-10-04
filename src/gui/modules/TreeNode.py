@@ -467,7 +467,7 @@ class TrajectoryTreeNode(GraphicsTreeNode, QtCore.QObject):
     def is_eligible_for_truth(self, graph_container: 'SubGraphContainer') -> bool:
         if self.has_truth():
             return False
-        if graph_container.get_graph().is_perturbed():
+        if not graph_container.get_graph().is_consistent():
             return False
         for child in self.get_children():
             if not graph_container.is_superset_similar(child.get_graph_container()):

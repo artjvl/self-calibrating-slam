@@ -7,5 +7,5 @@ class Dimensional(object):
     _dim: int
 
     @classmethod
-    def get_dim(cls) -> int:
+    def dim(cls) -> int:
         return cls._dim

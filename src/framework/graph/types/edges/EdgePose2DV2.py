@@ -31,10 +31,14 @@ class EdgePose2DV2(CalibratingEdgeV2, DrawEdge):
             info_matrix=info_matrix
         )
 
+    def is_complete(self) -> bool:
+        return self.has_value() and len(self.get_endpoints()) == 1
+
     def get_delta(self) -> Vector2:
+        assert self.is_complete()
         node: NodeSE2
         node, = tuple(self.get_endpoints())
-        return node.get_value().translation()
+        return node.get_value().get_translation()
 
     # Visualisable
     def draw_nodeset(self) -> tp.Tuple[Vector3, Vector3]:

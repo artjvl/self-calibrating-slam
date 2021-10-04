@@ -43,10 +43,10 @@ class Vector(Matrix, Dimensional):
         return self._matrix[item]
 
     def zeros(self) -> SubVector:
-        return self.__class__(np.zeros((self.get_dim(), 1)))
+        return self.__class__(np.zeros((self.dim(), 1)))
 
     def ones(self) -> SubVector:
-        return self.__class__(np.ones((self.get_dim(), 1)))
+        return self.__class__(np.ones((self.dim(), 1)))
 
     # manipulation
     def magnitude(self) -> float:
@@ -74,13 +74,13 @@ class SizeVector(Vector):
             *args: tp.Any
     ):
         super().__init__(args)
-        assert self.array().shape[0] == self.get_dim()
+        assert self.array().shape[0] == self.dim()
 
     # alternative creators
     @classmethod
     def zeros(cls) -> SubVector:
-        return cls(np.zeros((cls.get_dim(), 1)))
+        return cls(np.zeros((cls.dim(), 1)))
 
     @classmethod
     def ones(cls) -> SubVector:
-        return cls(np.ones((cls.get_dim(), 1)))
+        return cls(np.ones((cls.dim(), 1)))

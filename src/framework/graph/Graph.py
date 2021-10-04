@@ -21,39 +21,20 @@ class Graph(FactorGraph):
 
     # reference graphs
     _truth: tp.Optional[SubGraph]
-    _pre: tp.Optional[SubGraph]
 
     # metadata
     _date: str
     _path: tp.Optional[pathlib.Path]
-    _atol: tp.Optional[float]
-
-    # properties
-    _ate: tp.Optional[float]
-    _rpe_translation: tp.Optional[float]
-    _rpe_rotation: tp.Optional[float]
 
     def __init__(self):
         super().__init__()
 
         # reference graphs
         self._truth = None
-        self._pre = None
 
         # metadata
         self._date = datetime.now().strftime('%Y%m%d-%H%M%S')
         self._path = None
-        self._atol = 1e-6
-
-        # metrics
-        self.clear_metrics()
-
-    def clear_metrics(self) -> None:
-        super().clear_metrics()
-        self._error = None
-        self._ate = None
-        self._rpe_translation = None
-        self._rpe_rotation = None
 
     # properties
     def set_path(self, path: pathlib.Path) -> None:
@@ -73,105 +54,42 @@ class Graph(FactorGraph):
     def timestep(self) -> tp.Optional[int]:
         return self.get_nodes()[-1].get_timestep()
 
-    # pre
-    def has_pre(self) -> bool:
-        return self._pre is not None
-
-    def get_pre(self) -> SubGraph:
-        assert self.has_pre()
-        return self._pre
-
-    def assign_pre(self, graph: SubGraph):
-        assert self.is_equivalent(graph)
-        self._pre = graph
-
     # metrics
-    def get_ate(self) -> float:
-        assert self.has_truth()
-        if self._ate is None:
-            te2: float = 0
-            count: int = 0
-            node: SubNode
-            for node in self.get_nodes():
-                node_ate2 = node.get_ate2()
-                if node_ate2 is not None:
-                    te2 += node_ate2
-                    count += 1
-            self._ate = np.sqrt(te2 / count)
-        return self._ate
-
-    def compute_ate(self) -> float:
-        """ Returns the Absolute Trajectory Error (APE). """
-
-        assert self.has_truth()
+    def ate(self) -> float:
         te2: float = 0
         count: int = 0
         node: SubNode
         for node in self.get_nodes():
-            node_ate2 = node.compute_ate2()
+            node_ate2 = node.ate2()
             if node_ate2 is not None:
                 te2 += node_ate2
                 count += 1
-        self._ate = np.sqrt(te2/count)
-        return self._ate
+        ate: float = np.sqrt(te2 / count)
+        return ate
 
-    def get_rpe_translation(self) -> float:
-        assert self.has_truth()
-        if self._rpe_translation is None:
-            rpe2: float = 0
-            count: int = 0
-            edge: SubEdge
-            for edge in self.get_edges():
-                edge_rpe2 = edge.get_rpe_translation2()
-                if edge_rpe2 is not None:
-                    rpe2 += edge_rpe2
-                    count += 1
-            self._rpe_translation = np.sqrt(rpe2 / count)
-        return self._rpe_translation
-
-    def compute_rpe_translation(self) -> float:
-        """ Returns the translation portion of the Relative Pose Error (RPE). """
-
-        assert self.has_truth()
+    def rpe_translation(self) -> float:
         rpe2: float = 0
         count: int = 0
         edge: SubEdge
         for edge in self.get_edges():
-            edge_rpe2 = edge.compute_rpe_translation2()
+            edge_rpe2 = edge.rpe_translation2()
             if edge_rpe2 is not None:
                 rpe2 += edge_rpe2
                 count += 1
-        self._rpe_translation = np.sqrt(rpe2/count)
-        return self._rpe_translation
+        rpe_translation: float = np.sqrt(rpe2 / count)
+        return rpe_translation
 
-    def get_rpe_rotation(self) -> float:
-        assert self.has_truth()
-        if self._rpe_rotation is None:
-            rpe: float = 0
-            count: int = 0
-            edge: SubEdge
-            for edge in self.get_edges():
-                edge_rpe2 = edge.get_rpe_rotation2()
-                if edge_rpe2 is not None:
-                    rpe += edge_rpe2
-                    count += 1
-            self._rpe_rotation = rpe / count
-        return self._rpe_rotation
-
-    def compute_rpe_rotation(self) -> float:
-        """ Returns the rotation portion of the Relative Pose Error (RPE). """
-
-        assert self.has_truth()
+    def rpe_rotation(self) -> float:
         rpe: float = 0
         count: int = 0
         edge: SubEdge
         for edge in self.get_edges():
-            edge_rpe2 = edge.compute_rpe_rotation2()
+            edge_rpe2 = edge.rpe_rotation2()
             if edge_rpe2 is not None:
                 rpe += edge_rpe2
                 count += 1
-        self._rpe_rotation = rpe/count
-        return self._rpe_rotation
+        rpe_rotation: float = rpe / count
+        return rpe_rotation
 
     # truth
     def has_truth(self) -> bool:
@@ -181,12 +99,6 @@ class Graph(FactorGraph):
         assert self.has_truth()
         return self._truth
 
-    def set_atol(self, atol: float) -> None:
-        self._atol = atol
-
-    def is_perturbed(self) -> bool:
-        return not np.isclose(self.get_error(), 0., atol=self._atol)
-
     def assign_truth(
             self,
             graph: SubGraph
@@ -195,7 +107,7 @@ class Graph(FactorGraph):
         Populates the 'truth' (or ground-truth) reference with <graph>.
         Assumption: 'truth' graph only contains endpoints and shall be a subset of this graph.
         """
-        assert not graph.is_perturbed()
+        assert graph.is_consistent()
         assert self.is_similar(graph)
         assert not self.has_truth()
         self._truth = graph
@@ -263,14 +175,12 @@ class Graph(FactorGraph):
                 subgraph.assign_truth(truth_subgraph)
 
     # copy
-    def copy_meta_to(self, graph: SubGraph) -> SubGraph:
-        graph = super().copy_meta_to(graph)
-        # note: _previous is not part of the metadata copied
+    def copy_attributes_to(self, graph: SubGraph) -> SubGraph:
+        graph = super().copy_attributes_to(graph)
 
+        # note: _previous is not part of the attributes copied
         graph._truth = self._truth
-        graph._pre = self._pre
         graph._date = self._date
-        graph._atol = self._atol
         return graph
 
 
@@ -293,23 +203,18 @@ class Node(tp.Generic[T], FactorNode[T]):
             value: tp.Optional[T] = None,
             timestep: tp.Optional[float] = None
     ):
-        super().__init__(name=name, id_=id_, value=value)
-        self._truth = None
-        self._timestep = timestep
-        self.clear_metrics()
-
-    def clear_metrics(self) -> None:
-        super().clear_metrics()
         self._ate2 = None
+        self._truth = None
+        super().__init__(name=name, id_=id_, value=value)
+        self._timestep = timestep
+
+    def set_metrics(self) -> None:
+        super().set_metrics()
+        if self.has_truth() and self.is_complete():
+            self._ate2 = self._compute_ate2()
 
     # error
-    def get_ate2(self) -> tp.Optional[float]:
-        if self._ate2 is None:
-            self.compute_ate2()
-        return self._ate2
-
-    def compute_ate2(self) -> tp.Optional[float]:
-        self._ate2 = self._compute_ate2()
+    def ate2(self) -> tp.Optional[float]:
         return self._ate2
 
     def _compute_ate2(self) -> tp.Optional[float]:
@@ -321,6 +226,7 @@ class Node(tp.Generic[T], FactorNode[T]):
         assert node.get_id() == self.get_id()
         assert node.get_timestep() == self.get_timestep()
         self._truth = node
+        self.set_metrics()
 
     def has_truth(self) -> bool:
         return self._truth is not None
@@ -341,27 +247,11 @@ class Node(tp.Generic[T], FactorNode[T]):
         return self._timestep
 
     # copy
-    def copy_meta_to(self, node: SubNode) -> SubNode:
-        node = super().copy_meta_to(node)
+    def copy_attributes_to(self, node: SubNode) -> SubNode:
+        node = super().copy_attributes_to(node)
         node._truth = self._truth
         node._timestep = self._timestep
         return node
-
-    def __copy__(self):
-        new = super().__copy__()
-        new._timestep = self._timestep
-        new._truth = self._truth
-        return new
-
-    def __deepcopy__(self, memo: tp.Optional[tp.Dict[int, tp.Any]] = None):
-        if memo is None:
-            memo = {}
-        new = super().__deepcopy__(memo)
-        memo[id(self)] = new
-
-        new._timestep = self._timestep
-        new._truth = self._truth
-        return new
 
 
 class Edge(tp.Generic[T], FactorEdge[T], ABC):
@@ -380,14 +270,17 @@ class Edge(tp.Generic[T], FactorEdge[T], ABC):
             measurement: tp.Optional[T] = None,
             info_matrix: tp.Optional['SubSquare'] = None
     ):
-        super().__init__(name=name, nodes=nodes, measurement=measurement, info_matrix=info_matrix)
-        self._truth = None
-        self.clear_metrics()
-
-    def clear_metrics(self) -> None:
-        super().clear_metrics()
+        # metrics
         self._rpet2 = None
         self._rper2 = None
+        self._truth = None
+        super().__init__(name=name, nodes=nodes, measurement=measurement, info_matrix=info_matrix)
+
+    def set_metrics(self) -> None:
+        super().set_metrics()
+        if self.has_truth() and self.is_complete():
+            self._rpet2 = self._compute_rpe_translation2()
+            self._rper2 = self._compute_rpe_rotation2()
 
     # DataContainer
     def has_measurement(self) -> bool:
@@ -405,22 +298,10 @@ class Edge(tp.Generic[T], FactorEdge[T], ABC):
         pass
 
     # error
-    def get_rpe_translation2(self) -> tp.Optional[float]:
-        if self._rpet2 is None:
-            self.compute_rpe_translation2()
+    def rpe_translation2(self) -> tp.Optional[float]:
         return self._rpet2
 
-    def get_rpe_rotation2(self) -> tp.Optional[float]:
-        if self._rper2 is None:
-            self.compute_rpe_rotation2()
-        return self._rper2
-
-    def compute_rpe_translation2(self) -> tp.Optional[float]:
-        self._rpet2 = self._compute_rpe_translation2()
-        return self._rpet2
-
-    def compute_rpe_rotation2(self) -> tp.Optional[float]:
-        self._rper2 = self._compute_rpe_rotation2()
+    def rpe_rotation2(self) -> tp.Optional[float]:
         return self._rper2
 
     def _compute_rpe_translation2(self) -> tp.Optional[float]:
@@ -440,6 +321,7 @@ class Edge(tp.Generic[T], FactorEdge[T], ABC):
         assert not self.has_truth()
         assert self.is_eligible_for_truth(edge)
         self._truth = edge
+        self.set_metrics()
 
     def has_truth(self) -> bool:
         return self._truth is not None
@@ -456,21 +338,7 @@ class Edge(tp.Generic[T], FactorEdge[T], ABC):
         return max(timesteps)
 
     # copy
-    def copy_meta_to(self, edge: SubEdge) -> SubEdge:
-        edge = super().copy_meta_to(edge)
+    def copy_attributes_to(self, edge: SubEdge) -> SubEdge:
+        edge = super().copy_attributes_to(edge)
         edge._truth = self._truth
         return edge
-
-    def __copy__(self):
-        new = super().__copy__()
-        new._truth = self._truth
-        return new
-
-    def __deepcopy__(self, memo: tp.Optional[tp.Dict[int, tp.Any]] = None):
-        if memo is None:
-            memo = {}
-        new = super().__deepcopy__(memo)
-        memo[id(self)] = new
-
-        new._truth = self._truth
-        return new

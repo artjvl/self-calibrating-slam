@@ -44,7 +44,7 @@ class GraphBox(GroupComboBox):
             graph_node: GraphTreeNode
             for graph_node in trajectory_node.get_children():
                 graph: SubGraph = graph_node.get_graph()
-                if graph.is_perturbed():
+                if not graph.is_consistent():
                     group.add_child(graph_node.get_gui_name())
                     self._elements.append(graph_node)
         self.blockSignals(False)

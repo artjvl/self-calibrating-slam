@@ -17,15 +17,15 @@ class DataSymmetric(Data[SubSquare]):
             value: tp.Optional[SubSquare] = None
     ):
         super().__init__(value)
-        self._size = self._type.get_dim()
+        self._size = self._type.dim()
 
     def to_vector(self) -> SubVector:
-        return VectorFactory.from_dim(self.get_dim())(
+        return VectorFactory.from_dim(self.dim())(
             Parser.symmetric_to_list(self.get_value())
         )
 
-    def from_vector(self, vector: SubVector) -> None:
-        assert vector.get_dim() == self.get_dim()
+    def set_from_vector(self, vector: SubVector) -> None:
+        assert vector.dim() == self.dim()
         self.set_value(Parser.list_to_symmetric(vector.to_list()))
 
     def read(self, words: tp.List[str]) -> None:
@@ -39,13 +39,13 @@ class DataSymmetric(Data[SubSquare]):
 
     def oplus(self, delta: SubVector) -> SubSquare:
         assert self.has_value()
-        assert delta.get_dim() == self.get_dim()
+        assert delta.dim() == self.dim()
         symmetric: SubSquare = Parser.list_to_symmetric(delta.to_list())
         return self._type(self.get_value().array() + symmetric.array())
 
     @classmethod
-    def get_dim(cls) -> int:
-        dim: int = cls._type.get_dim()
+    def dim(cls) -> int:
+        dim: int = cls._type.dim()
         return int((dim + 1) * dim / 2)
 
 

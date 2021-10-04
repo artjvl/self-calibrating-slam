@@ -17,7 +17,7 @@ class Square(Matrix, Dimensional):
     ):
         square: np.ndarray = np.asarray(data).astype(float)
         assert square.ndim == 2
-        assert square.shape[0] == square.shape[1] == self.get_dim()
+        assert square.shape[0] == square.shape[1] == self.dim()
         super().__init__(square)
 
     # alternative representations
@@ -34,17 +34,17 @@ class Square(Matrix, Dimensional):
     # alternative creators
     @classmethod
     def zeros(cls) -> SubMatrix:
-        dim = cls.get_dim()
+        dim = cls.dim()
         return cls(np.zeros((dim, dim)))
 
     @classmethod
     def ones(cls) -> SubMatrix:
-        dim = cls.get_dim()
+        dim = cls.dim()
         return cls(np.ones((dim, dim)))
 
     @classmethod
     def identity(cls) -> SubMatrix:
-        return cls(np.eye(cls.get_dim()))
+        return cls(np.eye(cls.dim()))
 
     @classmethod
     def from_diagonal(cls, list_: tp.List[float]) -> SubMatrix:

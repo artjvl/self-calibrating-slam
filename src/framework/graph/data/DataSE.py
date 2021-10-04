@@ -22,9 +22,9 @@ class DataSE(Data[SubSE]):
     def to_vector(self) -> SubVector:
         return self.get_value().vector()
 
-    def from_vector(self, vector: SubVector) -> None:
-        assert vector.get_dim() == self.get_dim()
-        self.set_value(self.get_type().from_vector(vector))
+    def set_from_vector(self, vector: SubVector) -> None:
+        assert vector.dim() == self.dim()
+        self.set_value(self.type().from_vector(vector))
 
     def read(self, words: tp.List[str]) -> None:
         floats: tp.List[float] = Parser.words_to_list(words)
@@ -37,11 +37,11 @@ class DataSE(Data[SubSE]):
 
     def oplus(self, delta: SubVector) -> SubSE:
         assert self.has_value()
-        assert delta.get_dim() == self.get_dim()
+        assert delta.dim() == self.dim()
         return self.get_value().oplus(delta)
 
     @classmethod
-    def get_dim(cls) -> int:
+    def dim(cls) -> int:
         return cls._type.get_dof()
 
 
@@ -51,9 +51,9 @@ class DataSE2(DataSE):
     def to_vector(self) -> Vector3:
         return self.get_value().translation_angle_vector()
 
-    def from_vector(self, vector: SubVector) -> None:
-        assert vector.get_dim() == self.get_dim()
-        self.set_value(self.get_type().from_translation_angle_vector(vector))
+    def set_from_vector(self, vector: SubVector) -> None:
+        assert vector.dim() == self.dim()
+        self.set_value(self.type().from_translation_angle_vector(vector))
 
     def read(self, words: tp.List[str]) -> None:
         floats: tp.List[float] = Parser.words_to_list(words)

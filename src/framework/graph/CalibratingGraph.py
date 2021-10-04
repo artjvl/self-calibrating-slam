@@ -42,9 +42,15 @@ class CalibratingGraph(Graph):
         solution: tp.Optional[SubCalibratingGraph] = super().optimise(optimiser)
         if solution is not None:
             return solution
+        for parameter in parameters:
+            parameter.fix()
+        solution = super().optimise(optimiser)
+        if solution is not None:
+            return solution
 
         # solution is not of lower cost: revert parameter initialisation
         for i, parameter in enumerate(parameters):
+            parameter.fix(is_fixed=False)
             parameter.set_from_vector(vectors[i])
 
     # parameters
@@ -86,23 +92,22 @@ class CalibratingGraph(Graph):
     def get_parameter_names(self) -> tp.List[str]:
         return self._parameter_names
 
-    def __copy__(self):
-        new = super().__copy__()
-        new._endpoints = copy.copy(self._endpoints)
-        new._parameters = copy.copy(self._parameters)
-        new._parameter_names = copy.copy(self._parameter_names)
-        return new
-
-    def __deepcopy__(self, memo: tp.Optional[tp.Dict[int, tp.Any]] = None):
-        if memo is None:
-            memo = {}
-        new = super().__deepcopy__(memo)
-        memo[id(self)] = new
-
-        new._endpoints = copy.deepcopy(self._endpoints, memo)
-        new._parameters = copy.deepcopy(self._parameters, memo)
-        new._parameter_names = copy.deepcopy(self._parameter_names, memo)
-        return new
+    # def __copy__(self):
+    #     new = super().__copy__()
+    #     new._endpoints = copy.copy(self._endpoints)
+    #     new._parameters = copy.copy(self._parameters)
+    #     new._parameter_names = copy.copy(self._parameter_names)
+    #     return new
+    #
+    # def __deepcopy__(self, memo: tp.Optional[tp.Dict[int, tp.Any]] = None):
+    #     if memo is None:
+    #         memo = {}
+    #     new = super().__deepcopy__(memo)
+    #     memo[id(self)] = new
+    #     new._endpoints = copy.deepcopy(self._endpoints, memo)
+    #     new._parameters = copy.deepcopy(self._parameters, memo)
+    #     new._parameter_names = copy.deepcopy(self._parameter_names, memo)
+    #     return new
 
 
 T = tp.TypeVar('T')
@@ -188,6 +193,7 @@ class CalibratingEdge(tp.Generic[T], Edge[T], ABC):
     def remove_endpoint_id(self, id_: int) -> None:
         assert id_ in self._endpoints
         del self._endpoints[id_]
+        super().remove_node_id(id_)
 
     # parameter
     def add_parameter(self, node: ParameterNode):
@@ -208,41 +214,25 @@ class CalibratingEdge(tp.Generic[T], Edge[T], ABC):
     def remove_parameter_id(self, id_: int) -> None:
         assert id_ in self._parameters
         del self._parameters[id_]
-
-    # read/write
-    def read(self, words: tp.List[str]) -> tp.List[str]:
-        words = self.get_data().read_rest(words)
-        words = self._info_matrix.read_rest(words)
-        return words
-
-    def write(self) -> tp.List[str]:
-        words: tp.List[str] = self.get_data().write()
-        words += self._info_matrix.write()
-        return words
+        super().remove_node_id(id_)
 
     # copy
-    def copy_meta_to(self, edge: SubCalibratingEdge) -> SubCalibratingEdge:
-        edge = super().copy_meta_to(edge)
+    def copy_attributes_to(self, edge: SubCalibratingEdge) -> SubCalibratingEdge:
+        edge = super().copy_attributes_to(edge)
         edge._num_additional = self._num_additional
         return edge
 
-    def __copy__(self):
-        new = super().__copy__()
-
-        # CalibratingEdge
-        new._endpoints = copy.copy(self._endpoints)
-        new._parameters = copy.copy(self._parameters)
-        new._num_additional = self._num_additional
-        return new
-
-    def __deepcopy__(self, memo: tp.Optional[tp.Dict[int, tp.Any]] = None):
-        if memo is None:
-            memo = {}
-        new = super().__deepcopy__(memo)
-        memo[id(self)] = new
-
-        # CalibratingEdge
-        new._endpoints = copy.deepcopy(self._endpoints, memo)
-        new._parameters = copy.deepcopy(self._parameters, memo)
-        new._num_additional = self._num_additional
-        return new
+    # def __copy__(self):
+    #     new = super().__copy__()
+    #     new._endpoints = copy.copy(self._endpoints)
+    #     new._parameters = copy.copy(self._parameters)
+    #     return new
+    #
+    # def __deepcopy__(self, memo: tp.Optional[tp.Dict[int, tp.Any]] = None):
+    #     if memo is None:
+    #         memo = {}
+    #     new = super().__deepcopy__(memo)
+    #     memo[id(self)] = new
+    #     new._endpoints = copy.deepcopy(self._endpoints, memo)
+    #     new._parameters = copy.deepcopy(self._parameters, memo)
+    #     return new

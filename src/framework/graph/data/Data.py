@@ -1,7 +1,10 @@
 import typing as tp
 from abc import abstractmethod
 
-from src.framework.math.matrix.vector import SubVector
+from src.framework.math.matrix.vector import VectorFactory
+
+if tp.TYPE_CHECKING:
+    from src.framework.math.matrix.vector import SubVector
 
 T = tp.TypeVar('T')
 SubData = tp.TypeVar('SubData', bound='Data')
@@ -22,15 +25,30 @@ class Data(tp.Generic[T]):
         if value is not None:
             self.set_value(value)
 
-    @abstractmethod
-    def to_vector(self) -> SubVector:
-        pass
+    # type
+    @classmethod
+    def type(cls) -> tp.Type[T]:
+        """ Returns the value-type. """
+        return cls._type
 
+    @classmethod
     @abstractmethod
-    def from_vector(self, vector: SubVector) -> None:
+    def dim(cls) -> int:
+        """ Returns the dimension (i.e., minimal number of variables to fully define the data structure). """
         pass
 
     # value
+    @abstractmethod
+    def to_vector(self) -> 'SubVector':
+        pass
+
+    @abstractmethod
+    def set_from_vector(self, vector: 'SubVector') -> None:
+        pass
+
+    def set_zero(self) -> None:
+        self.set_from_vector(VectorFactory.from_dim(self.dim()).zeros())
+
     def set_value(
             self,
             value: T
@@ -50,26 +68,14 @@ class Data(tp.Generic[T]):
 
     # oplus
     @abstractmethod
-    def oplus(self, delta: SubVector) -> T:
+    def oplus(self, delta: 'SubVector') -> T:
         """ Increments the value with a delta. """
-        pass
-
-    # type
-    @classmethod
-    def get_type(cls) -> tp.Type[T]:
-        """ Returns the value-type. """
-        return cls._type
-
-    @classmethod
-    @abstractmethod
-    def get_dim(cls) -> int:
-        """ Returns the dimension (i.e., minimal number of variables to fully define the data structure). """
         pass
 
     # read/write
     def read_rest(self, words: tp.List[str]) -> tp.List[str]:
         """ Takes an over-sized list of words and reads only the required portion, while returning the rest. """
-        count: int = self.get_length()
+        count: int = self.dim()
         assert len(words) >= count, f"Words <{words}> should have at least length {count}."
         self.read(words[: count])
         return words[count:]
@@ -83,8 +89,3 @@ class Data(tp.Generic[T]):
     def write(self) -> tp.List[str]:
         """ Writes (or serialises) the class attributes to a list of words (strings). """
         pass
-
-    @classmethod
-    def get_length(cls) -> int:
-        """ Returns the length of the list of words necessary to instantiate the class instance. """
-        return cls.get_dim()

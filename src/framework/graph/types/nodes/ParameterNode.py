@@ -56,7 +56,7 @@ class ParameterNode(tp.Generic[T], Node[T]):
             index: int = 0  # ParameterNode
     ):
         if specification is None:
-            if self.get_type() == Vector3:
+            if self.type() == Vector3:
                 specification = ParameterSpecification.SCALE
             else:
                 specification = ParameterSpecification.BIAS
@@ -76,7 +76,7 @@ class ParameterNode(tp.Generic[T], Node[T]):
     # value
     def initialise(self) -> None:
         assert self._specification is not None
-        vector_type: tp.Type['SubSizeVector'] = VectorFactory.from_dim(self.get_dim())
+        vector_type: tp.Type['SubSizeVector'] = VectorFactory.from_dim(self.dim())
         if self._specification == ParameterSpecification.SCALE:
             self.set_from_vector(vector_type.ones())
         else:
@@ -131,31 +131,18 @@ class ParameterNode(tp.Generic[T], Node[T]):
     # read/write
     def read(self, words: tp.List[str]) -> tp.List[str]:
         self._specification = ParameterDict.from_string(words[0])
-        return self._data.read_rest(words[1:])
+        return super().read(words[1:])
 
     def write(self) -> tp.List[str]:
-        words: tp.List[str] = [ParameterDict.from_specification(self._specification)] + self._data.write()
-        return words
+        return [ParameterDict.from_specification(self._specification)] + super().write()
 
     # copy
-    def __copy__(self):
-        new = super().__copy__()
-
-        new._specification = self._specification
-        new._index = self._index
-        new._translation = self._translation
-        return new
-
-    def __deepcopy__(self, memo: tp.Optional[tp.Dict[int, tp.Any]] = None):
-        if memo is None:
-            memo = {}
-        new = super().__deepcopy__(memo)
-        memo[id(self)] = new
-
-        new._specification = self._specification
-        new._index = self._index
-        new._translation = self._translation
-        return new
+    def copy_attributes_to(self, node: SubParameterNode) -> SubParameterNode:
+        node = super().copy_attributes_to(node)
+        node._specification = self._specification
+        node._index = self._index
+        node._translation = self._translation
+        return node
 
 
 def compose_bias(
@@ -166,7 +153,7 @@ def compose_bias(
     if is_inverse:
         parameter = parameter.inverse()
 
-    transformation: SE2 = measurement.transformation()
+    transformation: SE2 = measurement.get_transformation()
     measurement.mask(transformation * parameter)
     return measurement
 
@@ -179,7 +166,7 @@ def compose_offset(
     if is_inverse:
         parameter = parameter.inverse()
 
-    transformation: SE2 = measurement.transformation()
+    transformation: SE2 = measurement.get_transformation()
     measurement.mask(parameter * transformation * parameter.inverse())
     return measurement
 
@@ -192,7 +179,7 @@ def compose_scale(
     if is_inverse:
         parameter = Vector3(np.reciprocal(parameter.array()))
 
-    transformation: SE2 = measurement.transformation()
+    transformation: SE2 = measurement.get_transformation()
     measurement.mask(
         SE2.from_translation_angle_vector(
             Vector3(np.multiply(parameter.array(), transformation.translation_angle_vector().array()))
@@ -310,7 +297,7 @@ class ParameterNodeV1(ParameterNode[Vector1]):
             is_inverse: bool = False
     ) -> 'SubMeasurement2D':
         assert measurement.has_translation()
-        translation: Vector2 = measurement.translation()
+        translation: Vector2 = measurement.get_translation()
         scale: float = self.get_float()
         if is_inverse:
             scale = 1 / scale

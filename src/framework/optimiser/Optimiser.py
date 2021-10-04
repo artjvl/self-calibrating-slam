@@ -154,7 +154,6 @@ class Optimiser(object):
 
         if path_output.exists():
             solution: SubCalibratingGraph = GraphParser.load(path_output, reference=graph, should_print=should_print)
-            graph.copy_meta_to(solution)
-            solution.assign_pre(graph)
+            graph.copy_attributes_to(solution)
             return solution
         return None

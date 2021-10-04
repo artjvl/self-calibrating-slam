@@ -65,6 +65,7 @@ class OptimisationHandler(QtCore.QObject):
         for subgraph in subgraphs:
             print(f"gui/OptimisationHandler: Optimising '{subgraph.to_unique()}'...")
             subsolution: SubGraph = self._optimiser.instance_optimise(subgraph, compute_marginals=False, should_print=should_print)
+            assert subsolution is not None
             if subsolutions:
                 subsolution.set_previous(subsolutions[-1])
             subsolutions.append(subsolution)

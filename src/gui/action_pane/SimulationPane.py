@@ -43,4 +43,4 @@ class SimulationPane(QtWidgets.QWidget):
         layout.addWidget(LabelPane(config, 'Simulation parameters:'))
 
     def _handle_mc(self) -> None:
-        return self._simulation_handler.monte_carlo(2)
+        return self._simulation_handler.monte_carlo(3)

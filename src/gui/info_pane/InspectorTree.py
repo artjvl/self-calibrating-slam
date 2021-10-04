@@ -71,8 +71,8 @@ class InspectorTree(QtWidgets.QTreeWidget):
 
         # error
         sub_error = self._construct_tree_property(root, 'Error', '', bold=True, is_expanded=True)
-        self._construct_tree_property(sub_error, 'is_perturbed', f'{graph.is_perturbed()}')
-        self._construct_tree_property(sub_error, 'error', f'{graph.get_error()}')
+        self._construct_tree_property(sub_error, 'is_consistent', f'{graph.is_consistent()}')
+        self._construct_tree_property(sub_error, 'error', f'{graph.cost()}')
 
         # metrics
         if graph.has_truth():
@@ -80,9 +80,9 @@ class InspectorTree(QtWidgets.QTreeWidget):
             truth: SubGraph = graph.get_truth()
             sub_truth = self._construct_tree_property(sub_metrics, 'truth', f'{truth.to_unique()}')
             sub_truth.obj = Indicator.TRUE
-            self._construct_tree_property(sub_metrics, 'ate', f'{graph.get_ate()}')
-            self._construct_tree_property(sub_metrics, 'rpe_translation', f'{graph.get_rpe_translation()}')
-            self._construct_tree_property(sub_metrics, 'rpe_rotation', f'{graph.get_rpe_rotation()}')
+            self._construct_tree_property(sub_metrics, 'ate', f'{graph.ate()}')
+            self._construct_tree_property(sub_metrics, 'rpe_translation', f'{graph.rpe_translation()}')
+            self._construct_tree_property(sub_metrics, 'rpe_rotation', f'{graph.rpe_rotation()}')
 
         # jacobian/hessian
         sub_linearisation = self._construct_tree_property(root, 'Linearisation', '', bold=True, is_expanded=True)
@@ -205,8 +205,8 @@ class InspectorTree(QtWidgets.QTreeWidget):
 
         # error
         sub_error = self._construct_tree_property(root, 'Error', '', bold=True, is_expanded=True)
-        self._construct_tree_property_from_value(sub_error, 'error_vector', edge.compute_error_vector())
-        self._construct_tree_property(sub_error, 'error', f'{edge.compute_error():f}')
+        self._construct_tree_property_from_value(sub_error, 'error_vector', edge.error_vector())
+        self._construct_tree_property(sub_error, 'cost', f'{edge.cost():f}')
 
         # metrics
         if edge.has_truth():
@@ -214,8 +214,8 @@ class InspectorTree(QtWidgets.QTreeWidget):
             truth: SubEdge = edge.get_truth()
             sub_truth = self._construct_tree_property(sub_metrics, 'truth', f'{truth.to_unique()}')
             self._construct_edge_tree(truth, sub_truth)
-            self._construct_tree_property_from_value(sub_metrics, 'rpe_translation2', edge._compute_rpe_translation2())
-            self._construct_tree_property_from_value(sub_metrics, 'rpe_rotation', edge._compute_rpe_rotation2())
+            self._construct_tree_property_from_value(sub_metrics, 'rpe_translation2', edge.rpe_translation2())
+            self._construct_tree_property_from_value(sub_metrics, 'rpe_rotation', edge.rpe_rotation2())
 
         # measurement
         sub_measurement = self._construct_tree_property(root, 'Measurement', '', bold=True)
@@ -255,7 +255,7 @@ class InspectorTree(QtWidgets.QTreeWidget):
         cls._construct_tree_property(root, 'type', type(value).__name__)
         cls._construct_tree_property_from_value(root, 'value', value)
         if isinstance(value, Dimensional):
-            cls._construct_tree_property(root, 'dimension', str(value.get_dim()))
+            cls._construct_tree_property(root, 'dimension', str(value.dim()))
             if isinstance(value, Lie):
                 cls._construct_tree_property(root, 'dof', str(value.get_dof()))
                 cls._construct_tree_property_from_value(root, 'vector', value.vector())

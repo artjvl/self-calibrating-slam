@@ -57,7 +57,7 @@ class NodeSE2(SpatialNode[SE2], DrawAxis):
 
     def get_translation(self) -> Vector2:
         assert self.has_value()
-        return self.get_value().translation()
+        return self.get_value().get_translation()
 
     def has_measurement(self) -> bool:
         return super().has_value()
@@ -74,7 +74,7 @@ class NodeSE2(SpatialNode[SE2], DrawAxis):
 
     def _compute_ate2(self) -> float:
         assert self.has_truth()
-        delta: Vector2 = self.get_truth().get_value().translation() - self.get_value().translation()
+        delta: Vector2 = self.get_truth().get_value().get_translation() - self.get_value().get_translation()
         return delta[0] ** 2 + delta[1] ** 2
 
 

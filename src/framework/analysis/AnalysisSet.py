@@ -130,10 +130,10 @@ class AnalysisSet(object):
             # metrics
             timestamp: float = subgraph.timestep()
             time_.append(timestamp)
-            error.append(subgraph.get_error())
-            ate.append(subgraph.get_ate())
-            rpet.append(subgraph.get_rpe_translation())
-            rper.append(subgraph.get_rpe_rotation())
+            error.append(subgraph.cost())
+            ate.append(subgraph.ate())
+            rpet.append(subgraph.rpe_translation())
+            rper.append(subgraph.rpe_rotation())
 
             # parameter evolution
             for name in names:
@@ -225,7 +225,7 @@ class AnalysisSet(object):
             fig=fig, figsize=figsize, should_show=should_show
         )
 
-    def plot_rept(
+    def plot_rpet(
             self,
             index: tp.Optional[int] = None,
             colour: tp.Optional[str] = None,  # b, g, r, c, m, y, k, w
@@ -241,7 +241,7 @@ class AnalysisSet(object):
             fig=fig, figsize=figsize, should_show=should_show
         )
 
-    def plot_repr(
+    def plot_rper(
             self,
             index: tp.Optional[int] = None,
             colour: tp.Optional[str] = None,  # b, g, r, c, m, y, k, w
@@ -319,7 +319,7 @@ class AnalysisSet(object):
             fig=fig, figsize=figsize, should_show=should_show
         )
 
-    def plot_rept_band(
+    def plot_rpet_band(
             self,
             colour: tp.Optional[str] = None,  # b, g, r, c, m, y, k, w
             alpha: float = 1,
@@ -335,7 +335,7 @@ class AnalysisSet(object):
             fig=fig, figsize=figsize, should_show=should_show
         )
 
-    def plot_repr_band(
+    def plot_rper_band(
             self,
             colour: tp.Optional[str] = None,  # b, g, r, c, m, y, k, w
             alpha: float = 1,

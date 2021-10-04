@@ -28,6 +28,7 @@ SubFactorElement = tp.Union[SubFactorNode, SubFactorEdge]
 
 
 class FactorGraph(BaseGraph):
+    _atol: tp.Optional[float]
 
     _error: tp.Optional[float]
     _hessian: tp.Optional['SubSparseBlockMatrix']
@@ -35,43 +36,28 @@ class FactorGraph(BaseGraph):
 
     def __init__(self):
         super().__init__()
+        self._atol = 1e-6
+
         self._hessian = None
         self._covariance = None
-        self._error = None
 
     # metrics
-    def clear_metrics(self) -> None:
-        self._error = None
-        for node in self.get_nodes():
-            node.clear_metrics()
-        for edge in self.get_edges():
-            edge.clear_metrics()
-
-    def get_error(self) -> float:
-        if self._error is None:
-            error: float = 0.
-            for edge in self.get_edges():
-                error += edge.get_error()
-            self._error = error
-        return self._error
-
-    def compute_error(self) -> float:
+    def cost(self) -> float:
         error: float = 0.
         for edge in self.get_edges():
-            error += edge.compute_error()
-        self._error = error
+            error += edge.cost()
         return error
 
     # vector initialisation
     def to_vector(self) -> 'SubVector':
-        list_: tp.List[float] = []
+        vector_list: tp.List[float] = []
         node: SubFactorNode
         for node in self.get_nodes():
-            list_ += node.to_vector().to_list()
-        return Vector(list_)
+            vector_list += node.to_vector().to_list()
+        return Vector(vector_list)
 
     def from_vector(self, vector: 'SubVector') -> None:
-        graph_dim: int = sum([node.get_dim() for node in self.get_nodes()])
+        graph_dim: int = sum([node.dim() for node in self.get_nodes()])
         vector_dim = vector.get_length()
         assert vector_dim == graph_dim
         list_: tp.List[float] = vector.to_list()
@@ -79,21 +65,20 @@ class FactorGraph(BaseGraph):
         index: int = 0
         node: SubFactorNode
         for node in self.get_nodes():
-            dim = node.get_dim()
+            dim = node.dim()
             segment: tp.List[float] = list_[index: index + dim]
             assert len(segment) == dim
             node.set_from_vector(VectorFactory.from_list(segment))
             index += dim
         assert index == len(list_)
-        self.clear_metrics()
 
     # optimise/copy
     def optimise(self, optimiser: 'Optimiser') -> tp.Optional[SubFactorGraph]:
-        error: float = self.compute_error()
+        cost_before: float = self.cost()
         solution: tp.Optional[SubFactorGraph] = optimiser.instance_optimise(self)
-        if solution is not None and solution.compute_error() < error:
+        cost_after: float = solution.cost()
+        if solution is not None and cost_after < cost_before:
             self.from_vector(solution.to_vector())
-            self.copy_meta_to(solution)
             if self.has_previous():
                 solution.set_previous(self.get_previous())
             return solution
@@ -101,10 +86,15 @@ class FactorGraph(BaseGraph):
 
     def copy(self, is_shallow: bool = False) -> SubFactorGraph:
         copy_: SubFactorGraph = copy.copy(self) if is_shallow else copy.deepcopy(self)
-        self.copy_meta_to(copy_)
         if self.has_previous():
             copy_.set_previous(self.get_previous())
         return copy_
+
+    def set_atol(self, atol: float) -> None:
+        self._atol = atol
+
+    def is_consistent(self) -> bool:
+        return bool(np.isclose(self.cost(), 0., atol=self._atol))
 
     # linearise
     def get_hessian(self) -> 'SubSparseBlockMatrix':
@@ -114,7 +104,7 @@ class FactorGraph(BaseGraph):
         return self._hessian
 
     def linearise(self) -> None:
-        self._hessian = SparseBlockMatrix([node.get_dim() for node in self.get_active_nodes()])
+        self._hessian = SparseBlockMatrix([node.dim() for node in self.get_active_nodes()])
         edges: tp.List[FactorEdge] = self.get_edges()
         for edge in edges:
             nodes: tp.List[FactorNode] = edge.get_active_nodes()
@@ -142,24 +132,10 @@ class FactorGraph(BaseGraph):
         return marginals
 
     # copy
-    def __copy__(self):
-        new = super().__copy__()
-
-        # # FactorGraph
-        # new._hessian = self._hessian
-        # new._covariance = self._covariance
-        return new
-
-    def __deepcopy__(self, memo: tp.Optional[tp.Dict[int, tp.Any]] = None):
-        if memo is None:
-            memo = {}
-        new = super().__deepcopy__(memo)
-        memo[id(self)] = new
-
-        # # FactorGraph
-        # new._hessian = copy.deepcopy(self._hessian, memo)
-        # new._covariance = copy.deepcopy(self._covariance, memo)
-        return new
+    def copy_attributes_to(self, graph: SubFactorGraph) -> SubFactorGraph:
+        graph = super().copy_attributes_to(graph)
+        graph._atol = self._atol
+        return graph
 
 
 T = tp.TypeVar('T')
@@ -176,20 +152,20 @@ class DataContainer(tp.Generic[T]):
             **kwargs
     ):
         super().__init__(**kwargs)
-        self._data = DataFactory.from_type(self.get_type())(value)
+        self._data = DataFactory.from_type(self.type())(value)
 
     # type
     @classmethod
-    def get_type(cls) -> tp.Type[T]:
+    def type(cls) -> tp.Type[T]:
         """ Returns the value-type of this container. """
         return cls._type
 
     @classmethod
-    def get_dim(cls) -> int:
+    def dim(cls) -> int:
         """ Returns the dimensions (minimum number of constraints) for the value-type of this container. """
-        return DataFactory.from_type(cls.get_type()).get_dim()
+        return DataFactory.from_type(cls.type()).dim()
 
-    def get_data(self) -> 'SubData':
+    def data(self) -> 'SubData':
         return self._data
 
     # value
@@ -199,7 +175,6 @@ class DataContainer(tp.Generic[T]):
 
     def get_value(self) -> T:
         """ Returns the value. """
-        assert self.has_value()
         return self._data.get_value()
 
     def set_value(self, value: T) -> None:
@@ -213,41 +188,52 @@ class DataContainer(tp.Generic[T]):
 
     def set_from_vector(self, vector: 'SubSizeVector') -> None:
         """ Sets the value according to the provided vector. """
-        self._data.from_vector(vector)
+        self._data.set_from_vector(vector)
 
     def set_zero(self) -> None:
         """ Sets the value to zero. """
-        self.set_from_vector(VectorFactory.from_dim(self.get_dim()).zeros())
+        self._data.set_zero()
 
     # read/write
     def read(self, words: tp.List[str]) -> tp.List[str]:
         return self._data.read_rest(words)
 
     def write(self) -> tp.List[str]:
-        words: tp.List[str] = self._data.write()
-        return words
+        return self._data.write()
 
 
 class FactorNode(BaseNode, tp.Generic[T], DataContainer[T]):
-
-    # properties
     _is_fixed: bool
 
     def __init__(
             self,
-            name: tp.Optional[str] = None,
-            id_: tp.Optional[int] = None,
-            value: tp.Optional[T] = None
+            name: tp.Optional[str] = None,  # BaseElement
+            id_: tp.Optional[int] = None,  # BaseNode
+            value: tp.Optional[T] = None  # DataContainer
     ):
         super().__init__(name=name, id_=id_, value=value)
+        self.set_metrics()
         self._is_fixed = False
 
-    def clear_metrics(self) -> None:
+    # data
+    def is_complete(self) -> bool:
+        return self.has_value()
+
+    def set_metrics(self) -> None:
         pass
+
+    def set_value(self, value: T) -> None:
+        super().set_value(value)
+        self.set_metrics()
 
     def set_from_vector(self, vector: 'SubSizeVector') -> None:
         super().set_from_vector(vector)
-        self.clear_metrics()
+        self.set_metrics()
+
+    def read(self, words: tp.List[str]) -> tp.List[str]:
+        words = super().read(words)
+        self.set_metrics()
+        return words
 
     # fix
     def fix(self, is_fixed: bool = True) -> None:
@@ -257,42 +243,28 @@ class FactorNode(BaseNode, tp.Generic[T], DataContainer[T]):
         return self._is_fixed
 
     # copy
-    def copy_meta_to(self, node: SubFactorNode) -> SubFactorNode:
-        node = super().copy_meta_to(node)
+    def copy_attributes_to(self, node: SubFactorNode) -> SubFactorNode:
+        node = super().copy_attributes_to(node)
         node._is_fixed = self._is_fixed
         return node
 
     # copy
-    def __copy__(self):
-        new = super().__copy__()
-
-        # FactorNode
-        new._is_fixed = self._is_fixed
-        # DataContainer
-        new.set_value(self.get_value())
-        return new
-
-    def __deepcopy__(self, memo: tp.Optional[tp.Dict[int, tp.Any]] = None):
-        if memo is None:
-            memo = {}
-
-        # class
-        new = super().__deepcopy__(memo)
-        memo[id(self)] = new
-
-        # FactorNode
-        new._is_fixed = self._is_fixed
-        # DataContainer
-        new.set_value(copy.deepcopy(self.get_value()))
-        return new
+    # def __copy__(self):
+    #     new = super().__copy__()
+    #     new.set_value(self.get_value())
+    #     return new
+    #
+    # def __deepcopy__(self, memo: tp.Optional[tp.Dict[int, tp.Any]] = None):
+    #     if memo is None:
+    #         memo = {}
+    #     new = super().__deepcopy__(memo)
+    #     memo[id(self)] = new
+    #     new.set_value(copy.deepcopy(self.get_value()))
+    #     return new
 
 
 class FactorEdge(BaseEdge, tp.Generic[T], DataContainer[T]):
-
-    # constant properties
     _info_matrix: 'SubDataSymmetric'
-
-    # dynamic properties
     _error_vector: tp.Optional['SubSizeVector']
     _jacobian: tp.Optional['SubBlockMatrix']
     _hessian: tp.Optional['SubBlockMatrix']
@@ -305,17 +277,54 @@ class FactorEdge(BaseEdge, tp.Generic[T], DataContainer[T]):
             info_matrix: tp.Optional['SubSquare'] = None
     ):
         super().__init__(name=name, nodes=nodes, value=measurement)
+
+        # info matrix
         if info_matrix is None:
-            info_matrix = SquareFactory.from_dim(self.get_dim()).identity()
+            info_matrix = SquareFactory.from_dim(self.dim()).identity()
         self._info_matrix = DataFactory.from_value(info_matrix)
-        self.clear_metrics()
 
-    def clear_metrics(self) -> None:
-        """ Clear all dynamic properties. """
-
+        # metrics
         self._error_vector = None
+        self.set_metrics()
+
+        # gradient
         self._jacobian = None
         self._hessian = None
+
+    # data
+    @abstractmethod
+    def is_complete(self) -> bool:
+        pass
+
+    def set_metrics(self) -> None:
+        if self.is_complete():
+            self._error_vector = self._compute_error_vector()
+
+    def set_value(self, value: T) -> None:
+        super().set_value(value)
+        self.set_metrics()
+
+    def set_from_vector(self, vector: 'SubSizeVector') -> None:
+        super().set_from_vector(vector)
+        self.set_metrics()
+
+    def add_node(self, node: SubFactorNode) -> None:
+        super().add_node(node)
+        self.set_metrics()
+
+    def remove_node_id(self, id_: int) -> None:
+        super().remove_node_id(id_)
+        self.set_metrics()
+
+    def read(self, words: tp.List[str]) -> tp.List[str]:
+        words = self.data().read_rest(words)
+        words = self._info_matrix.read_rest(words)
+        self.set_metrics()
+        return words
+
+    def write(self) -> tp.List[str]:
+        words: tp.List[str] = self.data().write() + self._info_matrix.write()
+        return words
 
     # estimate
     @abstractmethod
@@ -323,25 +332,17 @@ class FactorEdge(BaseEdge, tp.Generic[T], DataContainer[T]):
         """ Returns the estimate of the measurement. """
         pass
 
+    # error
     @abstractmethod
     def _compute_error_vector(self) -> 'SubSizeVector':
         pass
 
-    def compute_error_vector(self) -> 'SubSizeVector':
-        self._error_vector = self._compute_error_vector()
+    def error_vector(self) -> 'SubSizeVector':
+        assert self._error_vector is not None
         return self._error_vector
 
-    def get_error_vector(self) -> 'SubSizeVector':
-        if self._error_vector is None:
-            self.compute_error_vector()
-        return self._error_vector
-
-    def compute_error(self) -> float:
-        error_vector: 'SubSizeVector' = self.compute_error_vector()
-        return self.mahalanobis_distance(error_vector, self.get_info_matrix())
-
-    def get_error(self) -> float:
-        error_vector: 'SubSizeVector' = self.get_error_vector()
+    def cost(self) -> float:
+        error_vector: 'SubSizeVector' = self.error_vector()
         return self.mahalanobis_distance(error_vector, self.get_info_matrix())
 
     # information
@@ -367,7 +368,7 @@ class FactorEdge(BaseEdge, tp.Generic[T], DataContainer[T]):
             vector: 'SubSizeVector',
             information: 'SubSquare'
     ) -> float:
-        assert vector.get_dim() == information.get_dim(), f'{vector} and {information} are not of appropriate dimensions.'
+        assert vector.dim() == information.dim(), f'{vector} and {information} are not of appropriate dimensions.'
         return float(vector.array().transpose() @ information.array() @ vector.array())
 
     # linearisation
@@ -383,8 +384,8 @@ class FactorEdge(BaseEdge, tp.Generic[T], DataContainer[T]):
 
     def linearise(self) -> None:
         nodes: tp.List[SubFactorNode] = self.get_active_nodes()
-        node_dims: tp.List[int] = [node.get_dim() for node in nodes]
-        self._jacobian = BlockMatrix([self.get_dim()], node_dims)
+        node_dims: tp.List[int] = [node.dim() for node in nodes]
+        self._jacobian = BlockMatrix([self.dim()], node_dims)
 
         node: SubFactorNode
         for node in nodes:
@@ -407,25 +408,25 @@ class FactorEdge(BaseEdge, tp.Generic[T], DataContainer[T]):
 
         delta: float = 1e-9
         jacobian: List2D = []
-        for i in range(node.get_dim()):
+        for i in range(node.dim()):
             edge_copy: SubFactorEdge = copy.deepcopy(self)
             node_copy: SubFactorNode = edge_copy.get_node(id_)
 
             mean: SubData = copy.deepcopy(node_copy._data)
-            unit_vector: 'SubSizeVector' = VectorFactory.from_dim(node_copy.get_dim()).zeros()
+            unit_vector: 'SubSizeVector' = VectorFactory.from_dim(node_copy.dim()).zeros()
 
             unit_vector[i] = delta
             plus: T = mean.oplus(unit_vector)
             node_copy.set_value(plus)
-            plus_error: 'SubSizeVector' = edge_copy.compute_error_vector()
+            plus_error: 'SubSizeVector' = edge_copy.error_vector()
 
             unit_vector[i] = - delta
             minus: T = mean.oplus(unit_vector)
             node_copy.set_value(minus)
-            minus_error: 'SubSizeVector' = edge_copy.compute_error_vector()
+            minus_error: 'SubSizeVector' = edge_copy.error_vector()
             error = plus_error.array() - minus_error.array()
 
-            column: 'SubSizeVector' = VectorFactory.from_dim(self.get_dim())(
+            column: 'SubSizeVector' = VectorFactory.from_dim(self.dim())(
                 error / (2 * delta)
             )
             jacobian.append(column.to_list())
@@ -434,40 +435,18 @@ class FactorEdge(BaseEdge, tp.Generic[T], DataContainer[T]):
     def get_cardinality(self) -> int:
         return len(self.get_nodes())
 
-    # read/write
-    def read(self, words: tp.List[str]) -> tp.List[str]:
-        words = self.get_data().read_rest(words)
-        return self._info_matrix.read_rest(words)
-
-    def write(self) -> tp.List[str]:
-        words: tp.List[str] = self.get_data().write() + self._info_matrix.write()
-        return words
-
     # copy
-    def __copy__(self):
-        new = super().__copy__()
-
-        # DataContainer
-        new.set_value(self.get_value())
-        # FactorEdge
-        new._info_matrix = self._info_matrix
-        # new._error_vector = self._error_vector
-        # new._jacobian = self._jacobian
-        # new._hessian = self._hessian
-        return new
-
-    def __deepcopy__(self, memo: tp.Optional[tp.Dict[int, tp.Any]] = None):
-        if memo is None:
-            memo = {}
-
-        new = super().__deepcopy__(memo)
-        memo[id(self)] = new
-
-        # DataContainer
-        new.set_value(copy.deepcopy(self.get_value(), memo))
-        # FactorEdge
-        new.set_info_matrix(copy.deepcopy(self.get_info_matrix(), memo))
-        # new._error_vector = copy.deepcopy(self._error_vector, memo)
-        # new._jacobian = copy.deepcopy(self._jacobian, memo)
-        # new._hessian = copy.deepcopy(self._hessian, memo)
-        return new
+    # def __copy__(self):
+    #     new = super().__copy__()
+    #     new.set_value(self.get_value())
+    #     new._info_matrix = self._info_matrix
+    #     return new
+    #
+    # def __deepcopy__(self, memo: tp.Optional[tp.Dict[int, tp.Any]] = None):
+    #     if memo is None:
+    #         memo = {}
+    #     new = super().__deepcopy__(memo)
+    #     memo[id(self)] = new
+    #     new.set_value(copy.deepcopy(self.get_value(), memo))
+    #     new.set_info_matrix(copy.deepcopy(self.get_info_matrix(), memo))
+    #     return new

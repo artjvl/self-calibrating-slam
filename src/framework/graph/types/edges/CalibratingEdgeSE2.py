@@ -18,7 +18,7 @@ class CalibratingEdgeSE2(CalibratingEdge[SE2], ABC):
         estimate: 'SubMeasurement2D' = Measurement2D.from_transformation(self.get_delta())
         for parameter in self.get_parameters():
             estimate = parameter.compose(estimate, is_inverse=True)
-        return estimate.transformation()
+        return estimate.get_transformation()
 
     def _compute_error_vector(self) -> 'Vector3':
         delta: SE2 = self.get_estimate() - self.get_value()
@@ -27,7 +27,7 @@ class CalibratingEdgeSE2(CalibratingEdge[SE2], ABC):
         # return self.get_estimate().minus(self.get_measurement())
 
     def set_measurement(self, measurement: 'SubMeasurement2D') -> None:
-        self.set_value(measurement.transformation())
+        self.set_value(measurement.get_transformation())
 
     def get_measurement(self) -> 'SubMeasurement2D':
         return Measurement2D.from_transformation(self.get_value())

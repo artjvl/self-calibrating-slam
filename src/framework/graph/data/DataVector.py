@@ -15,13 +15,13 @@ class DataVector(Data[SubVector]):
             value: tp.Optional[SubVector] = None
     ):
         super().__init__(value)
-        self._size = self._type.get_dim()
+        self._size = self._type.dim()
 
     def to_vector(self) -> SubVector:
         return self.get_value()
 
-    def from_vector(self, vector: SubVector) -> None:
-        assert vector.get_dim() == self.get_dim()
+    def set_from_vector(self, vector: SubVector) -> None:
+        assert vector.dim() == self.dim()
         self.set_value(vector)
 
     def read(self, words: tp.List[str]) -> None:
@@ -35,12 +35,12 @@ class DataVector(Data[SubVector]):
 
     def oplus(self, delta: SubVector) -> SubVector:
         assert self.has_value()
-        assert delta.get_dim() == self.get_dim()
+        assert delta.dim() == self.dim()
         return self._type(self.get_value().array() + delta.array())
 
     @classmethod
-    def get_dim(cls) -> int:
-        return cls._type.get_dim()
+    def dim(cls) -> int:
+        return cls._type.dim()
 
 
 class DataV1(DataVector):

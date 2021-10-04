@@ -19,23 +19,30 @@ class BaseElement(object):
             **kwargs
     ):
         super().__init__(**kwargs)
+
+        # default the element name to the class name
         if name is None:
             name = self.__class__.__name__
         self._name = name
 
     # name
     def get_name(self) -> str:
+        """ Returns the element name. """
         return self._name
 
     def set_name(self, name: str):
+        """ Sets the element name. """
         self._name = name
 
-    # copy
+    # equivalence
     @abstractmethod
     def is_equivalent(self, element: SubBaseElement) -> bool:
+        """ Returns whether the other element is equivalent. """
         pass
 
-    def copy_meta_to(self, element: SubBaseElement) -> SubBaseElement:
+    # copy
+    def copy_attributes_to(self, element: SubBaseElement) -> SubBaseElement:
+        """ Copies relevant attributes to the other element. """
         assert self.is_equivalent(element)
         element._name = self._name
         return element
@@ -48,14 +55,13 @@ class NodeContainer(object):
         super().__init__(**kwargs)
         self._nodes = {}
 
+    # nodes
     def add_node(self, node: SubBaseNode) -> None:
         id_: int = node.get_id()
         assert not self.contains_node_id(id_)
         self._nodes[id_] = node
 
-    # nodes
     def get_nodes(self) -> tp.List[SubBaseNode]:
-        """ Returns all nodes. """
         return list(self._nodes.values())
 
     def has_nodes(self) -> bool:
@@ -85,9 +91,8 @@ class NodeContainer(object):
         assert self.contains_node_id(id_)
         del self._nodes[id_]
 
-    # active nodes
+    # active nodes (i.e., nodes that are not fixed)
     def get_active_nodes(self) -> tp.List[SubBaseNode]:
-        """ Returns only active nodes (i.e., nodes that are not fixed). """
         return list(filter(lambda node: not node.is_fixed(), self.get_nodes()))
 
     def get_active_node_ids(self) -> tp.List[int]:
@@ -97,7 +102,7 @@ class NodeContainer(object):
         assert self.contains_node_id(id_)
         return self.get_active_node_ids().index(id_)
 
-    # endpoints
+    # endpoints (i.e., pose-nodes)
     def get_endpoints(self) -> tp.List[SubBaseNode]:
         """ Returns only nodes of interest. """
         return self.get_nodes()
@@ -136,7 +141,7 @@ class BaseGraph(BaseElement, NodeContainer, EdgeContainer, Printable):
     _by_type: tp.Dict[tp.Type[SubBaseElement], tp.List[SubBaseElement]]  # elements grouped by type
     _by_name: tp.Dict[str, tp.List[SubBaseNode]]  # elements grouped by name
 
-    # references
+    # previous
     _previous: tp.Optional[SubBaseGraph]  # reference to a previous graph state
 
     def __init__(
@@ -159,6 +164,7 @@ class BaseGraph(BaseElement, NodeContainer, EdgeContainer, Printable):
         super().add_node(node)
 
     def get_nodes(self) -> tp.List[SubBaseNode]:
+        """ Returns nodes sorted by node id. """
         return [self._nodes[key] for key in sorted(self._nodes)]
 
     def clear(self) -> None:
@@ -256,13 +262,13 @@ class BaseGraph(BaseElement, NodeContainer, EdgeContainer, Printable):
         return f'{len(self._nodes)};{len(self._edges)}'
 
     # subgraphs
-    def length(self) -> int:
+    def previous_depth(self) -> int:
         graph: SubBaseGraph = self
-        length_: int = 1
+        depth: int = 1
         while graph.has_previous():
             graph = graph.get_previous()
-            length_ += 1
-        return length_
+            depth += 1
+        return depth
 
     def set_previous(self, previous: SubBaseGraph) -> None:
         # assert not self.has_previous()
@@ -371,32 +377,29 @@ class BaseGraph(BaseElement, NodeContainer, EdgeContainer, Printable):
         """
         return graph.get_elements() == self.get_elements()
 
-    def __copy__(self):
-        new = self.__class__()
-
-        # BaseElement
-        new._name = self._name
-        # BaseGraph
-        new._nodes = copy.copy(self._nodes)
-        new._edges = copy.copy(self._edges)
-        new._by_type = {type_: copy.copy(elements) for (type_, elements) in self._by_type.items()}
-        new._by_name = {name: copy.copy(elements) for (name, elements) in self._by_name.items()}
-        return new
-
-    def __deepcopy__(self, memo: tp.Optional[tp.Dict[int, tp.Any]] = None):
-        if memo is None:
-            memo = {}
-        new = self.__class__()
-        memo[id(self)] = new
-
-        # BaseElement
-        new._name = self._name
-        # BaseGraph
-        new._nodes = copy.deepcopy(self._nodes, memo)
-        new._edges = copy.deepcopy(self._edges, memo)
-        new._by_type = {type_: copy.deepcopy(elements, memo) for (type_, elements) in self._by_type.items()}
-        new._by_name = {name: copy.deepcopy(elements, memo) for (name, elements) in self._by_name.items()}
-        return new
+    # def copy(self, is_shallow: bool = False) -> SubBaseGraph:
+    #     copy_: SubBaseGraph = copy.copy(self) if is_shallow else copy.deepcopy(self)
+    #     self.copy_attributes_to(copy_)
+    #     return copy_
+    #
+    # def __copy__(self):
+    #     new = self.__class__()
+    #     new._nodes = copy.copy(self._nodes)
+    #     new._edges = copy.copy(self._edges)
+    #     new._by_type = {type_: copy.copy(elements) for (type_, elements) in self._by_type.items()}
+    #     new._by_name = {name: copy.copy(elements) for (name, elements) in self._by_name.items()}
+    #     return new
+    #
+    # def __deepcopy__(self, memo: tp.Optional[tp.Dict[int, tp.Any]] = None):
+    #     if memo is None:
+    #         memo = {}
+    #     new = self.__class__()
+    #     memo[id(self)] = new
+    #     new._nodes = copy.deepcopy(self._nodes, memo)
+    #     new._edges = copy.deepcopy(self._edges, memo)
+    #     new._by_type = {type_: copy.deepcopy(elements, memo) for (type_, elements) in self._by_type.items()}
+    #     new._by_name = {name: copy.deepcopy(elements, memo) for (name, elements) in self._by_name.items()}
+    #     return new
 
 
 class BaseNode(BaseElement, Printable):
@@ -423,7 +426,7 @@ class BaseNode(BaseElement, Printable):
         assert self.has_id()
         return self._id
 
-    # copy
+    # equivalence
     def is_equivalent(self, node: SubBaseNode) -> bool:
         return node._id == self._id
 
@@ -431,22 +434,23 @@ class BaseNode(BaseElement, Printable):
     def to_id(self) -> str:
         return f'{self.get_id()}'
 
-    # copy
-    def __copy__(self):
-        new = self.__class__()
-
-        # BaseElement
-        new._name = self._name
-        # BaseNode
-        new._id = self._id
-        return new
-
-    def __deepcopy__(self, memo: tp.Optional[tp.Dict[int, tp.Any]] = None):
-        if memo is None:
-            memo = {}
-        new = self.__copy__()
-        memo[id(self)] = new
-        return new
+    # def copy(self, is_shallow: bool = False) -> SubBaseNode:
+    #     copy_: SubBaseNode = copy.copy(self) if is_shallow else copy.deepcopy(self)
+    #     self.copy_attributes_to(copy_)
+    #     return copy_
+    #
+    # def __copy__(self):
+    #     new = self.__class__()
+    #     new._id = self._id
+    #     return new
+    #
+    # def __deepcopy__(self, memo: tp.Optional[tp.Dict[int, tp.Any]] = None):
+    #     if memo is None:
+    #         memo = {}
+    #     new = self.__copy__()
+    #     memo[id(self)] = new
+    #     new._id = self._id
+    #     return new
 
 
 class BaseEdge(BaseElement, NodeContainer, Printable):
@@ -462,7 +466,7 @@ class BaseEdge(BaseElement, NodeContainer, Printable):
             for node in nodes:
                 self.add_node(node)
 
-    # copy
+    # equivalence
     def is_equivalent(self, edge: SubBaseEdge) -> bool:
         return edge.get_node_ids() == self.get_node_ids()
 
@@ -470,24 +474,20 @@ class BaseEdge(BaseElement, NodeContainer, Printable):
     def to_id(self) -> str:
         return '-'.join([f'{id_}' for id_ in self.get_node_ids()])
 
-    # copy
-    def __copy__(self):
-        new = self.__class__()
-
-        # BaseElement
-        new._name = self._name
-        # BaseEdge
-        new._nodes = copy.copy(self._nodes)
-        return new
-
-    def __deepcopy__(self, memo: tp.Optional[tp.Dict[int, tp.Any]] = None):
-        if memo is None:
-            memo = {}
-        new = self.__class__()
-        memo[id(self)] = new
-
-        # BaseElement
-        new._name = self._name
-        # BaseEdge
-        new._nodes = copy.deepcopy(self._nodes, memo)
-        return new
+    # def copy(self, is_shallow: bool = False) -> SubBaseEdge:
+    #     copy_: SubBaseEdge = copy.copy(self) if is_shallow else copy.deepcopy(self)
+    #     self.copy_attributes_to(copy_)
+    #     return copy_
+    #
+    # def __copy__(self):
+    #     new = self.__class__()
+    #     new._nodes = copy.copy(self._nodes)
+    #     return new
+    #
+    # def __deepcopy__(self, memo: tp.Optional[tp.Dict[int, tp.Any]] = None):
+    #     if memo is None:
+    #         memo = {}
+    #     new = self.__class__()
+    #     memo[id(self)] = new
+    #     new._nodes = copy.deepcopy(self._nodes, memo)
+    #     return new
