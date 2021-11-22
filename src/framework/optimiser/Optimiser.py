@@ -128,7 +128,7 @@ class Optimiser(object):
         relative_to: str = 'graphs/temp'
         GraphParser.save_path_folder(graph, relative_to, 'before', should_print=should_print)
 
-        path_g2o_bin: Path = (root / 'g2o/bin/g2o_d').resolve()
+        path_g2o_bin: Path = (root / 'g2o/bin/g2o').resolve()
         path_input: Path = (root / (relative_to + '/before.g2o')).resolve()
         path_output: Path = (root / (relative_to + '/after.g2o')).resolve()
         path_summary: Path = (root / (relative_to + '/summary.g2o')).resolve()
