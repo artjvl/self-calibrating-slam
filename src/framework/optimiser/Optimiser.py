@@ -154,6 +154,6 @@ class Optimiser(object):
 
         if path_output.exists():
             solution: 'SubGraph' = GraphParser.load(path_output, reference=graph, should_print=should_print)
-            graph.copy_attributes_to(solution)
+            # graph.copy_attributes_to(solution)
             return solution
         return None

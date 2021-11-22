@@ -11,10 +11,19 @@ if tp.TYPE_CHECKING:
 class EdgeSE2(Edge[SE2], ABC):
     _type = SE2
 
+    def set_from_transformation(
+            self,
+            transformation: SE2
+    ) -> None:
+        self.set_value(transformation)
+
+    def to_transformation(self) -> SE2:
+        return self.get_value()
+
     def estimate(self) -> SE2:
         transformation: SE2 = self.delta()
         for parameter in self.get_parameter_nodes():
-            transformation = parameter.compose(transformation, is_inverse=True)
+            transformation = parameter.compose_transformation(transformation, is_inverse=True)
         return transformation
 
     def _compute_error_vector(self) -> 'Vector3':

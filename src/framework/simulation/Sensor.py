@@ -11,6 +11,7 @@ from src.framework.simulation.Parameter import StaticParameter
 if tp.TYPE_CHECKING:
     from src.framework.graph.data import SubData
     from src.framework.graph.data.DataFactory import Quantity
+    from src.framework.graph.Graph import SubParameterNode
     from src.framework.math.matrix.square import SubSquare
     from src.framework.math.matrix.vector.Vector import SubSizeVector
     from src.framework.simulation.Parameter import SubParameter
@@ -35,17 +36,17 @@ class Sensor(tp.Generic[T]):
 
         # information
         if info_matrix is None:
-            info_matrix = SquareFactory.from_dim(self.get_dim()).identity()
+            info_matrix = SquareFactory.from_dim(self.dim()).identity()
         self._info_matrix = info_matrix
         self._parameters = {}
 
     # measurement-type
     @classmethod
-    def get_dim(cls):
-        return DataFactory.from_type(cls.get_type()).dim()
+    def dim(cls):
+        return DataFactory.from_type(cls.type()).dim()
 
     @classmethod
-    def get_type(cls) -> tp.Type['SubData']:
+    def type(cls) -> tp.Type['SubData']:
         return cls._type
 
     # info
@@ -62,11 +63,11 @@ class Sensor(tp.Generic[T]):
         return self._info_matrix.inverse()
 
     # noise
-    def set_rng(self, seed: tp.Optional[int] = None):
+    def set_rng(self, seed: tp.Optional[int] = None) -> None:
         self._rng = np.random.RandomState(seed)
 
     def generate_noise(self) -> 'SubSizeVector':
-        dim: int = self.get_dim()
+        dim: int = self.dim()
         vector_type: tp.Type['SubSizeVector'] = VectorFactory.from_dim(dim)
         return vector_type(
             self._rng.multivariate_normal(
@@ -83,20 +84,21 @@ class Sensor(tp.Generic[T]):
             self,
             name: str,
             parameter: 'SubParameter'
-    ) -> None:
+    ) -> 'SubParameterNode':
         assert name not in self._parameters, f'{name}'
         parameter.set_name(name)
         self._parameters[name] = parameter
+        return parameter.node()
 
     def update_parameter(
             self,
             name: str,
             value: 'Quantity'
-    ) -> None:
+    ) -> 'SubParameterNode':
         assert name in self._parameters, f'{name}'
         parameter: 'SubParameter' = self._parameters[name]
         assert isinstance(parameter, StaticParameter)
-        parameter.update(value)
+        return parameter.update(value)
 
     def get_parameter(
             self,

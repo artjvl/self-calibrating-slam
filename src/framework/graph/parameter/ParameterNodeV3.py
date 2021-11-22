@@ -18,7 +18,7 @@ class ParameterNodeV3(BaseParameterNode[Vector3]):
             index: int = 0
     ):
         if specification is None:
-            specification = ParameterSpecification.BIAS
+            specification = ParameterSpecification.SCALE
         super().__init__(
             name,
             value=value, specification=specification, id_=id_, timestep=timestep, index=index

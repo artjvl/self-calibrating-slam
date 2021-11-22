@@ -124,6 +124,7 @@ class ManhattanPath(Path):
         transformation: SE2 = SE2.from_translation_angle_elements(self._step_size, 0., angle)
         new: SE2 = self._current + transformation
         self._current = new
+        # return new
         sidestep: np.ndarray = self._sidestep_rng.multivariate_normal(
             mean=[0, 0], cov=0.16 * np.eye(2)
         )

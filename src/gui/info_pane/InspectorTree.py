@@ -2,7 +2,7 @@ import enum
 import typing as tp
 
 from PyQt5 import QtGui, QtWidgets
-from src.framework.graph.Graph import SubGraph, Graph, SubEdge, SubNode, SubElement, Node
+from src.framework.graph.Graph import SubGraph, Graph, SubEdge, SubNode, SubElement, Node, SpatialNode, ParameterNode
 from src.framework.graph.data.DataFactory import Quantity
 from src.framework.math.Dimensional import Dimensional
 from src.framework.math.lie.Lie import Lie
@@ -150,26 +150,35 @@ class InspectorTree(QtWidgets.QTreeWidget):
         self._construct_tree_property(root, 'name', f'{node.get_name()}')
         self._construct_tree_property(root, 'address', f'{hex(id(node))}')
 
-        # top
+        # Node
         sub_node = self._construct_tree_property(root, 'Node', '', bold=True, is_expanded=True)
         self._construct_tree_property(sub_node, 'id', f'{node.get_id()}')
-        timestep: tp.Optional[float] = node.get_timestep()
-        self._construct_tree_property(sub_node, 'timestep', f'{timestep:.2f}' if timestep is not None else '-')
+        self._construct_tree_property(sub_node, 'timestep', f'{node.get_timestep()}')
         self._construct_tree_property(sub_node, 'is_fixed', f'{node.is_fixed()}')
 
-        # metrics
+        # truth
         if node.has_truth():
-            sub_metrics = self._construct_tree_property(root, 'Metrics', '', bold=True, is_expanded=True)
             truth: SubNode = node.get_truth()
-            sub_truth = self._construct_tree_property(sub_metrics, 'truth', f'{truth.identifier_class_unique()}')
+            sub_truth = self._construct_tree_property(sub_node, 'truth', f'{truth.identifier_class_unique()}')
             self._construct_node_tree(truth, sub_truth)
-            ate2: tp.Optional[float] = node._compute_ate2()
-            if ate2 is not None:
-                self._construct_tree_property(sub_metrics, 'ate2', f'{ate2}')
+
+        if isinstance(node, SpatialNode):
+            sub_metrics = self._construct_tree_property(root, 'Metrics', '', bold=True, is_expanded=True)
+            if node.has_value() and node.has_truth():
+                self._construct_tree_property(sub_metrics, 'ate2', f'{node.ate2()}')
+
+        if isinstance(node, ParameterNode):
+            sub_parameter = self._construct_tree_property(root, 'Parameter', '', bold=True, is_expanded=True)
+            self._construct_tree_property(sub_parameter, 'specification', f'{node.get_specification()}')
+            self._construct_tree_property(sub_parameter, 'index', f'{node.index()}')
+            if node.has_translation():
+                self._construct_tree_property(sub_parameter, 'translation', f'{node.get_translation()}')
 
         # value
         sub_value = self._construct_tree_property(root, 'Value', '', bold=True, is_expanded=True)
-        self._construct_value_tree(sub_value, node.get_value())
+        if node.has_value():
+            self._construct_tree_property_from_value(sub_value, 'write', f"{' '.join(node.write())}")
+            self._construct_value_tree(sub_value, node.get_value())
         return root
 
     # edge

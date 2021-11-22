@@ -3,6 +3,7 @@ import typing as tp
 
 if tp.TYPE_CHECKING:
     from src.framework.graph.data.DataFactory import Quantity
+    from src.framework.graph.Graph import SubParameterNode
     from src.framework.simulation.Parameter import SubParameter
     from src.framework.simulation.Sensor import SubSensor
 
@@ -18,6 +19,10 @@ class Model(object):
     def reset(self) -> None:
         self._sensors = {}
 
+    def has_sensor(self, sensor_name: str) -> bool:
+        """ Returns whether a sensor is present. """
+        return sensor_name in self._sensors
+
     def add_sensor(
             self,
             sensor_name: str,
@@ -26,10 +31,6 @@ class Model(object):
         """ Adds a sensor. """
         assert sensor_name not in self._sensors
         self._sensors[sensor_name] = sensor
-
-    def has_sensor(self, sensor_name: str) -> bool:
-        """ Returns whether a sensor is present. """
-        return sensor_name in self._sensors
 
     def get_sensor(
             self,
@@ -52,13 +53,13 @@ class Model(object):
             sensor_name: str,
             parameter_name: str,
             parameter: 'SubParameter'
-    ) -> None:
-        self.get_sensor(sensor_name).add_parameter(parameter_name, parameter)
+    ) -> 'SubParameterNode':
+        return self.get_sensor(sensor_name).add_parameter(parameter_name, parameter)
 
     def update_parameter(
             self,
             sensor_name: str,
             parameter_name: str,
             value: 'Quantity'
-    ) -> None:
-        self.get_sensor(sensor_name).update_parameter(parameter_name, value)
+    ) -> 'SubParameterNode':
+        return self.get_sensor(sensor_name).update_parameter(parameter_name, value)

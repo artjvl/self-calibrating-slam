@@ -180,7 +180,7 @@ class Node(Element, tp.Generic[T], DataContainer[T]):
     def has_truth(self) -> bool:
         return self._truth is not None
 
-    def assign_truth(self, node: SubNode):
+    def assign_truth(self, node: SubNode) -> None:
         assert not self.has_truth()
         assert self.is_equivalent(node)
         self._truth = node
@@ -326,7 +326,7 @@ class ParameterNode(tp.Generic[T], Node[T]):
         return f'{self.get_id()}; {ParameterDict.from_specification(self._specification)}'
 
     @abstractmethod
-    def compose(
+    def compose_transformation(
             self,
             transformation: 'SE2',
             is_inverse: bool = False
@@ -464,6 +464,15 @@ class NodeContainer(Element):
     def get_parameter_names(self) -> tp.List[str]:
         return self._parameter_names
 
+    def remove_node_id(self, id_) -> None:
+        assert self.contains_node_id(id_)
+        del self._nodes[id_]
+        if id_ in self._spatial_nodes:
+            del self._spatial_nodes[id_]
+        else:
+            assert id_ in self._parameter_nodes
+            del self._parameter_nodes[id_]
+
     # clear
     def clear(self) -> None:
         self._nodes = {}
@@ -509,7 +518,7 @@ class NodeContainer(Element):
 class Edge(tp.Generic[T], DataContainer[T], NodeContainer):
     _cardinality: int
     _info_matrix: 'SubDataSymmetric'
-    _truth: tp.Optional[SubNode]
+    _truth: tp.Optional[SubEdge]
 
     # metrics
     _error_vector: tp.Optional['SubSizeVector']
@@ -586,14 +595,19 @@ class Edge(tp.Generic[T], DataContainer[T], NodeContainer):
         self.set_metrics()
 
     def remove_node_id(self, id_) -> None:
-        assert self.contains_node_id(id_)
-        del self._nodes[id_]
-        if id_ in self._spatial_nodes:
-            del self._spatial_nodes[id_]
-        else:
-            assert id_ in self._parameter_nodes
-            del self._parameter_nodes[id_]
+        super().remove_node_id(id_)
         self.set_metrics()
+
+    @abstractmethod
+    def set_from_transformation(
+            self,
+            transformation: 'SE2'
+    ) -> None:
+        pass
+
+    @abstractmethod
+    def to_transformation(self) -> 'SE2':
+        pass
 
     def set_value(self, value: T) -> None:
         super().set_value(value)
@@ -809,6 +823,7 @@ class Graph(NodeContainer):
         parameters: tp.List[SubParameterNode] = self.get_parameter_nodes()
         vectors: tp.List['SubSizeVector'] = []
         for parameter in parameters:
+            # reinitialise parameters to default value
             vector: 'SubSizeVector' = parameter.reinitialise()
             vectors.append(vector)
         if cost_threshold is None:
@@ -820,19 +835,22 @@ class Graph(NodeContainer):
             # cost below cost_threshold is considered optimal
             cost: float = solution.cost()
             if cost < cost_threshold:
+                # accept solution
                 return self.accept_solution(solution)
 
-            # else: reset parameters and try again
+            # else: fix parameters and try again
             for parameter in parameters:
                 parameter.fix()
             solution = optimiser.instance_optimise(self)
-
             if solution is not None:
+                # revert parameter fix
+                for parameter in parameters:
+                    parameter.fix(is_fixed=False)
+                # accept solution
                 return self.accept_solution(solution)
 
-            # revert parameters
+            # revert parameters to original state
             for i, parameter in enumerate(parameters):
-                parameter.fix(is_fixed=False)
                 parameter.set_from_vector(vectors[i])
 
     def accept_solution(self, solution: SubGraph) -> SubGraph:
@@ -843,6 +861,7 @@ class Graph(NodeContainer):
 
     def copy(self, is_shallow: bool = False) -> SubGraph:
         copy_: SubGraph = copy.copy(self) if is_shallow else copy.deepcopy(self)
+        self.copy_attributes_to(copy_)
         if self.has_previous():
             copy_.set_previous(self.get_previous())
         return copy_
@@ -917,11 +936,11 @@ class Graph(NodeContainer):
             depth += 1
         return depth
 
-    def set_previous(self, previous: SubGraph) -> None:
-        self._previous = previous
-
     def has_previous(self) -> bool:
         return self._previous is not None
+
+    def set_previous(self, previous: SubGraph) -> None:
+        self._previous = previous
 
     def get_previous(self) -> SubGraph:
         assert self.has_previous()
@@ -933,7 +952,7 @@ class Graph(NodeContainer):
         while graph.has_previous():
             graph = graph.get_previous()
             graphs.append(graph)
-        return graphs
+        return graphs[::-1]
 
     def find_subgraphs(self) -> tp.List[SubGraph]:
         assert not self.has_previous()
@@ -1010,38 +1029,41 @@ class Graph(NodeContainer):
 
     def ate(self) -> float:
         te2: float = 0
-        count: int = 0
+        nodes: tp.List[SubSpatialNode] = self.get_spatial_nodes()
+        if len(nodes) == 0:
+            return 0.
         node: SubNode
-        for node in self.get_spatial_nodes():
+        for node in nodes:
             node_ate2 = node.ate2()
             if node_ate2 is not None:
                 te2 += node_ate2
-                count += 1
-        ate: float = np.sqrt(te2 / count)
+        ate: float = np.sqrt(te2 / len(nodes))
         return ate
 
     def rpe_translation(self) -> float:
         rpe2: float = 0
-        count: int = 0
+        edges: tp.List[SubEdge] = self.get_edges()
+        if len(edges) == 0:
+            return 0.
         edge: SubEdge
-        for edge in self.get_edges():
+        for edge in edges:
             edge_rpe2 = edge.rpe_translation2()
             if edge_rpe2 is not None:
                 rpe2 += edge_rpe2
-                count += 1
-        rpe_translation: float = np.sqrt(rpe2 / count)
+        rpe_translation: float = np.sqrt(rpe2 / len(edges))
         return rpe_translation
 
     def rpe_rotation(self) -> float:
         rpe: float = 0
-        count: int = 0
+        edges: tp.List[SubEdge] = self.get_edges()
+        if len(edges) == 0:
+            return 0.
         edge: SubEdge
-        for edge in self.get_edges():
+        for edge in edges:
             edge_rpe2 = edge.rpe_rotation2()
             if edge_rpe2 is not None:
                 rpe += edge_rpe2
-                count += 1
-        rpe_rotation: float = rpe / count
+        rpe_rotation: float = rpe / len(edges)
         return rpe_rotation
 
     # clear
@@ -1074,7 +1096,7 @@ class Graph(NodeContainer):
 
     def copy_attributes_to(self, other: SubGraph) -> SubGraph:
         super().copy_attributes_to(other)
-        other._previous = self._previous
+        # other._previous = self._previous
         other._truth = self._truth
         other._atol = self._atol
         return other
@@ -1088,8 +1110,8 @@ class Graph(NodeContainer):
         new._edges = copy.copy(self._edges)  # passed by reference -> copy
 
         # other attributes
-        new._previous = self._previous  # same previous
-        new._truth = self._truth  # same truth
+        new._previous = None  # not copied
+        new._truth = None  # not copied
         new._atol = self._atol  # passed by value
         return new
 
@@ -1105,7 +1127,7 @@ class Graph(NodeContainer):
         new._edges = copy.deepcopy(self._edges, memo)  # passed by reference -> copy
 
         # other attributes
-        new._previous = self._previous  # same previous
-        new._truth = self._truth  # same truth
+        new._previous = None  # not copied
+        new._truth = None  # not copied
         new._atol = self._atol  # passed by value
         return new

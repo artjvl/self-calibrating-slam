@@ -5,13 +5,14 @@ from abc import abstractmethod
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
-from framework.analysis.FigureParser import FigureParser
+from src.framework.analysis.plot.FigureParser import FigureParser
+from src.framework.analysis.plot.Plotter import Plotter
 from src.framework.graph.Visualisable import Visualisable, DrawPoint, DrawAxis, DrawEdge
 from src.framework.math.matrix.vector.Vector import Vector
 from src.gui.viewer.Rgb import Rgb
 
 if tp.TYPE_CHECKING:
-    from src.framework.graph.Graph import SubGraph, SubNode, SubParameterNode, SubNodeEdge, SubEdge
+    from src.framework.graph.Graph import SubGraph, SubNode, SubSpatialNode, SubParameterNode, SubNodeEdge, SubEdge
     from src.framework.math.lie.transformation import SE2
     from src.framework.math.matrix.vector.Vector import SubSizeVector
     from src.framework.math.matrix.vector import SubVector, Vector2, Vector3
@@ -42,7 +43,6 @@ def round_down(value: float, nearest: float = 1.) -> float:
     return nearest * np.floor(value / nearest)
 
 
-
 def update_print(text: str) -> None:
     sys.__stdout__.write(f'\r{text}')
     sys.__stdout__.flush()
@@ -51,7 +51,11 @@ def update_print(text: str) -> None:
 class AnalyserTopology(object):
 
     @staticmethod
-    def find_domain(graph: 'SubGraph') -> tp.Tuple[float, float, float, float]:
+    def find_domain(
+            graph: 'SubGraph',
+            margin: float = 0.,
+            round: tp.Optional[float] = None
+    ) -> tp.Tuple[float, float, float, float]:
         x_min: float = 0.
         x_max: float = 0.
         y_min: float = 0.
@@ -69,7 +73,16 @@ class AnalyserTopology(object):
                         x_max = max(x_max, point[0])
                         y_min = min(y_min, point[1])
                         y_max = max(y_max, point[1])
-        return x_min, y_min, x_max - x_min, y_max - y_min
+        x_min -= margin
+        y_min -= margin
+        x_max += margin
+        y_max += margin
+
+        if round is None:
+            return x_min, y_min, x_max - x_min, y_max - y_min
+        x_min = round_down(x_min, round)
+        y_min = round_down(y_min, round)
+        return x_min, y_min, round_up(x_max, round) - x_min, round_up(y_max, round) - y_min
 
     @classmethod
     def plot(
@@ -483,6 +496,121 @@ class AnalyserParameterDynamics(object):
         return fig
 
 
+class AnalyserParameterSpatial(object):
+    @staticmethod
+    def is_eligible(graph: 'SubGraph', name: str) -> bool:
+        return name in graph.get_parameter_names() and all(node.has_translation() for node in graph.get_of_name(name))
+
+    @classmethod
+    def plot_spatial_clusters(
+            cls,
+            graph: 'SubGraph',
+            parameter_name: str,
+            fig: tp.Optional[plt.Figure] = None
+    ) -> plt.Figure:
+        assert cls.is_eligible(graph, parameter_name)
+
+        parameters: tp.List['SubParameterNode'] = graph.get_of_name(parameter_name)
+        edges: tp.List['SubEdge'] = graph.get_edges()
+        batches: tp.List[tp.List['SubEdge']] = [[] for _ in parameters]
+        averages: tp.List[np.ndarray] = []
+        centres: np.ndarray = np.zeros((2, len(parameters)))
+        for i, parameter in enumerate(parameters):
+            centres[:, i] = parameter.get_translation().array().flatten()
+            for edge in edges:
+                if edge.contains_node_id(parameter.get_id()):
+                    batches[i].append(edge)
+        for batch in batches:
+            average: np.ndarray = np.zeros((2, len(batch)))
+            for i, edge in enumerate(batch):
+                endpoints: tp.List['SubSpatialNode'] = edge.get_spatial_nodes()
+                translations: np.ndarray = np.zeros((2, len(endpoints)))
+                for j, endpoint in enumerate(endpoints):
+                    translations[:, j] = endpoint.get_value().translation().array().flatten()
+                average[:, i] = np.mean(translations, axis=1)
+            averages.append(average)
+
+        fig = cls.create_fig(f"Clusters of '{parameter_name}'")
+        ax = fig.axes[0]
+        ax.set_aspect('equal')
+        x_min, y_min, size_x, size_y = AnalyserTopology.find_domain(graph, margin=1., round=5.)
+        ax.set_xlim(x_min, x_min + size_x)
+        ax.set_ylim(y_min, y_min + size_y)
+
+        for i, batch in enumerate(batches):
+            average = averages[i]
+            sc = ax.scatter(average[0, :], average[1, :], s=20, alpha=1, zorder=0)
+            colour = sc.get_facecolors()
+            for edge in batch:
+                if isinstance(edge, DrawEdge):
+                    a, b = edge.draw_nodeset()
+                    ax.plot([a[0], b[0]], [a[1], b[1]], color=colour, linestyle='-', alpha=0.5, zorder=0, linewidth=2)
+            translation: 'Vector2' = parameters[i].get_translation()
+            # ax.scatter((translation[0]), (translation[1]), s=300, c=colour, alpha=0.5, zorder=1)
+            # ax.scatter((translation[0]), (translation[1]), s=40, c='black', zorder=2)
+            ax.scatter((translation[0]), (translation[1]), s=120, c=colour, alpha=1, zorder=1, edgecolors='black')
+
+        fig.show()
+        return fig
+
+    @classmethod
+    def plot_interpolation(cls, graph: 'SubGraph', parameter_name: str) -> plt.Figure:
+        assert cls.is_eligible(graph, parameter_name)
+        import scipy.interpolate as spi
+
+        edges: tp.List['SubEdge'] = graph.get_edges()
+        parameters: tp.List['SubParameterNode'] = graph.get_of_name(parameter_name)
+        dim: int = parameters[0].dim()
+        size: int = len(parameters)
+
+        translations: np.ndarray = np.zeros((2, size))
+        data: np.ndarray = np.zeros((dim, size))
+        for i, parameter in enumerate(parameters):
+            translations[:, i] = parameter.get_translation().array().flatten()
+            data[:, i] = parameter.to_vector().array().flatten()
+
+        x_min, y_min, size_x, size_y = AnalyserTopology.find_domain(graph, margin=1., round=5.)
+        x_max = x_min + size_x
+        y_max = y_min + size_y
+
+        for d in range(dim):
+            fig = cls.create_fig(f"Interpolation of '{parameter_name}'")
+            ax = fig.axes[0]
+            ax.set_aspect('equal')
+
+            grid_x, grid_y = np.mgrid[
+                x_min: x_max: complex(0, 2 * (x_max - x_min) + 1),
+                y_min: y_max: complex(0, 2 * (y_max - y_min) + 1),
+            ]
+            grid = spi.griddata(np.transpose(translations), np.transpose(data[d, :]), (grid_x, grid_y), method='linear')
+            im = ax.imshow(grid.T, extent=(x_min, x_max, y_min, y_max), origin='lower', zorder=0)
+            fig.colorbar(im, ax=ax)
+
+            for edge in edges:
+                if isinstance(edge, DrawEdge):
+                    a, b = edge.draw_nodeset()
+                    ax.plot([a[0], b[0]], [a[1], b[1]], color='black', linestyle='-', alpha=0.5, zorder=1)
+            for parameter in parameters:
+                translation: 'Vector2' = parameter.get_translation()
+                ax.scatter((translation[0]), (translation[1]), s=40, c='red', edgecolors='black', zorder=2)
+
+            fig.show()
+            # fig2 = plt.figure()
+            # ax = plt.axes(projection='3d')
+            # ax.plot_surface(grid_x, grid_y, grid)
+            # ax.view_init(-150, 60)
+            # fig2.show()
+            # return fig
+        return fig
+
+    @staticmethod
+    def create_fig(name: str) -> plt.Figure:
+        fig, ax = plt.subplots()
+        fig.tight_layout()
+        ax.set_title(name)
+        return fig
+
+
 class AnalyserVariance(object):
 
     @staticmethod
@@ -626,6 +754,7 @@ class Analyser(object):
     _rper: AnalyserRPER
     _parameter_values: tp.Type[AnalyserParameterValues]
     _parameter_dynamics: tp.Type[AnalyserParameterDynamics]
+    _parameter_spatial: tp.Type[AnalyserParameterSpatial]
     _variance: tp.Type[AnalyserVariance]
 
     def __init__(self):
@@ -638,6 +767,7 @@ class Analyser(object):
         self._rper = AnalyserRPER()
         self._parameter_values = AnalyserParameterValues
         self._parameter_dynamics = AnalyserParameterDynamics
+        self._parameter_spatial = AnalyserParameterSpatial
         self._variance = AnalyserVariance
 
     def has_fig(self) -> bool:
@@ -653,10 +783,12 @@ class Analyser(object):
     def save_fig(
             self,
             name: tp.Optional[str] = None
-    ) -> None:
+    ) -> plt.Figure:
         assert self.has_fig()
         fig: plt.Figure = self._fig
         FigureParser.save(fig, name)
+        Plotter(fig).save(name)
+        return fig
 
     def clear(self) -> None:
         self._ate.clear()
@@ -683,6 +815,9 @@ class Analyser(object):
 
     def parameter_dynamics(self) -> tp.Type[AnalyserParameterDynamics]:
         return self._parameter_dynamics
+
+    def parameter_spatial(self) -> tp.Type[AnalyserParameterSpatial]:
+        return self._parameter_spatial
 
     def variance(self) -> tp.Type[AnalyserVariance]:
         return self._variance

@@ -7,6 +7,7 @@ from src.gui.viewer.Rgb import Rgb, RgbTuple
 if tp.TYPE_CHECKING:
     from src.framework.graph.Visualisable import SubVisualisable
 
+SubGLGraphicsItem = tp.TypeVar('SubGLGraphicsItem', bound='GLGraphicsItem')
 SubGraphicsItem = tp.TypeVar('SubGraphicsItem', bound='GraphicsItem')
 
 

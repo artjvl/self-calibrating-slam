@@ -42,9 +42,6 @@ class BiSimulation(object):
     _truth_sim: tp.Optional['SubSimulation']
     _estimate_sim: tp.Optional['SubSimulation']
 
-    # config
-    _config: tp.Union[int, str]
-
     def __init__(
             self,
             name: tp.Optional[str] = None,
@@ -66,13 +63,13 @@ class BiSimulation(object):
         self._truth_sim = None
         self._estimate_sim = None
 
-        # config
-        self._config = 0
+        # configure
         self.configure()
 
     # name
-    def set_name(self, name: str) -> None:
+    def set_name(self, name: str) -> SubBiSimulation:
         self._name = name
+        return self
 
     def get_name(self) -> str:
         """ Returns the name. """
@@ -112,18 +109,12 @@ class BiSimulation(object):
         self._geo.add(translation[0], translation[1], self.get_current_id())
         self.set_constraint_rng(self._constraint_seed)
 
-    def set_config(self, config: tp.Union[int, str]) -> None:
-        self._config = config
-
-    def get_config(self) -> tp.Union[int, str]:
-        return self._config
-
     # path
-    def set_path(self, path: 'SubPath') -> None:
-        self._path = path
-
     def has_path(self) -> bool:
         return self._path is not None
+
+    def set_path(self, path: 'SubPath') -> None:
+        self._path = path
 
     def path(self) -> 'SubPath':
         assert self.has_path()
@@ -246,19 +237,6 @@ class BiSimulation(object):
         self.add_edge(sensor_name, [current_id], translation)
 
     # loop-closure
-    def roll_closure(
-            self,
-            sensor_name: str,
-            distance: float,
-            separation: int = 10,
-            threshold: float = 0.
-    ) -> bool:
-        """ Creates a loop-closure constraint with probability <threshold>. """
-
-        if self._constraint_rng.uniform(0, 1) >= threshold:
-            return self.try_closure(sensor_name, distance, separation)
-        return False
-
     def try_closure(
             self,
             sensor_name: str,
@@ -291,19 +269,20 @@ class BiSimulation(object):
                 return True
         return False
 
-    # proximity constraint
-    def roll_proximity(
+    def roll_closure(
             self,
             sensor_name: str,
-            steps: int,
+            distance: float,
+            separation: int = 10,
             threshold: float = 0.
     ) -> bool:
-        """ Creates a proximity constraint with probability <threshold>. """
+        """ Creates a loop-closure constraint with probability <threshold>. """
 
         if self._constraint_rng.uniform(0, 1) >= threshold:
-            return self.try_proximity(sensor_name, steps)
+            return self.try_closure(sensor_name, distance, separation)
         return False
 
+    # proximity constraint
     def try_proximity(
             self,
             sensor_name: str,
@@ -322,6 +301,18 @@ class BiSimulation(object):
             proximity_id: int = pose_ids[-1 - steps]
             self.add_poses_edge(sensor_name, proximity_id, current_id)
             return True
+        return False
+
+    def roll_proximity(
+            self,
+            sensor_name: str,
+            steps: int,
+            threshold: float = 0.
+    ) -> bool:
+        """ Creates a proximity constraint with probability <threshold>. """
+
+        if self._constraint_rng.uniform(0, 1) >= threshold:
+            return self.try_proximity(sensor_name, steps)
         return False
 
     # rng

@@ -16,7 +16,6 @@ Nodeset = tp.Tuple[Vector3, Vector3]
 
 
 class Edges(GraphicsItem):
-
     name = 'Constraint edges'
 
     # constructor

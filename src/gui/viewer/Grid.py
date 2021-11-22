@@ -1,4 +1,4 @@
-from typing import *
+import typing as tp
 import numpy as np
 
 from OpenGL.GL import *
@@ -10,20 +10,19 @@ from src.gui.viewer.Drawer import Drawer
 
 
 class Grid(GLGraphicsItem):
-
     name = 'Constraint edges'
 
     # constructor
     def __init__(
             self,
-            size: Tuple[float, float] = (100., 100.),
-            spacing: Tuple[float, float] = (1., 1.),
+            size: tp.Tuple[float, float] = (100., 100.),
+            spacing: tp.Tuple[float, float] = (1., 1.),
             gl_options: str = 'translucent'
     ):
         super().__init__()
         assert all((0.5 * dim).is_integer() for dim in size)
-        self._size: Tuple[float, float] = (0.5 * size[0], 0.5 * size[1])
-        self._spacing: Tuple[float, float] = spacing
+        self._size: tp.Tuple[float, float] = (0.5 * size[0], 0.5 * size[1])
+        self._spacing: tp.Tuple[float, float] = spacing
         # settings
         self.setGLOptions(gl_options)
 

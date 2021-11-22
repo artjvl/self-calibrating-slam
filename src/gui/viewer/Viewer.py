@@ -1,4 +1,5 @@
 import numpy as np
+import typing as tp
 import pyqtgraph.opengl as gl
 from PyQt5.QtCore import QSize
 from PyQt5.QtGui import QVector3D
@@ -6,6 +7,8 @@ from PyQt5.QtGui import QVector3D
 from src.framework.math.matrix.vector import Vector3
 from src.gui.modules.TreeNode import TopTreeNode
 from src.gui.viewer.Grid import Grid
+if tp.TYPE_CHECKING:
+    from src.gui.viewer.items.GraphicsItem import SubGLGraphicsItem
 
 
 class Viewer(gl.GLViewWidget):
@@ -17,6 +20,7 @@ class Viewer(gl.GLViewWidget):
             **kwargs
     ):
         super().__init__(**kwargs)
+        self.setBackgroundColor('k')
         self.setMinimumSize(QSize(600, 400))
         self.setCameraPosition(distance=40)
         self.set_isometric_view()
@@ -41,7 +45,7 @@ class Viewer(gl.GLViewWidget):
         self.setCameraPosition(pos=QVector3D(*(pos.to_list())))
 
     def update_items(self):
-        items = self._tree.get_graphics()
+        items: tp.List['SubGLGraphicsItem'] = self._tree.get_graphics()
         if self._is_grid:
             items.append(self._grid)
 
@@ -64,7 +68,7 @@ class Viewer(gl.GLViewWidget):
         if relative == 'view-upright':
             camera_pos = self.cameraPosition()
             camera_vector = self.opts['center'] - camera_pos
-            distance = camera_vector.previous_depth()  # distance from camera to center
+            distance = camera_vector.length()  # distance from camera to center
             distance_x = distance * 2. * np.tan(0.5 * self.opts['fov'] * np.pi / 180.)
             scale_x = distance_x / self.width()
             z = QVector3D(0, 0, 1)

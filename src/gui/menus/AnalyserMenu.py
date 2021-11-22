@@ -2,11 +2,11 @@ import pathlib
 import typing as tp
 
 from PyQt5 import QtWidgets
-from src.framework.analysis.FigureParser import FigureParser
+from src.framework.analysis.plot.FigureParser import FigureParser
 from src.gui.menus.Menu import Menu
 
 if tp.TYPE_CHECKING:
-    from framework.analysis.Analyser import Analyser
+    from src.framework.analysis.Analyser import Analyser
 
 
 class AnalyserMenu(Menu):
@@ -42,7 +42,7 @@ class AnalyserMenu(Menu):
             handler=self._handle_save_as
         )
 
-    def _handle_save(self):
+    def _handle_save(self) -> None:
         self._analyser.save_fig()
 
     def _handle_save_as(self):
@@ -57,3 +57,4 @@ class AnalyserMenu(Menu):
                 filename += '.pickle'
             path: pathlib.Path = pathlib.Path(filename)
             self._analyser.save_fig(path.name)
+

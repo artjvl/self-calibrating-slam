@@ -7,7 +7,7 @@ from src.framework.graph.parameter.ParameterSpecification import ParameterSpecif
 from src.framework.math.matrix.vector.Vector import Vector
 
 if tp.TYPE_CHECKING:
-    from src.framework.graph.Graph import SubGraph, SubParameterNode
+    from src.framework.graph.Graph import SubEdge, SubParameterNode
     from src.framework.graph.data.DataFactory import Quantity
     from src.framework.math.lie.transformation import SE2
     from src.framework.simulation.Simulation import SubSimulation
@@ -48,7 +48,7 @@ class Parameter(object):
     @abstractmethod
     def add_edge(
             self,
-            edge: 'SubGraph'
+            edge: 'SubEdge'
     ) -> None:
         pass
 
@@ -70,7 +70,7 @@ class Parameter(object):
             transformation: 'SE2',
             is_inverse: bool = False
     ) -> 'SE2':
-        return self._node.compose(transformation, is_inverse)
+        return self._node.compose_transformation(transformation, is_inverse)
 
 
 class StaticParameter(Parameter):
@@ -83,7 +83,7 @@ class StaticParameter(Parameter):
         new: 'SubParameterNode' = old.__class__(
             value=value,
             name=old.get_name(),
-            index=old.get_index(),
+            index=old.index(),
             specification=old.get_specification()
         )
         self.simulation().add_node(new)
@@ -95,13 +95,13 @@ class StaticParameter(Parameter):
 
     def add_edge(
             self,
-            edge: 'SubGraph'
+            edge: 'SubEdge'
     ) -> None:
         node: SubParameterNode = self.node()
         if self.is_visible():
             edge.add_node(node)
         else:
-            edge.set_measurement(node.decompose(edge.get_measurement()))
+            edge.set_from_transformation(node.decompose(edge.to_transformation()))
 
 
 class TimelyBatchParameter(StaticParameter):
@@ -134,22 +134,22 @@ class TimelyBatchParameter(StaticParameter):
 
     def add_edge(
             self,
-            edge: 'SubGraph'
+            edge: 'SubEdge'
     ) -> None:
         if self._edge_count == self._batch_size:
             self.renew()
             self._edge_count = 0
-        edge.add_parameter(self.node())
+        edge.add_node(self.node())
         self._edge_count += 1
 
 
 class SlidingParameter(Parameter):
     _window_size: int
 
-    _in: tp.List['SubGraph']
+    _in: tp.List['SubEdge']
     _is_closures: tp.List[bool]
-    _between: tp.List['SubGraph']
-    _out: tp.List['SubGraph']
+    _between: tp.List['SubEdge']
+    _out: tp.List['SubEdge']
 
     def __init__(
             self,
@@ -183,10 +183,10 @@ class SlidingParameter(Parameter):
 
     def add_edge(
             self,
-            edge: 'SubGraph'
+            edge: 'SubEdge'
     ) -> None:
         node: 'SubParameterNode' = self.node()
-        edge.add_parameter(node)
+        edge.add_node(node)
 
         if len(self._in) < self._window_size:
             self._in.append(edge)  # append <node>
@@ -199,8 +199,8 @@ class SlidingParameter(Parameter):
         # if any closures are present in the previously connected edges, the window size is reduced to its default value
         if len(self._is_closures) > 1 and self._is_closures[-2]:
             for edge_ in self._between:
-                edge_.remove_parameter_id(node.get_id())
-                edge_.set_measurement(node.compose(edge_.get_measurement(), is_inverse=False))
+                edge_.remove_node_id(node.get_id())
+                edge_.set_from_transformation(node.compose_transformation(edge_.to_transformation(), is_inverse=False))
                 self._out.append(edge_)
             self._between = []
 
@@ -208,8 +208,8 @@ class SlidingParameter(Parameter):
 class OldSlidingParameter(Parameter):
     _window_size: int
 
-    _in: tp.List['SubGraph']
-    _out: tp.List['SubGraph']
+    _in: tp.List['SubEdge']
+    _out: tp.List['SubEdge']
 
     def __init__(
             self,
@@ -241,14 +241,14 @@ class OldSlidingParameter(Parameter):
 
     def add_edge(
             self,
-            edge: 'SubGraph'
+            edge: 'SubEdge'
     ) -> None:
         node: 'SubParameterNode' = self.node()
-        edge.add_parameter(node)
+        edge.add_node(node)
 
         self._in.append(edge)
         if len(self._in) > self._window_size:
-            first: 'SubGraph' = self._in[0]
-            first.remove_parameter_id(node.get_id())
-            first.set_measurement(node.compose(first.get_measurement(), is_inverse=False))
+            first: 'SubEdge' = self._in[0]
+            first.remove_node_id(node.get_id())
+            first.set_from_transformation(node.compose_transformation(first.to_transformation(), is_inverse=False))
             self._in = self._in[1:]

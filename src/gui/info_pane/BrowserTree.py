@@ -8,7 +8,8 @@ from src.gui.modules.TreeNode import GraphTreeNode, TrajectoryTreeNode, Toggle
 from src.gui.utils.PopUp import PopUp
 
 if tp.TYPE_CHECKING:
-    from src.framework.analysis.Analyser import AnalyserParameterValues, AnalyserParameterDynamics, AnalyserVariance
+    from src.framework.analysis.Analyser import AnalyserParameterValues, AnalyserParameterDynamics, AnalyserVariance, \
+        AnalyserParameterSpatial
     from src.framework.graph.Graph import SubGraph
     from src.framework.graph.Visualisable import SubVisualisable
     from src.gui.info_pane.InspectorTree import InspectorTree
@@ -309,26 +310,34 @@ class BrowserTree(QtWidgets.QTreeWidget):
         action.setEnabled(has_metrics)
         plot_commands[action] = functools.partial(self._tree.analyser().rper().plot, graph)
 
-        # analyse - plot parameter dynamics
-        sub_analyse_parameter_dynamics = sub_analyse.addMenu('Plot parameter dynamics')
-        parameter_names: tp.List[str] = graph.get_parameter_names()
-        for parameter_name in parameter_names:
-            analyser: tp.Type['AnalyserParameterDynamics'] = self._tree.analyser().parameter_dynamics()
+        sub_analyse_parameter = sub_analyse.addMenu('Parameter')
+        for parameter_name in graph.get_parameter_names():
+            sub_analyse_parameter_name = sub_analyse_parameter.addMenu(f"'{parameter_name}'")
+
+            # dynamics
+            analyser: tp.Any = self._tree.analyser().parameter_dynamics()
             if analyser.is_eligible(graph, parameter_name):
-                plot_commands[sub_analyse_parameter_dynamics.addAction(f"'{parameter_name}'")] = functools.partial(
-                    self._tree.analyser().parameter_dynamics().plot, graph, parameter_name
-                )
-        sub_analyse_parameter_dynamics.setEnabled(bool(sub_analyse_parameter_dynamics.actions()))
-        # analyse - plot parameter
-        sub_analyse_plot_parameters = sub_analyse.addMenu('Plot parameter values')
-        parameter_names: tp.List[str] = graph.get_parameter_names()
-        for parameter_name in parameter_names:
-            analyser: tp.Type['AnalyserParameterValues'] = self._tree.analyser().parameter_values()
-            if analyser.is_eligible(graph, parameter_name):
-                plot_commands[sub_analyse_plot_parameters.addAction(f"'{parameter_name}'")] = functools.partial(
+                plot_commands[sub_analyse_parameter_name.addAction('Plot dynamics')] = functools.partial(
                     analyser.plot, graph, parameter_name
                 )
-        sub_analyse_plot_parameters.setEnabled(bool(sub_analyse_plot_parameters.actions()))
+
+            # values
+            analyser = self._tree.analyser().parameter_values()
+            if analyser.is_eligible(graph, parameter_name):
+                plot_commands[sub_analyse_parameter_name.addAction('Plot values')] = functools.partial(
+                    analyser.plot, graph, parameter_name
+                )
+
+            # spatial
+            analyser = self._tree.analyser().parameter_spatial()
+            if analyser.is_eligible(graph, parameter_name):
+                plot_commands[sub_analyse_parameter_name.addAction('Plot clusters')] = functools.partial(
+                    analyser.plot_spatial_clusters, graph, parameter_name
+                )
+                plot_commands[sub_analyse_parameter_name.addAction('Plot interpolation')] = functools.partial(
+                    analyser.plot_interpolation, graph, parameter_name
+                )
+
         # analyse - plot edge variance
         sub_analyse_plot_edge_variance = sub_analyse.addMenu('Plot edge variance')
         edge_names: tp.List[str] = graph.get_edge_names()

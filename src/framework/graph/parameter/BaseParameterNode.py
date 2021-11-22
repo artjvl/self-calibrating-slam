@@ -68,7 +68,7 @@ class BaseParameterNode(tp.Generic[T], ParameterNode[T]):
             name, value, specification,
             id_=id_, timestep=timestep, index=index)
 
-    def compose(
+    def compose_transformation(
             self,
             transformation: SE2,
             is_inverse: bool = False

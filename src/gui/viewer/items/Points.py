@@ -12,8 +12,8 @@ from src.gui.viewer.items.GraphicsItem import GraphicsItem
 if tp.TYPE_CHECKING:
     from src.framework.graph.Visualisable import SubVisualisable
 
-class Points(GraphicsItem):
 
+class Points(GraphicsItem):
     name = 'Node points'
 
     # constructor

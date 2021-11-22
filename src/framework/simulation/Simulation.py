@@ -12,7 +12,7 @@ from src.framework.simulation.Parameter import StaticParameter, TimelyBatchParam
 from src.framework.simulation.PostAnalyser import SpatialBatchAnalyser
 
 if tp.TYPE_CHECKING:
-    from src.framework.graph.Graph import SubNode, SubEdge, SubGraph
+    from src.framework.graph.Graph import SubNode, SubParameterNode, SubEdge, SubGraph
     from src.framework.graph.data.DataFactory import Quantity
     from src.framework.graph.parameter.ParameterSpecification import ParameterSpecification
     from src.framework.graph.spatial.NodeSE2 import NodeSE2
@@ -31,7 +31,6 @@ class Simulation(GraphManager):
 
     _pose_ids: tp.List[int]  # list of pose-ids
     _current_node: 'NodeSE2'  # current pose-node
-    _last_graph: 'SubGraph'  # last saved instance of the graph
 
     def __init__(
             self,
@@ -55,7 +54,6 @@ class Simulation(GraphManager):
         self._pose_ids = []
         self._current_node = self.add_pose_node(SE2.from_translation_angle_elements(0, 0, 0))
         self._current_node.fix()
-        self._last_graph = super().graph()
 
     # sensors
     def add_sensor(
@@ -111,7 +109,7 @@ class Simulation(GraphManager):
             self,
             sensor_name: str,
             measurement: SE2
-    ) -> tp.Tuple['SubNode', 'SubEdge']:
+    ) -> tp.Tuple['NodeSE2', 'SubEdge']:
         """ Creates and adds a new node and edge with a measurement from a sensor. """
         sensor: 'SubSensor' = self.model().get_sensor(sensor_name)
         transformation: SE2 = sensor.compose(measurement)
@@ -145,13 +143,13 @@ class Simulation(GraphManager):
         return self._pose_ids
 
     # optimiser
-    def set_optimiser(self, optimiser: Optimiser) -> None:
-        """ Sets the optimiser. """
-        self._optimiser = optimiser
-
     def has_optimiser(self) -> bool:
         """ Returns whether an optimiser has been set. """
         return self._optimiser is not None
+
+    def set_optimiser(self, optimiser: Optimiser) -> None:
+        """ Sets the optimiser. """
+        self._optimiser = optimiser
 
     def get_optimiser(self) -> Optimiser:
         """ Returns the optimiser. """
@@ -161,7 +159,6 @@ class Simulation(GraphManager):
     def set_previous(self, previous: 'SubGraph') -> None:
         """ Sets a previous graph. """
         self.graph().set_previous(previous)
-        self._last_graph = previous
 
     def add_static_parameter(
             self,
@@ -170,7 +167,7 @@ class Simulation(GraphManager):
             value: 'Quantity',
             specification: 'ParameterSpecification',
             index: int = 0
-    ) -> None:
+    ) -> 'SubParameterNode':
         parameter: 'SubParameter' = StaticParameter(
             self,
             value,
@@ -179,15 +176,15 @@ class Simulation(GraphManager):
             index=index,
             is_visible=True
         )
-        self._model.add_parameter(sensor_name, parameter_name, parameter)
+        return self._model.add_parameter(sensor_name, parameter_name, parameter)
 
     def update_parameter(
             self,
             sensor_name: str,
             parameter_name: str,
             value: 'Quantity'
-    ) -> None:
-        self._model.update_parameter(sensor_name, parameter_name, value)
+    ) -> 'SubParameterNode':
+        return self._model.update_parameter(sensor_name, parameter_name, value)
 
     @abstractmethod
     def step(self) -> 'SubGraph':
@@ -227,6 +224,11 @@ class OptimisingSimulation(Simulation, ABC):
         self._last_cost = None
         self.set_timestep(0)
 
+    def reset(self) -> None:
+        super().reset()
+        self._has_closure = False
+        self._last_cost = None
+
     def add_odometry(
             self,
             sensor_name: str,
@@ -245,7 +247,7 @@ class OptimisingSimulation(Simulation, ABC):
         graph: 'SubGraph' = self.graph()
         solution: tp.Optional['SubGraph'] = None
         if self._has_closure:
-            cost_threshold: tp.Optional[float] = None
+            cost_threshold: tp.Optional[float] = 0.
             if self._last_cost is not None:
                 cost_threshold = 2 * self._last_cost
             solution = graph.optimise(self.get_optimiser(), cost_threshold=cost_threshold)
@@ -265,7 +267,7 @@ class OptimisingSimulation(Simulation, ABC):
             specification: 'ParameterSpecification',
             batch_size: int,
             index: int = 0
-    ) -> None:
+    ) -> 'SubParameterNode':
         parameter: 'SubParameter' = TimelyBatchParameter(
             self,
             value,
@@ -274,7 +276,7 @@ class OptimisingSimulation(Simulation, ABC):
             batch_size=batch_size,
             index=index
         )
-        self.model().add_parameter(sensor_name, parameter_name, parameter)
+        return self.model().add_parameter(sensor_name, parameter_name, parameter)
 
     def add_sliding_parameter(
             self,
@@ -284,7 +286,7 @@ class OptimisingSimulation(Simulation, ABC):
             specification: 'ParameterSpecification',
             window: int,
             index: int = 0
-    ) -> None:
+    ) -> 'SubParameterNode':
         parameter: 'SubParameter' = SlidingParameter(
             self,
             value,
@@ -293,7 +295,7 @@ class OptimisingSimulation(Simulation, ABC):
             name=parameter_name,
             index=index
         )
-        self.model().add_parameter(sensor_name, parameter_name, parameter)
+        return self.model().add_parameter(sensor_name, parameter_name, parameter)
 
     def add_old_sliding_parameter(
             self,
@@ -303,7 +305,7 @@ class OptimisingSimulation(Simulation, ABC):
             specification: 'ParameterSpecification',
             window_size: int,
             index: int = 0
-    ) -> None:
+    ) -> 'SubParameterNode':
         parameter: 'SubParameter' = OldSlidingParameter(
             self,
             value,
@@ -312,7 +314,7 @@ class OptimisingSimulation(Simulation, ABC):
             name=parameter_name,
             index=index
         )
-        self.model().add_parameter(sensor_name, parameter_name, parameter)
+        return self.model().add_parameter(sensor_name, parameter_name, parameter)
 
 
 class PostSimulation(Simulation):
@@ -349,7 +351,7 @@ class PostSimulation(Simulation):
             specification: 'ParameterSpecification',
             num_batches: int,
             index: int = 0
-    ) -> None:
+    ):
         analyser: 'SubPostAnalyser' = SpatialBatchAnalyser(
             self,
             parameter_name,
@@ -382,8 +384,8 @@ class PostSimulation(Simulation):
         assert self.has_analyser()
         analyser: SubPostAnalyser = self.get_analyser()
 
-        previous: 'SubGraph' = self.optimise()
+        previous: 'SubGraph' = self.graph().optimise(self.get_optimiser(), cost_threshold=None)
         for _ in range(steps):
             self.set_previous(previous)
             analyser.post_process()
-            previous = self.optimise()
+            previous = self.graph().optimise(self.get_optimiser(), cost_threshold=None)

@@ -3,17 +3,16 @@ from __future__ import annotations
 import typing as tp
 
 from OpenGL.GL import *
-from framework.graph.Visualisable import DrawAxis
+from src.framework.graph.Visualisable import DrawAxis
 from src.framework.math.lie.transformation import SE3
 from src.gui.viewer.Drawer import Drawer
 from src.gui.viewer.items.GraphicsItem import GraphicsItem
 
 if tp.TYPE_CHECKING:
-    from framework.graph.Visualisable import SubVisualisable
+    from src.framework.graph.Visualisable import SubVisualisable
 
 
 class Axes(GraphicsItem):
-
     name = 'Axis systems'
 
     # constructor

@@ -108,6 +108,9 @@ class TreeNode(object):
     ) -> None:
         self._children[node.get_key()] = node
 
+    def clear_children(self) -> None:
+        self._children = {}
+
     def has_key(self, key: str) -> bool:
         return key in self._children
 
@@ -276,7 +279,7 @@ class GraphTreeNode(GraphicsTreeNode):
     _id: int  # node id
     _types: tp.List[Type]  # supported
     _graph_container: 'SubGraphContainer'  # graph-container
-    _timestep: tp.Optional[float]  # current time-stamp
+    _index: tp.Optional[int]  # current time-stamp
 
     def __init__(
             self,
@@ -289,12 +292,12 @@ class GraphTreeNode(GraphicsTreeNode):
         self._id = id_
         self._types = types
         self._graph_container = graph_container
-        self._timestep = None
-        if not graph_container.is_singular():
-            self._timestep = graph_container.get_timesteps()[-1]
-        self.init_graph(self._graph_container.get_graph())
+        self._index = len(graph_container.get_timesteps()) - 1
+        self.init_graph(graph_container.get_graph())
 
     def init_graph(self, graph: 'SubGraph'):
+        self.clear_children()
+
         # for all of the given graphics-item-types
         type_: Type
         for type_ in self._types:
@@ -319,22 +322,21 @@ class GraphTreeNode(GraphicsTreeNode):
         return self._id
 
     # timestep
-    def set_timesteps(self, timestep: int):
-        assert self._graph_container.has_timestep(timestep)
-        self._timestep = timestep
+    def set_index(self, index: int):
+        self._index = index
         self.init_graph(self.get_graph())
         self.broadcast(self.get_id())
 
-    def get_timestep(self) -> float:
-        return self._timestep
+    def get_index(self) -> int:
+        return self._index
 
     # graphs
     def get_graph(self, is_final: bool = False) -> 'SubGraph':
         """ Returns the graph that this tree-element represents. """
-        timestep: tp.Optional[float] = None
+        index: tp.Optional[int] = None
         if not is_final:
-            timestep = self._timestep
-        return self._graph_container.get_graph(timestep)
+            index = self._index
+        return self._graph_container.get_graph(index)
 
     def get_graph_container(self) -> 'SubGraphContainer':
         return self._graph_container
@@ -352,16 +354,11 @@ class GraphTreeNode(GraphicsTreeNode):
         return self.get_parent().is_eligible_for_truth(self._graph_container)
 
     # GraphContainer interface
-    def get_timesteps(self) -> tp.List[int]:
-        return self._graph_container.get_timesteps()
-
     def is_singular(self) -> bool:
         return self._graph_container.is_singular()
 
     def find_subgraphs(self) -> None:
-        assert self.is_singular()
         self._graph_container.find_subgraphs()
-        self.set_timesteps(self.get_timesteps()[-1])
 
     # TreeNode
     def get_key(self) -> str:

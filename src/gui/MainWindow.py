@@ -21,7 +21,7 @@ class MainWindow(QMainWindow):
         # window
         self.setGeometry(200, 200, 1600, 1000)
         # self.centre()
-        self.setWindowTitle('Graph-Viewer')
+        self.setWindowTitle('PPGO Graph-Viewer')
 
         # modules
         self._container = TopTreeNode()

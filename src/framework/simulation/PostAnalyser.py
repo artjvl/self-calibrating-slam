@@ -9,7 +9,7 @@ from src.framework.math.matrix.vector import VectorFactory, Vector2
 
 if tp.TYPE_CHECKING:
     from src.framework.graph.data.DataFactory import Quantity
-    from src.framework.graph.Graph import SubParameterNode, SubEdge, SubGraph
+    from src.framework.graph.Graph import SubSpatialNode, SubParameterNode, SubEdge, SubGraph
     from src.framework.graph.parameter.ParameterSpecification import ParameterSpecification
     from src.framework.math.matrix.vector import SubVector
     from src.framework.math.matrix.vector.Vector import SubSizeVector
@@ -21,7 +21,7 @@ SubPostAnalyser = tp.TypeVar('SubPostAnalyser', bound='PostAnalyser')
 
 class PostAnalyser(object):
     _sim: 'SubSimulation'
-    _edges: tp.List['SubGraph']
+    _edges: tp.List['SubEdge']
 
     def __init__(
             self,
@@ -53,6 +53,7 @@ class SpatialBatchAnalyser(PostAnalyser):
     _specification: 'ParameterSpecification'
     _index: int
     _num_batches: int
+    _nodes: tp.Optional[tp.List['SubParameterNode']]
 
     def __init__(
             self,
@@ -69,16 +70,27 @@ class SpatialBatchAnalyser(PostAnalyser):
         self._specification = specification
         self._index = index
         self._num_batches = num_batches
+        self._nodes = None
 
     def post_process(self) -> None:
+        if self._nodes is not None:
+            for node in self._nodes:
+                id_: int = node.get_id()
+                self._sim.graph().remove_node_id(id_)
+
+                edges: tp.List['SubEdge'] = self.edges()
+                for edge in edges:
+                    if edge.contains_node_id(id_):
+                        edge.remove_node_id(id_)
+
         # calculate edge centres
-        edges: tp.List['SubGraph'] = self.edges()
+        edges: tp.List['SubEdge'] = self.edges()
         averages: np.ndarray = np.zeros((2, len(edges)))
         for i, edge in enumerate(edges):
-            endpoints: tp.List['SubGraph'] = edge.get_endpoints()
+            endpoints: tp.List['SubSpatialNode'] = edge.get_spatial_nodes()
             translations: np.ndarray = np.zeros((2, len(endpoints)))
             for j, endpoint in enumerate(endpoints):
-                translations[:, j] = endpoint.get_value().get_translation().array().flatten()
+                translations[:, j] = endpoint.get_value().translation().array().flatten()
             averages[:, i] = np.mean(translations, axis=1)
 
         # perform k-means clustering
@@ -91,8 +103,8 @@ class SpatialBatchAnalyser(PostAnalyser):
         parameters: tp.List['SubParameterNode'] = []
         for i in range(self._num_batches):
             parameter: 'SubParameterNode' = ParameterNodeFactory.from_value(
+                self._name,
                 self._init_value,
-                name = self._name,
                 specification=self._specification,
                 index=self._index
             )
@@ -100,23 +112,25 @@ class SpatialBatchAnalyser(PostAnalyser):
             parameter.set_translation(translation)
             self._sim.add_node(parameter)
             parameters.append(parameter)
+        self._nodes = parameters
 
         # assign parameters
-        label_dict: tp.Dict[int, int] = {}
-        label_counter: int = 0
+        # label_dict: tp.Dict[int, int] = {}
+        # label_counter: int = 0
         for i, edge in enumerate(edges):
             label: int = k.labels_[i]
-            if label not in label_dict:
-                label_dict[label] = label_counter
-                label_counter += 1
-            index: int = label_dict[label]
-            parameter: 'SubParameterNode' = parameters[index]
-            edge.add_parameter(parameter)
+            # if label not in label_dict:
+            #     label_dict[label] = label_counter
+            #     label_counter += 1
+            # index: int = label_dict[label]
+            parameter: 'SubParameterNode' = parameters[label]
+            edge.add_node(parameter)
 
         centres: np.ndarray = k.cluster_centers_.transpose()
         fig, ax = plt.subplots()
         ax.scatter(averages[0, :], averages[1, :])
-        ax.scatter(centres[0, :], centres[1, :], s=300, c='red')
+        ax.scatter(centres[0, :], centres[1, :], s=300, c='red', alpha=0.5)
+        ax.set_aspect('equal')
         fig.show()
         print('done')
 
