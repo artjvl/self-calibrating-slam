@@ -1,7 +1,6 @@
 import typing as tp
 
 from src.simulation.results.ResultsSinScale import ResultsSinScaleTimelyBatch
-from src.simulation.results.ResultsSpatialBias1D import ResultsSpatialBias1DSpatial
 from src.simulation.results.ResultsSpatialBias import ResultsSpatialBiasSpatial, ResultsSpatialBiasWithout
 from src.simulation.dataset.IntelDatasetSim import IntelPlain, IntelSliding, IntelSlidingOld, \
     IntelWithout, IntelConstant, IntelTimely, IntelSpatial
