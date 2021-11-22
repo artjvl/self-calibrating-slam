@@ -28,13 +28,12 @@ g2o:
 ## Installation
 
 Self-Calibrating SLAM Python framework:
-- ```pip3 install -e path/to/self-calibrating-slam/``` (or ```pip3 install -e .``` when in the root directory) to install the package in editable state.
+- in root folder: ```pip3 install -e .``` (i.e., ```pip3 install -e path/to/self-calibrating-slam/```)
 
 g2o:
-- ```mkdir build``` in the ```g2o/``` directory
-- ```cd build```
-- ```cmake ../```
-- ```make```
+- in ```g2o/``` directory (```cd g2o```): ```mkdir build```
+- in ```build/``` directory (```cd build```):```cmake ../```
+- in ```build/``` directory: ```make```
 
 # Framework
 
@@ -43,7 +42,7 @@ g2o:
 ![](doc/gif/peek_20210309.gif)
 
 The GUI intuitively allows for graph creation, optimisation and analysis.
-- ```python3 gui.py``` in ```src/gui/```
+- in ```src/``` directory: ```python3 main.py``` or ```python3 gui/gui.py```
 
 # Contact Info
 
