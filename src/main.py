@@ -1,7 +1,11 @@
-import numpy as np
-from src.groups import *
-from src.structures import *
+from pyqtgraph.Qt import QtGui
+from src.definitions import get_project_root
 
-print("Hello, World!")
+from src.gui.MainWindow import MainWindow
 
-print("Bye, World!")
+if __name__ == '__main__':
+    print(get_project_root())
+    app = QtGui.QApplication([])
+    window = MainWindow()
+    window.show()
+    app.exec_()

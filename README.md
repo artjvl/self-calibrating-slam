@@ -16,6 +16,7 @@ Self-Calibrating SLAM Python framework:
 - **[pip3](https://pypi.org/project/pip/)** (with ```apt install python3-pip```)
 - **[pyqt5](https://pypi.org/project/PyQt5/)** (with ```pip3 install pyqt5``` or ```apt install python3-pyqt5```)
 - **[pyqtgraph](http://www.pyqtgraph.org/)** (with  ```pip3 install pyqtgraph``` or ```apt install python-pyqtgraph```)
+- **[pyopengl](https://pypi.org/project/PyOpenGL/)** (with ```pip3 install pyopengl```)
 
 g2o:
 - **[cmake](https://cmake.org/)** (with ```apt install cmake```)
