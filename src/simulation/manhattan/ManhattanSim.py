@@ -9,8 +9,11 @@ from src.framework.simulation.Path import ManhattanPath
 
 
 def f_space(x, y):
-    return -0.5 + 0.01 * (x + y)
-    # return 0.1 * np.sin(0.1 * (x + y))
+    # if x > 0.:
+    #     return -0.2
+    # return 0.2
+    # return -0.5 + 0.01 * (x + y)
+    return 0.2 * np.cos(0.1 * (x + y))
 
 
 def f_step(x):
@@ -50,22 +53,25 @@ class ManhattanSim(BiSimulation):
         self.add_sensor('gps', Vector2, info_gps_truth, info_gps_estimate)
 
         # parameters:
-        self.truth_simulation().add_static_parameter(
-            'wheel', 'scale',
-            Vector1(1.1), ParameterSpecification.SCALE, index=1
+        node = self.truth_simulation().add_static_parameter(
+            'wheel', 'bias',
+            Vector1(0.1), ParameterSpecification.BIAS, index=0
         )
+        node.set_translation(self.get_current_pose().translation())
 
     def simulate(self) -> None:
         delta: float = 0.1
-        num: int = 100  # 400
+        num: int = 400  # 400
 
         is_gps: bool = True
-        is_dyn: bool = False
+        is_dyn: bool = True
 
         gps_num: int = 10
         gps_ids: set = set(self.get_constraint_rng().randint(1, num, size=(gps_num,)))
 
         for i in range(num):
+            self.step()
+
             self.auto_odometry('wheel')
             self.roll_proximity('lidar', 3, threshold=0.9)
             self.roll_closure('lidar', 2., separation=10, threshold=0.6)
@@ -74,10 +80,10 @@ class ManhattanSim(BiSimulation):
                 self.add_gps('gps')
 
             if is_dyn:
-                self.truth_simulation().update_parameter('wheel', 'bias', Vector1(f_step(i)))
+                translation: Vector2 = self.get_current_pose().translation()
+                node = self.truth_simulation().update_parameter('wheel', 'bias', Vector1(f_space(translation[0], translation[1])))
+                node.set_translation(self.get_current_pose().translation())
                 # model.update_truth_parameter('wheel', 'bias', Vector1(0.1 * np.sin(0.01 * i)))
-
-            self.step()
 
     def finalise(self) -> None:
         pass
@@ -93,7 +99,7 @@ class ManhattanPlain(ManhattanSim):
         super().initialise()
         self.estimate_simulation().add_static_parameter(
             'wheel', 'scale',
-            Vector1(1.1), ParameterSpecification.SCALE, index=1
+            Vector1(0.), ParameterSpecification.BIAS, index=0
         )
 
 
@@ -114,7 +120,7 @@ class ManhattanConstant(ManhattanSim):
         super().initialise()
         self.estimate_simulation().add_static_parameter(
             'wheel', 'bias',
-            Vector1(1.), ParameterSpecification.SCALE, index=1
+            Vector1(0.), ParameterSpecification.BIAS, index=0
         )
 
 
@@ -128,7 +134,7 @@ class ManhattanTimely(ManhattanSim):
         super().initialise()
         self.estimate_simulation().add_timely_parameter(
             'wheel', 'bias',
-            Vector1(0.), ParameterSpecification.SCALE, 20, index=0
+            Vector1(0.), ParameterSpecification.BIAS, 20, index=0
         )
 
 
@@ -142,7 +148,7 @@ class ManhattanSliding(ManhattanSim):
         super().initialise()
         self.estimate_simulation().add_sliding_parameter(
             'wheel', 'bias',
-            Vector1(0.), ParameterSpecification.SCALE, 20, index=0
+            Vector1(0.), ParameterSpecification.BIAS, 20, index=0
         )
 
 
@@ -156,7 +162,7 @@ class ManhattanSlidingOld(ManhattanSim):
         super().initialise()
         self.estimate_simulation().add_old_sliding_parameter(
             'wheel', 'bias',
-            Vector1(0.), ParameterSpecification.SCALE, 20, index=0
+            Vector1(0.), ParameterSpecification.BIAS, 20, index=0
         )
 
 
@@ -169,10 +175,10 @@ class ManhattanSpatial(ManhattanSim):
     def initialise(self) -> None:
         super().initialise()
         self.estimate_simulation().add_spatial_parameter(
-            'wheel', 'bias', Vector1(1.),
-            ParameterSpecification.SCALE, 20, index=0
+            'wheel', 'bias', Vector1(0.),
+            ParameterSpecification.BIAS, 20, index=0
         )
 
     def finalise(self) -> None:
         super().finalise()
-        self.estimate_simulation().post_process()
+        self.estimate_simulation().post_process(2)

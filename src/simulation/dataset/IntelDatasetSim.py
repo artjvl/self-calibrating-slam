@@ -54,7 +54,7 @@ class IntelSim(BiSimulation):
 
     def simulate(self) -> None:
         delta: float = 0.1
-        num: int = 100  # 400
+        num: int = 300  # 400
 
         is_gps: bool = True
         is_dyn: bool = True
@@ -63,6 +63,8 @@ class IntelSim(BiSimulation):
         gps_ids: set = set(self.get_constraint_rng().randint(1, num, size=(gps_num,)))
 
         for i in range(num):
+            self.step()
+
             self.auto_odometry('wheel')
             self.roll_proximity('lidar', 3, threshold=0.9)
             self.roll_closure('lidar', 2., separation=10, threshold=0.8)
@@ -73,8 +75,6 @@ class IntelSim(BiSimulation):
             if is_dyn:
                 self.truth_simulation().update_parameter('wheel', 'bias', Vector1(f_step(i)))
                 # model.update_truth_parameter('wheel', 'bias', Vector1(0.1 * np.sin(0.01 * i)))
-
-            self.step()
 
     def finalise(self) -> None:
         pass
