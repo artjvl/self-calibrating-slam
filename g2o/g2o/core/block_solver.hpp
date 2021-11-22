@@ -451,6 +451,15 @@ template <typename Traits>
 bool BlockSolver<Traits>::computeMarginals(SparseBlockMatrix<MatrixX>& spinv, const std::vector<std::pair<int, int> >& blockIndices)
 {
   number_t t = get_monotonic_time();
+  size_t size = _optimizer->indexMapping().size();
+  for (size_t i = 0; i < size; ++i) {
+      for (size_t j = 0; j <= i; ++j) {
+          std::cerr << "cov block :" << i << ", " << j << std::endl;
+          std::cerr << *(_Hpp->block(i, j));
+          std::cerr << std::endl;
+      }
+  }
+
   bool ok = _linearSolver->solvePattern(spinv, blockIndices, *_Hpp);
   G2OBatchStatistics* globalStats = G2OBatchStatistics::globalStats();
   if (globalStats) {
