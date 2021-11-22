@@ -17,6 +17,7 @@ SubResults = tp.TypeVar('SubResults', bound='Results')
 
 class Results(BiSimulation, ABC):
     _num_steps: tp.Optional[int]
+    _config: tp.Any
     def __init__(
             self,
             name: tp.Optional[str] = None,
@@ -24,13 +25,20 @@ class Results(BiSimulation, ABC):
     ):
         super().__init__(name=name, optimiser=optimiser)
         self._num_steps = None
+        self._config = None
+
+    def set_config(self, config: tp.Any) -> 'SubResults':
+        self._config = config
+        return self
+
+    def get_config(self) -> tp.Any:
+        return self._config
 
     def set_steps(self, num_steps: int) -> 'SubResults':
         self._num_steps = num_steps
         return self
 
     def configure(self) -> None:
-        self.set_config(2)  # CHANGE DEFAULT CONFIG HERE
         self.set_sensor_seed(0)
         self.set_constraint_rng(0)
 
@@ -70,6 +78,8 @@ class Results(BiSimulation, ABC):
         costs: tp.List[float] = []
 
         for i in range(self._num_steps):
+            self.step()
+
             self.auto_odometry('wheel')
             is_proximity: bool = self.roll_proximity('lidar', 3, threshold=0.9)
             is_closure: bool = self.roll_closure('lidar', 2., separation=10, threshold=0.6)
@@ -77,11 +87,6 @@ class Results(BiSimulation, ABC):
                 self.add_gps('gps')
 
             self.loop(i)
-
-            if i == 84:
-                print(i)
-
-            self.step()
             cost = self.estimate_simulation().graph().cost()
             costs.append(cost)
 

@@ -1,43 +1,35 @@
-import typing as tp
 from abc import ABC
 
 import numpy as np
 from src.framework.graph.parameter.ParameterSpecification import ParameterSpecification
-from src.framework.math.matrix.vector import Vector1
+from src.framework.math.lie.transformation import SE2
 from src.simulation.results.Results import Results
 
 
 def f_sin(
         x: float,
-        factor: int = 0
+        factor: int = 1
 ) -> float:
-    factor += 1
     return 0.1 * np.sin(factor * 2 * np.pi * x / 200.)
 
 
 class ResultsSinBias(Results, ABC):
     def initialise(self) -> None:
         super().initialise()
-
-        config: tp.Union[int, str] = self.get_config()
-        if config == 1:
-            self.truth_simulation().add_static_parameter(
-                'wheel', 'bias',
-                Vector1(0.), ParameterSpecification.BIAS, index=0
-            )
-        elif config == 2:
-            self.truth_simulation().add_static_parameter(
-                'wheel', 'bias',
-                Vector1(0.), ParameterSpecification.BIAS, index=1
-            )
-        elif config == 3:
-            self.truth_simulation().add_static_parameter(
-                'wheel', 'bias',
-                Vector1(0.), ParameterSpecification.BIAS, index=2
-            )
+        self.truth_simulation().add_static_parameter(
+            'wheel', 'bias',
+            SE2.from_zeros(), ParameterSpecification.BIAS
+        )
 
     def loop(self, iteration: int) -> None:
-        self.truth_simulation().update_parameter('wheel', 'bias', Vector1(f_sin(iteration)))
+        self.truth_simulation().update_parameter(
+            'wheel', 'bias',
+            SE2.from_translation_angle_elements(
+                f_sin(iteration, 1),
+                f_sin(iteration, 2),
+                f_sin(iteration, 3),
+            )
+        )
 
     def finalise(self) -> None:
         pass
@@ -48,85 +40,48 @@ class ResultsSinBiasWithout(ResultsSinBias):
         super().configure()
         self.set_optimising_simulation()
 
+
 class ResultsSinBiasStatic(ResultsSinBiasWithout):
     def initialise(self) -> None:
         super().initialise()
-        config: tp.Union[int, str] = self.get_config()
-        if config == 1:
-            self.estimate_simulation().add_static_parameter(
-                'wheel', 'bias',
-                Vector1(0.), ParameterSpecification.BIAS, index=0
-            )
-        elif config == 2:
-            self.estimate_simulation().add_static_parameter(
-                'wheel', 'bias',
-                Vector1(0.), ParameterSpecification.BIAS, index=1
-            )
-        elif config == 3:
-            self.estimate_simulation().add_static_parameter(
-                'wheel', 'bias',
-                Vector1(0.), ParameterSpecification.BIAS, index=2
-            )
+
+        self.estimate_simulation().add_static_parameter(
+            'wheel', 'bias',
+            SE2.from_zeros(), ParameterSpecification.BIAS
+        )
 
 
 class ResultsSinBiasTimelyBatch(ResultsSinBiasWithout):
     def initialise(self) -> None:
         super().initialise()
-        config: tp.Union[int, str] = self.get_config()
-        if config == 1:
-            self.estimate_simulation().add_timely_parameter(
-                'wheel', 'bias',
-                Vector1(0.), ParameterSpecification.BIAS, 20, index=0
-            )
-        elif config == 2:
-            self.estimate_simulation().add_timely_parameter(
-                'wheel', 'bias',
-                Vector1(0.), ParameterSpecification.BIAS, 20, index=1
-            )
-        elif config == 3:
-            self.estimate_simulation().add_timely_parameter(
-                'wheel', 'bias',
-                Vector1(0.), ParameterSpecification.BIAS, 20, index=2
-            )
+
+        config: int = self.get_config()
+        assert isinstance(config, int)
+        self.estimate_simulation().add_timely_parameter(
+            'wheel', 'bias',
+            SE2.from_zeros(), ParameterSpecification.BIAS, config
+        )
 
 
 class ResultsSinBiasSliding(ResultsSinBiasWithout):
     def initialise(self) -> None:
         super().initialise()
-        config: tp.Union[int, str] = self.get_config()
-        if config == 1:
-            self.estimate_simulation().add_sliding_parameter(
-                'wheel', 'bias',
-                Vector1(0.), ParameterSpecification.BIAS, 20, index=0
-            )
-        elif config == 2:
-            self.estimate_simulation().add_sliding_parameter(
-                'wheel', 'bias',
-                Vector1(0.), ParameterSpecification.BIAS, 20, index=1
-            )
-        elif config == 3:
-            self.estimate_simulation().add_sliding_parameter(
-                'wheel', 'bias',
-                Vector1(0.), ParameterSpecification.BIAS, 20, index=2
-            )
+
+        config: int = self.get_config()
+        assert isinstance(config, int)
+        self.estimate_simulation().add_sliding_parameter(
+            'wheel', 'bias',
+            SE2.from_zeros(), ParameterSpecification.BIAS, config
+        )
 
 
 class ResultsSinBiasSlidingOld(ResultsSinBiasWithout):
     def initialise(self) -> None:
         super().initialise()
-        config: tp.Union[int, str] = self.get_config()
-        if config == 1:
-            self.estimate_simulation().add_old_sliding_parameter(
-                'wheel', 'bias',
-                Vector1(0.), ParameterSpecification.BIAS, 20, index=0
-            )
-        elif config == 2:
-            self.estimate_simulation().add_old_sliding_parameter(
-                'wheel', 'bias',
-                Vector1(0.), ParameterSpecification.BIAS, 20, index=1
-            )
-        elif config == 3:
-            self.estimate_simulation().add_old_sliding_parameter(
-                'wheel', 'bias',
-                Vector1(0.), ParameterSpecification.BIAS, 20, index=2
-            )
+
+        config: int = self.get_config()
+        assert isinstance(config, int)
+        self.estimate_simulation().add_old_sliding_parameter(
+            'wheel', 'bias',
+            SE2.from_zeros(), ParameterSpecification.BIAS, config
+        )

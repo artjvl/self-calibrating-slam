@@ -6,47 +6,37 @@ from src.framework.math.lie.transformation import SE2
 from src.framework.math.matrix.vector import Vector1, Vector2
 from src.simulation.results.Results import Results
 
+Parameter = tp.Union[Vector1, Vector2, SE2]
+
+
+def parse_config(
+        pars: tp.List[tp.Optional[float]],
+        init: tp.Optional[float] = None
+) -> tp.Tuple[Parameter, int]:
+    assert len(pars) == 3
+    num_none: int = pars.count(None)
+    if init is not None:
+        pars = [init if par is not None else None for par in pars]
+    pars_not_none: tp.List[float] = [par for par in pars if par is not None]
+
+    if num_none == 0:
+        return SE2.from_translation_angle_elements(*pars), 0
+    elif num_none == 1:
+        return Vector2(pars_not_none), pars.index(None)
+    return Vector1(pars_not_none), pars.index(pars_not_none[0])
+
 
 class ResultsConstantBias(Results, ABC):
     def initialise(self) -> None:
         super().initialise()
 
-        config: tp.Union[int, str] = self.get_config()
-        if config == 1:
-            self.truth_simulation().add_static_parameter(
-                'wheel', 'bias',
-                Vector1(0.1), ParameterSpecification.BIAS, index=0
-            )
-        elif config == 2:
-            self.truth_simulation().add_static_parameter(
-                'wheel', 'bias',
-                Vector1(0.1), ParameterSpecification.BIAS, index=1
-            )
-        elif config == 3:
-            self.truth_simulation().add_static_parameter(
-                'wheel', 'bias',
-                Vector1(0.1), ParameterSpecification.BIAS, index=2
-            )
-        elif config == 4:
-            self.truth_simulation().add_static_parameter(
-                'wheel', 'bias',
-                Vector2(0.1, 0.1), ParameterSpecification.BIAS, index=2
-            )
-        elif config == 5:
-            self.truth_simulation().add_static_parameter(
-                'wheel', 'bias',
-                Vector2(0.1, 0.1), ParameterSpecification.BIAS, index=1
-            )
-        elif config == 6:
-            self.truth_simulation().add_static_parameter(
-                'wheel', 'bias',
-                Vector2(0.1, 0.1), ParameterSpecification.BIAS, index=0
-            )
-        elif config == 7:
-            self.truth_simulation().add_static_parameter(
-                'wheel', 'bias',
-                SE2.from_translation_angle_elements(0.1, 0.1, 0.1), ParameterSpecification.BIAS
-            )
+        config: tp.List[float] = self.get_config()
+        assert isinstance(config, list)
+        value, index = parse_config(config)
+        self.truth_simulation().add_static_parameter(
+            'wheel', 'bias',
+            value, ParameterSpecification.BIAS, index=index
+        )
 
     def loop(self, iteration: int) -> None:
         pass
@@ -64,39 +54,11 @@ class ResultsConstantBiasWithout(ResultsConstantBias):
 class ResultsConstantBiasStatic(ResultsConstantBiasWithout):
     def initialise(self) -> None:
         super().initialise()
-        config: tp.Union[int, str] = self.get_config()
-        if config == 1:
-            self.estimate_simulation().add_static_parameter(
-                'wheel', 'bias',
-                Vector1(0.), ParameterSpecification.BIAS, index=0
-            )
-        elif config == 2:
-            self.estimate_simulation().add_static_parameter(
-                'wheel', 'bias',
-                Vector1(0.), ParameterSpecification.BIAS, index=1
-            )
-        elif config == 3:
-            self.estimate_simulation().add_static_parameter(
-                'wheel', 'bias',
-                Vector1(0.), ParameterSpecification.BIAS, index=2
-            )
-        elif config == 4:
-            self.estimate_simulation().add_static_parameter(
-                'wheel', 'bias',
-                Vector2(0., 0.), ParameterSpecification.BIAS, index=2
-            )
-        elif config == 5:
-            self.estimate_simulation().add_static_parameter(
-                'wheel', 'bias',
-                Vector2(0., 0.), ParameterSpecification.BIAS, index=1
-            )
-        elif config == 6:
-            self.estimate_simulation().add_static_parameter(
-                'wheel', 'bias',
-                Vector2(0., 0.), ParameterSpecification.BIAS, index=0
-            )
-        elif config == 7:
-            self.estimate_simulation().add_static_parameter(
-                'wheel', 'bias',
-                SE2.from_translation_angle_elements(0., 0., 0.), ParameterSpecification.BIAS
-            )
+
+        config: tp.List[float] = self.get_config()
+        assert isinstance(config, list)
+        value, index = parse_config(config, 0.)
+        self.estimate_simulation().add_static_parameter(
+            'wheel', 'bias',
+            value, ParameterSpecification.BIAS, index=index
+        )
